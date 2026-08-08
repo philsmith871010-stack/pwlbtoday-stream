@@ -126,6 +126,21 @@ tbody tr:hover td{background:var(--accent-soft)}
 :root[data-theme="dark"] .chipbtn[aria-pressed="true"]{color:#0b1420}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chipbtn[aria-pressed="true"]{color:#0b1420}}
 /* ---------- council panels ---------- */
+.chipbtn .x{margin-left:8px;font-weight:800;opacity:.7}
+.chipbtn:hover .x{opacity:1}
+.cresults{position:absolute;top:calc(100% + 6px);left:0;z-index:30;width:min(440px,100%);
+  background:var(--card);border:1px solid var(--line2);border-radius:var(--r);box-shadow:var(--sh-lg);
+  overflow-y:auto;max-height:344px}
+.cres{position:relative;display:flex;flex-direction:column;gap:1px;width:100%;text-align:left;appearance:none;
+  border:none;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;
+  padding:9px 15px;cursor:pointer}
+.cres:last-child{border-bottom:none}
+.cres:hover,.cres:focus-visible{background:var(--accent-soft);outline:none}
+.cres-n{font-size:14px;font-weight:600}
+.cres-m{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.cres-on{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.05em;color:var(--good)}
+.cres-empty{padding:12px 15px;font-size:13px;color:var(--muted)}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
   padding:22px 24px;box-shadow:var(--sh)}
 .panel .head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
@@ -314,10 +329,11 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 <section id="view-councils" hidden>
   <h2>Councils</h2>
   <p class="sub">Search a council to see its assembled position: summary, signals, key figures with page references, dated events and the document trail. The daily reading loop adds councils as their documents are read.</p>
-  <div class="controls">
-    <input id="csearch" type="search" placeholder="Search a council…" aria-label="Search a council">
+  <div class="controls" style="position:relative">
+    <input id="csearch" type="search" placeholder="Search a council by name…" autocomplete="off" aria-label="Search a council">
+    <div id="cresults" class="cresults" hidden></div>
   </div>
-  <p class="hint">Pick up to three councils to compare them side by side.</p>
+  <p class="hint">Search a council, then pick up to three to compare side by side.</p>
   <div id="lmstat" class="lmstat load" style="margin:0 0 14px">Connecting to the LA Metrics sheet…</div>
   <div class="chiprow" id="cchips"></div>
   <div id="cpanel" class="cgrid"></div>
@@ -480,37 +496,67 @@ document.querySelector('#feedtab tbody').innerHTML = D.feed.map(r => `
       <td><span class="chip ${esc(r.cat)}">${esc(r.sub.replace(/_/g,' '))}</span>
           ${r.strict ? '<span class="chip">reading</span>' : ''}</td></tr>`).join('');
 
-/* ---------- Councils: search + multi-select panels ---------- */
-const chips = document.getElementById('cchips');
+/* ---------- Councils: search-first picker (no endless pill wall) ---------- */
+const cchips = document.getElementById('cchips');
+const csearch = document.getElementById('csearch');
+const cresults = document.getElementById('cresults');
 let csel = [0];
-D.councils.forEach((c, i) => {
-  const b = document.createElement('button');
-  b.className = 'chipbtn'; b.textContent = c.chip || c.name;
-  b.dataset.i = i;
-  b.setAttribute('aria-pressed', i === 0);
-  b.addEventListener('click', () => {
-    const at = csel.indexOf(i);
-    if (at >= 0) { if (csel.length > 1) csel.splice(at, 1); }
-    else { csel.push(i); if (csel.length > 3) csel.shift(); }
-    chips.querySelectorAll('button').forEach(x =>
-      x.setAttribute('aria-pressed', csel.includes(+x.dataset.i)));
-    renderCouncils();
-  });
-  chips.appendChild(b);
+function renderChips(){
+  cchips.innerHTML = csel.map(i => {
+    const c = D.councils[i];
+    return `<button class="chipbtn" data-i="${i}" aria-pressed="true" title="Remove ${esc(c.name)}">`+
+      `${esc(c.chip||c.name)}<span class="x" aria-hidden="true">×</span></button>`;
+  }).join('');
+}
+cchips.addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  const at = csel.indexOf(+b.dataset.i);
+  if (at >= 0) csel.splice(at, 1);
+  renderChips(); renderCouncils();
 });
-document.getElementById('csearch').addEventListener('input', e => {
-  const q = e.target.value.toLowerCase().trim();
-  chips.querySelectorAll('button').forEach(b => {
-    const c = D.councils[+b.dataset.i];
-    const hay = (c.name + ' ' + (c.nation||'') + ' ' + (c.type||'')).toLowerCase();
-    b.style.display = (!q || hay.includes(q)) ? '' : 'none';
-  });
+function hideResults(){ cresults.hidden = true; cresults.innerHTML = ''; }
+function addCouncil(i){
+  if (!csel.includes(i)){ csel.push(i); if (csel.length > 3) csel.shift(); }
+  csearch.value = ''; hideResults();
+  renderChips(); renderCouncils();
+}
+function showResults(q){
+  q = (q||'').toLowerCase().trim();
+  if (!q){ hideResults(); return; }
+  const hits = [];
+  for (let i=0;i<D.councils.length && hits.length<10;i++){
+    const c = D.councils[i];
+    if ((c.name+' '+(c.nation||'')+' '+(c.type||'')+' '+(c.gss||'')).toLowerCase().includes(q)) hits.push(i);
+  }
+  cresults.hidden = false;
+  cresults.innerHTML = hits.length ? hits.map(i => {
+    const c = D.councils[i], on = csel.includes(i);
+    return `<button class="cres" data-i="${i}"><span class="cres-n">${esc(c.name)}</span>`+
+      `<span class="cres-m">${esc(c.type||'')} · ${esc(c.nation||'')}</span>`+
+      (on ? '<span class="cres-on">shown</span>' : '')+`</button>`;
+  }).join('') : `<div class="cres-empty">No council matches “${esc(q)}”.</div>`;
+}
+csearch.addEventListener('input', e => showResults(e.target.value));
+csearch.addEventListener('focus', e => showResults(e.target.value));
+csearch.addEventListener('keydown', e => {
+  if (e.key === 'Enter'){ const f = cresults.querySelector('button.cres'); if (f){ e.preventDefault(); addCouncil(+f.dataset.i); } }
+  else if (e.key === 'Escape'){ hideResults(); }
+});
+cresults.addEventListener('click', e => {
+  const b = e.target.closest('button.cres'); if(!b) return;
+  addCouncil(+b.dataset.i); csearch.focus();
+});
+document.addEventListener('click', e => {
+  if (e.target !== csearch && !cresults.contains(e.target)) hideResults();
 });
 function renderCouncils() {
   const box = document.getElementById('cpanel');
   box.classList.toggle('multi', csel.length > 1);
-  box.innerHTML = csel.map(i => councilHTML(D.councils[i])).join('');
+  box.innerHTML = csel.length
+    ? csel.map(i => councilHTML(D.councils[i])).join('')
+    : '<div class="empty">Search for a council above to see its assembled position.</div>';
 }
+renderChips();
 /* MHCLG credit metrics: live gviz value (window.LM) preferred, baked snapshot as fallback */
 function _d(a,b){return (a!=null&&b!=null&&b!==0)?a/b:null;}
 const _RK={brw_nre:m=>_d(m.gross,m.nre),netdebt_nre:m=>_d(m.netdebt,m.nre),int_nre:m=>_d(m.interest,m.nre),
