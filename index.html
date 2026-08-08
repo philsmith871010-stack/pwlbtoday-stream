@@ -81,6 +81,7 @@ main{padding:30px 0 10px}
 section[hidden]{display:none}
 h2{font-family:Georgia,"Times New Roman",serif;font-size:23px;margin:0 0 5px;letter-spacing:-.01em;color:var(--ink)}
 .sub{color:var(--muted);font-size:13.5px;margin:0 0 20px;max-width:74ch;line-height:1.55}
+.board-h{font-family:Georgia,"Times New Roman",serif;font-size:18px;margin:26px 0 12px;color:var(--ink)}
 /* ---------- signals board ---------- */
 .sig-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px;margin-bottom:22px}
 .sig{position:relative;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--faint);
@@ -152,7 +153,7 @@ tbody tr:hover td{background:var(--accent-soft)}
 .fig .l{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .fig .v{font-size:13.5px;margin-top:2px;line-height:1.4}
 .fig .p{font-size:11px;color:var(--muted);margin-top:3px}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.cols{display:grid;grid-template-columns:1fr;gap:20px}
 @media(max-width:760px){.cols{grid-template-columns:1fr}}
 .hint{font-size:12.5px;color:var(--muted);margin:-10px 0 14px}
 .cgrid{display:grid;gap:16px;grid-template-columns:1fr}
@@ -205,21 +206,20 @@ footer{border-top:1px solid var(--line);margin-top:40px;padding:18px 0 34px;
 footer .wrap{display:flex;flex-direction:column;gap:4px}
 @media(max-width:760px){.wrap{padding:0 16px}.brand h1{font-size:25px}.tile b{font-size:22px}}
 /* ---- Credit metrics: MHCLG-vs-read paired tiles (Councils tab; cm- prefix, no collision) ---- */
-.cmgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin:0 0 6px}
-.cgrid.multi .cmgrid{grid-template-columns:1fr}
-.cmtile{background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px}
-.cmtile .tl{font-weight:700;font-size:13px;color:var(--ink)}
-.cmtile .tl .rl{font-weight:500;font-size:10.5px;color:var(--muted);margin-left:5px}
-.cmpair{display:grid;grid-template-columns:1fr 1.3fr;gap:8px;margin-top:8px}
-.cmh,.cmd{border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 10px;background:var(--card)}
-.cmh{background:var(--accent-soft);border-color:transparent}
-.cmtag{font-size:8.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:4px;font-weight:700}
-.cmv{font-size:12.5px;font-weight:600;line-height:1.35;color:var(--ink)}
-.cmh .cmv{font-size:19px;font-weight:800;letter-spacing:-.02em}
-.cmh .cmv .raw{display:block;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0;margin-top:1px}
-.cmv .none{font-weight:400;color:var(--muted);font-size:12px}
-.cmd .cmv .raw{color:var(--muted);font-weight:400}
-.cmm{font-size:9.5px;color:var(--muted);margin-top:3px}
+.cmgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:8px;margin:0 0 6px}
+.cgrid.multi .cmgrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+.cmt{background:var(--sunken);border:1px solid var(--line);border-left:3px solid var(--line2);
+  border-radius:var(--r-sm);padding:9px 11px}
+.cmt-k{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmt-v{font-size:21px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-top:3px;line-height:1.1}
+.cmt-raw{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0;margin-left:2px}
+.cmt-b{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);margin-top:5px}
+.cmt-dot{width:8px;height:8px;border-radius:50%;background:var(--line2);flex:none}
+.cmt-good{border-left-color:var(--good)} .cmt-good .cmt-dot{background:var(--good)}
+.cmt-avg{border-left-color:var(--warn)} .cmt-avg .cmt-dot{background:var(--warn)}
+.cmt-bad{border-left-color:var(--alert)} .cmt-bad .cmt-dot{background:var(--alert)}
+.cmnote{font-size:12.5px;color:var(--muted);padding:4px 0}
 .cmoth{margin-top:4px}
 .cmoth .ol{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:4px 0 7px;font-weight:700}
 .cmochip{display:inline-block;font-size:12px;background:var(--sunken);border:1px solid var(--line);
@@ -306,14 +306,14 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
   <nav class="tabs" role="tablist">
     <button role="tab" aria-selected="true" data-v="pulse">Pulse</button>
     <button role="tab" aria-selected="false" data-v="councils">Councils</button>
-    <button role="tab" aria-selected="false" data-v="cp">Counterparty</button>
+    <button role="tab" aria-selected="false" data-v="signals">Signals</button>
   </nav>
 </div></header>
 
 <main class="wrap">
 <section id="view-pulse">
   <div class="pulsebar">
-    <div><h2>Pulse</h2><p class="sub" style="margin:0">The live stream — markets, economics and council news, newest first. One card per item; open a card for the detail.</p></div>
+    <div><p class="sub" style="margin:0">The live stream — markets, economics and council news, newest first. One card per item; open a card for the detail.</p></div>
     <div class="pstatus" id="pstatus"></div>
   </div>
   <div class="spills" id="spills">
@@ -327,7 +327,6 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 </section>
 
 <section id="view-councils" hidden>
-  <h2>Councils</h2>
   <p class="sub">Search a council to see its assembled position: summary, signals, key figures with page references, dated events and the document trail. The daily reading loop adds councils as their documents are read.</p>
   <div class="controls" style="position:relative">
     <input id="csearch" type="search" placeholder="Search a council by name…" autocomplete="off" aria-label="Search a council">
@@ -337,23 +336,20 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
   <div id="lmstat" class="lmstat load" style="margin:0 0 14px">Connecting to the LA Metrics sheet…</div>
   <div class="chiprow" id="cchips"></div>
   <div id="cpanel" class="cgrid"></div>
+</section>
 
-  <details style="margin-top:26px">
-    <summary>Signals board — what changed across all councils, and why it matters</summary>
-    <p class="sub" style="margin-top:10px">Red: distress markers. Amber: watch items with dates. Green: verified good news or verified quiet. Each links to the document it came from.</p>
-    <div class="sig-grid" id="sigs"></div>
-  </details>
-  <details>
-    <summary>Latest documents caught — every relevant paper as it appears, newest first</summary>
-    <div class="tablewrap" style="margin-top:12px"><table id="feedtab">
-      <thead><tr><th>Published</th><th>Council</th><th>Document</th><th>Committee</th><th>Shelf</th></tr></thead>
-      <tbody></tbody>
-    </table></div>
-  </details>
+<section id="view-signals" hidden>
+  <p class="sub">What's changed across the estate — cross-council distress and watch signals, and every relevant paper as it's caught. Red: distress markers · amber: watch items with dates · green: verified good news or verified quiet. Each links to its source document.</p>
+  <h3 class="board-h" style="margin-top:6px">Signals board</h3>
+  <div class="sig-grid" id="sigs"></div>
+  <h3 class="board-h">Latest documents caught</h3>
+  <div class="tablewrap"><table id="feedtab">
+    <thead><tr><th>Published</th><th>Council</th><th>Document</th><th>Committee</th><th>Shelf</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
 </section>
 
 <section id="view-cp" hidden>
-  <h2>Counterparty policies</h2>
   <p class="sub">Who each council will deposit with — the per-council limit for lending to a single other local authority is the column the inter-authority market prices on. Extracted from each council's own treasury strategy; page numbers included.</p>
   <div class="chartcard" style="margin-bottom:16px">
     <div class="mini"><h4>Distribution of per-LA lending limits</h4>
@@ -573,27 +569,45 @@ function mhVal(c,mhr,mhraw){
                 raw:(b.raw&&b.raw[mhraw]!=null)?b.raw[mhraw]:null, year:b.year, live:false};}
   return null;
 }
+/* traffic light vs peers: -1 = higher is worse, +1 = higher is better. Quartiles (window.LMQ)
+   are computed live from every English LA, grouped by authority class. */
+const _DIR={brw_nre:-1,brw_cfr:-1,netdebt_nre:-1,int_nre:-1,st_ratio:-1,res_nre:1};
+function _light(gss,ratioKey,v){
+  if(v==null || !window.LMQ) return null;
+  const m=window.LM&&window.LM[gss], cl=m&&m.class, star=window.LMQ['*']||{};
+  const q=(cl&&window.LMQ[cl]&&window.LMQ[cl][ratioKey]) || star[ratioKey];
+  if(!q) return null;
+  const band = v<=q.q25 ? 'low' : (v>=q.q75 ? 'high' : 'mid');
+  let tone;
+  if(band==='mid') tone='avg';
+  else if(_DIR[ratioKey]<0) tone=(band==='high')?'bad':'good';
+  else tone=(band==='high')?'good':'bad';
+  const label = band==='high'?'top quartile':band==='low'?'bottom quartile':'mid-range';
+  const peer = (cl&&window.LMQ[cl]&&window.LMQ[cl][ratioKey]) ? cl : 'all English LAs';
+  return {tone, label, peer};
+}
 function creditMetrics(c){
   const tiles=c.tiles.map(t=>{
     const mh=mhVal(c,t.mhr,t.mhraw);
-    let mv,mm;
-    if(mh&&(mh.r!=null||mh.raw!=null)){ mv=_pct(mh.r)+(mh.raw!=null?` <span class="raw">${_m2(mh.raw)}</span>`:'');
-      mm=_fyl(mh.year)+' · MHCLG'+(mh.live?' (live)':''); }
-    else if(c.mhclg===null){ mv='<span class="none">England only — no MHCLG return</span>'; mm='MHCLG'; }
-    else { mv='<span class="none">—</span>'; mm='MHCLG'; }
-    const doc=t.doc;
-    const dv=doc?esc(String(doc.value).slice(0,150)):'<span class="none">not in the latest read paper</span>';
-    const dm=doc&&doc.meta?`<div class="cmm">${esc(doc.meta)}</div>`:'';
-    return `<div class="cmtile"><div class="tl">${esc(t.label)} <span class="rl">${esc(t.ratio)}</span></div>
-      <div class="cmpair">
-        <div class="cmh"><div class="cmtag">MHCLG statistical</div><div class="cmv">${mv}</div><div class="cmm">${mm}</div></div>
-        <div class="cmd"><div class="cmtag">Council’s own paper</div><div class="cmv">${dv}</div>${dm}</div>
-      </div></div>`;
-  }).join('');
-  const other=(c.other&&c.other.length)?`<div class="cmoth"><div class="ol">Also read from the papers</div>`+
-    c.other.map(o=>`<span class="cmochip"><b>${esc(o.label)}</b> ${esc(String(o.value).slice(0,90))}${o.meta?` · ${esc(o.meta)}`:''}</span>`).join('')+`</div>`:'';
-  return `<div class="mini" style="margin-top:16px"><h4>Credit metrics — MHCLG return vs the council’s own read</h4>
-    <div class="cmgrid">${tiles}</div>${other}</div>`;
+    if(!mh || (mh.r==null && mh.raw==null)) return null;
+    const lt=_light(c.gss,t.mhr,mh.r), tone=lt?lt.tone:'none', band=lt?lt.label:'';
+    const tip=lt ? `${band} vs ${lt.peer}` : 'peer comparison loads with the live sheet';
+    return `<div class="cmt cmt-${tone}" title="${esc(tip)}">`+
+      `<div class="cmt-k">${esc(t.ratio)}</div>`+
+      `<div class="cmt-v">${_pct(mh.r)}${mh.raw!=null?` <span class="cmt-raw">${_m2(mh.raw)}</span>`:''}</div>`+
+      `<div class="cmt-b"><span class="cmt-dot"></span>${band?esc(band):'vs peers'}${mh.year?` · ${_fyl(mh.year)}`:''}</div>`+
+      `</div>`;
+  }).filter(Boolean).join('');
+  let body;
+  if(tiles) body=`<div class="cmgrid">${tiles}</div>`;
+  else if(c.mhclg===null) body='<div class="cmnote">MHCLG statutory returns cover England only — none for this authority.</div>';
+  else body='<div class="cmnote">No MHCLG return matched yet.</div>';
+  const reads=[];
+  c.tiles.forEach(t=>{ if(t.doc) reads.push({label:t.label, value:t.doc.value, meta:t.doc.meta}); });
+  (c.other||[]).forEach(o=>reads.push(o));
+  const other=reads.length?`<div class="cmoth"><div class="ol">From the council’s own latest papers</div>`+
+    reads.map(o=>`<span class="cmochip"><b>${esc(o.label)}</b> ${esc(String(o.value).slice(0,80))}${o.meta?` · ${esc(o.meta)}`:''}</span>`).join('')+`</div>`:'';
+  return `<div class="mini" style="margin-top:16px"><h4>Credit metrics vs peers — MHCLG statutory returns</h4>${body}${other}</div>`;
 }
 function flatFigs(c){
   if(!c.figures||!c.figures.length) return '';
@@ -612,13 +626,13 @@ function councilHTML(c) {
       <span class="chip ${esc(c.cat)}">${esc(c.cat.replace('_',' '))}</span>
       <span class="chip">${esc(c.extraction === 'full' ? 'fully read' : 'found, reading next')}</span>${chip?` · ${chip}`:''}</div>
     <p class="summary">${esc(c.summary)}</p>
-    ${c.signals.length ? `<div class="mini"><h4>Signals</h4>` + c.signals.map(s =>
+    ${c.tiles ? creditMetrics(c) : flatFigs(c)}
+    ${c.signals.length ? `<div class="mini" style="margin-top:16px"><h4>Signals</h4>` + c.signals.map(s =>
       `<div class="evt"><span class="dot" style="background:var(--${s.sev === 'alert' ? 'alert' : s.sev === 'good' ? 'good' : 'warn'})"></span>
        <span>${esc(s.headline)}</span></div>`).join('') + `</div>` : ''}
-    ${c.tiles ? creditMetrics(c) : flatFigs(c)}
     <div class="cols">
       ${c.events.length ? `<div class="mini"><h4>Diary — dated events</h4>` + c.events.map(e =>
-        `<div class="evt"><span class="d">${esc(e.date)}</span><span>${esc(e.event)}</span></div>`).join('') + `</div>` : '<div></div>'}
+        `<div class="evt"><span class="d">${esc(e.date)}</span><span>${esc(e.event)}</span></div>`).join('') + `</div>` : ''}
       ${c.docs.length ? `<div class="mini"><h4>Document trail</h4><div class="doctrail">` + c.docs.map(d =>
         `<div>${esc(d.date)} — <a href="${esc(d.url)}" rel="noopener">${esc(d.title)}</a>
          <span class="meta">· ${esc(d.committee)}</span></div>`).join('') + `</div></div>` : ''}
@@ -711,7 +725,7 @@ document.getElementById('dist').innerHTML = D.dist.map(d => `
 /* ---------- Live LA Metrics (Google Sheet via gviz) → powers the Councils credit tiles ---------- */
 (function(){
   var SHEET='1CWmC60ewkvh27mEBuumyC1sJMisQvg5YN_fu8z9Yve0';
-  var TQ=encodeURIComponent('select A,B,E,H,J,K,M,N,R,U,V');
+  var TQ=encodeURIComponent('select A,B,E,F,H,J,K,M,N,R,U,V');
   var URL='https://docs.google.com/spreadsheets/d/'+SHEET+'/gviz/tq?tqx=out:json&sheet=Data&headers=1&tq='+TQ;
   var stat=document.getElementById('lmstat');
   var t0=performance.now();
@@ -722,17 +736,30 @@ document.getElementById('dist').innerHTML = D.dist.map(d => `
      var j=JSON.parse(text.substring(text.indexOf('(')+1, text.lastIndexOf(')')));
      var cols=j.table.cols.map(function(c){return c.label||c.id;});
      function ix(n){return cols.indexOf(n);}
-     var I={year:ix('Year'),ons:ix('ONS'),status:ix('Status'),nre:ix('NRE'),interest:ix('Interest'),
+     var I={year:ix('Year'),ons:ix('ONS'),status:ix('Status'),cls:ix('Class'),nre:ix('NRE'),interest:ix('Interest'),
        reserves:ix('Reserves'),cfr:ix('CFR'),gross:ix('Gross Borrowing'),netdebt:ix('Net External Debt'),
        stloans:ix('Short Term Loans'),loans:ix('Loans')};
      function val(c,i){return (i>=0&&c[i]&&c[i].v!=null)?c[i].v:null;}
      var map={},rows=j.table.rows;
      for(var k=0;k<rows.length;k++){var c=rows[k].c,ons=val(c,I.ons),y=val(c,I.year),st=val(c,I.status);
        if(ons==null||y==null||st!=='Actual')continue; var yy=Math.floor(y/100);
-       if(!map[ons]||yy>map[ons].year)map[ons]={year:yy,nre:val(c,I.nre),interest:val(c,I.interest),
+       if(!map[ons]||yy>map[ons].year)map[ons]={year:yy,class:val(c,I.cls),nre:val(c,I.nre),interest:val(c,I.interest),
          reserves:val(c,I.reserves),cfr:val(c,I.cfr),gross:val(c,I.gross),netdebt:val(c,I.netdebt),
          stloans:val(c,I.stloans),loans:val(c,I.loans)};}
      window.LM=map;
+     /* peer quartiles per authority class (and overall '*') for the credit traffic lights */
+     var RKEYS=['brw_nre','brw_cfr','netdebt_nre','int_nre','res_nre','st_ratio'];
+     function quart(list,rk){
+       var v=[]; for(var a=0;a<list.length;a++){var x=_RK[rk]?_RK[rk](list[a]):null; if(x!=null&&isFinite(x))v.push(x);}
+       if(v.length<8) return null; v.sort(function(p,q){return p-q;});
+       return {q25:v[Math.floor(v.length*0.25)], q75:v[Math.floor(v.length*0.75)], n:v.length};
+     }
+     var all=[],byCls={};
+     for(var g in map){var m=map[g]; all.push(m); var cl=m.class||'—'; (byCls[cl]=byCls[cl]||[]).push(m);}
+     var LMQ={'*':{}};
+     RKEYS.forEach(function(rk){ LMQ['*'][rk]=quart(all,rk);
+       for(var cl2 in byCls){ (LMQ[cl2]=LMQ[cl2]||{})[rk]=quart(byCls[cl2],rk); } });
+     window.LMQ=LMQ;
      var parseMs=performance.now()-t0-net;
      if(stat){ stat.className='lmstat ok';
        stat.innerHTML='● <b>Live from the LA Metrics sheet</b> — '+Object.keys(map).length+
