@@ -273,6 +273,41 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 .how-guide ul{margin:0;padding-left:18px}
 .how-guide li{margin:5px 0;color:var(--ink2);font-size:14px}
 .how-foot{color:var(--muted);font-size:12.5px;font-style:italic;margin:14px 0 0}
+/* ---- Persona front door ---- */
+.doorwrap{margin:2px 0 8px}
+.door-lede{font-family:Georgia,"Times New Roman",serif;font-size:21px;line-height:1.5;
+  color:var(--ink);max-width:66ch;margin:2px 0 6px}
+.door-sub{color:var(--ink2);font-size:14px;margin:0 0 16px;max-width:72ch}
+.door-sub b{color:var(--ink);font-variant-numeric:tabular-nums}
+.doors{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:14px}
+.door{position:relative;display:flex;flex-direction:column;background:var(--card);
+  border:1px solid var(--line);border-top:3px solid var(--dc,var(--accent));
+  border-radius:var(--r);padding:17px 18px 16px;box-shadow:var(--sh-sm)}
+.door.lender{--dc:var(--warn)}
+.door.analyst{--dc:var(--good)}
+.door-role{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;
+  text-transform:uppercase;letter-spacing:.07em;color:var(--dc,var(--accent))}
+.door-role .dot{width:7px;height:7px;border-radius:99px;background:var(--dc,var(--accent))}
+.door-h{font-family:Georgia,"Times New Roman",serif;font-size:17.5px;line-height:1.3;
+  letter-spacing:-.01em;margin:9px 0 11px;color:var(--ink)}
+.door-list{list-style:none;margin:0 0 15px;padding:0;display:flex;flex-direction:column;gap:8px}
+.door-list li{position:relative;padding-left:17px;color:var(--ink2);font-size:13px;line-height:1.45}
+.door-list li::before{content:"";position:absolute;left:2px;top:6px;width:6px;height:6px;
+  border-radius:99px;background:var(--dc,var(--accent));opacity:.75}
+.door-list b{color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.door-cta{margin-top:auto;display:flex;flex-wrap:wrap;gap:7px}
+.dcta{appearance:none;cursor:pointer;font:inherit;font-size:12.5px;font-weight:700;line-height:1;
+  border-radius:99px;padding:7px 13px;border:1px solid var(--dc,var(--accent));
+  background:transparent;color:var(--dc,var(--accent));transition:background .12s,color .12s,filter .12s}
+.dcta:hover{background:var(--dc,var(--accent));color:#fff}
+.dcta.primary{background:var(--dc,var(--accent));color:#fff}
+.dcta.primary:hover{filter:brightness(1.07)}
+:root[data-theme="dark"] .dcta:hover,:root[data-theme="dark"] .dcta.primary{color:#0b1420}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .dcta:hover,
+  :root:not([data-theme="light"]) .dcta.primary{color:#0b1420}}
+.dcta:focus-visible{outline:2px solid var(--dc,var(--accent));outline-offset:2px}
+.how-mech-h{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  font-weight:800;margin:28px 0 4px;padding-top:22px;border-top:1px solid var(--line)}
 /* ---- Newsroom ---- */
 .newsfeed{display:flex;flex-direction:column;gap:14px}
 .art{position:relative;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--faint);
@@ -549,8 +584,58 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 
 <main class="wrap">
 <section id="view-how">
+  <div class="doorwrap">
+    <p class="door-lede">An early-warning and benchmarking system for the financial health of England's councils — every council's treasury and accounts papers, read in full and turned into dated, sourced, comparable positions.</p>
+    <p class="door-sub">Start where you sit — <b>26</b> councils compliance-scored, <b>18</b> refinancing-profiled, and growing weekly.</p>
+    <div class="doors">
+      <div class="door">
+        <span class="door-role"><span class="dot"></span>Local authorities</span>
+        <h3 class="door-h">See how your treasury strategy scores — and exactly where the gaps are.</h3>
+        <ul class="door-list">
+          <li>Your TMSS graded against all <b>74</b> CIPFA 2021 requirements, every gap named with page-anchored evidence.</li>
+          <li>What best-in-class looks like, requirement by requirement — backed by a real council you can copy.</li>
+          <li>Your refinancing and interest-rate exposure, ranked beside every peer.</li>
+        </ul>
+        <div class="door-cta">
+          <button class="dcta primary" data-goto="councils">Find your council →</button>
+          <button class="dcta" data-goto="screener" data-sort="core">Benchmark vs sector</button>
+          <button class="dcta" data-goto="councils" data-scroll="ov-model">Model TMS</button>
+        </div>
+      </div>
+      <div class="door lender">
+        <span class="door-role"><span class="dot"></span>Lenders &amp; investors</span>
+        <h3 class="door-h">Read the borrowing pipeline and credit risk before you price.</h3>
+        <ul class="door-list">
+          <li>Who's borrowing and how much — <b>£3.2bn</b> of planned new prudential borrowing across profiled councils, ranked.</li>
+          <li>Near-term refinancing cliffs, LOBO calls and the <b>£/+1%</b> cost of each rate move, per council.</li>
+          <li>Governance quality as a credit overlay — CIPFA compliance and the gaps that matter.</li>
+        </ul>
+        <div class="door-cta">
+          <button class="dcta primary" data-goto="screener" data-sort="fwd">Borrowing pipeline →</button>
+          <button class="dcta" data-goto="screener" data-sort="per1">Rate exposure</button>
+          <button class="dcta" data-goto="signals">Early-warning signals</button>
+        </div>
+      </div>
+      <div class="door analyst">
+        <span class="door-role"><span class="dot"></span>Advisors, analysts &amp; press</span>
+        <h3 class="door-h">Track the whole estate as it moves.</h3>
+        <ul class="door-list">
+          <li>The live pulse of rates, economics and council news, newest first.</li>
+          <li>The Newsroom — what the deep reads have exposed, most serious first.</li>
+          <li>Cross-sector distress and watch signals, each sourced to a council's own papers.</li>
+        </ul>
+        <div class="door-cta">
+          <button class="dcta primary" data-goto="pulse">Live pulse →</button>
+          <button class="dcta" data-goto="news">Newsroom</button>
+          <button class="dcta" data-goto="signals">Signals</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="how">
-    <p class="how-lede">An early-warning system for the financial health of England's councils. It finds each council's treasury and accounts papers, reads them in full, and turns every one into a dated, sourced position — with each figure checkable against the original document.</p>
+    <p class="how-mech-h">How the machine works</p>
+    <p class="how-lede">Behind every figure: it finds each council's treasury and accounts papers, reads them in full, and turns every one into a dated, sourced position — with each figure checkable against the original document.</p>
     <div class="tiles how-tiles">
       <div class="tile"><b>241</b><span>councils tracked</span></div>
       <div class="tile"><b>215</b><span>treasury strategies located</span></div>
@@ -570,8 +655,8 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
       <ul>
         <li><b>Pulse</b> — the live stream of markets, economics and council news, newest first.</li>
         <li><b>Newsroom</b> — what the deep reads have exposed, most serious first.</li>
-        <li><b>Councils</b> — search any council for its assembled position: summary, signals, dated figures and the document trail.</li>
-        <li><b>Compliance</b> — each scored council against the 2021 CIPFA Codes: presence and quality of every required disclosure, its gaps, and the sector benchmark.</li>
+        <li><b>Councils</b> — search any council for its assembled position: summary, council-specific signals, CIPFA Code compliance, refinancing &amp; rate risk, dated figures and the document trail. The landing shows the sector-wide picture and the Model TMS.</li>
+        <li><b>Screener</b> — every council we've read in one sortable table: compliance, refinancing &amp; rate risk and borrowing vs peers, side by side — sort, filter and drill in.</li>
         <li><b>Signals</b> — the cross-sector board, and every relevant paper as it is caught.</li>
       </ul>
     </div>
@@ -701,6 +786,19 @@ tabs.forEach(b => b.addEventListener('click', () => {
   tabs.forEach(x => x.setAttribute('aria-selected', x === b));
   document.querySelectorAll('main > section').forEach(s => s.hidden = true);
   document.getElementById('view-' + b.dataset.v).hidden = false;
+}));
+
+/* persona front-door CTAs: switch tab, optionally pre-sort the screener or scroll to a panel */
+document.querySelectorAll('.dcta[data-goto]').forEach(b => b.addEventListener('click', () => {
+  const tab = document.querySelector('nav.tabs button[data-v="' + b.dataset.goto + '"]');
+  if (tab) tab.click();
+  if (b.dataset.sort && typeof window.screenerSort === 'function')
+    window.screenerSort(b.dataset.sort, b.dataset.dir != null ? +b.dataset.dir : undefined);
+  if (b.dataset.scroll) {
+    const el = document.getElementById(b.dataset.scroll);
+    if (el) { setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'start'}), 60); return; }
+  }
+  window.scrollTo(0, 0);
 }));
 
 /* ---------- Pulse ---------- */
@@ -993,6 +1091,8 @@ function sectorOverviewHTML(){
     ['red','amber','green'].filter(k=>rc[k]).map(k=>`<button class="spill" data-r="${k}" aria-pressed="false"><span class="rk-dot ${k}"></span>${k} <span class="sn">${rc[k]}</span></button>`).join('');
   rt.addEventListener('click',e=>{const b=e.target.closest('.spill');if(!b)return;fRating=b.dataset.r;rt.querySelectorAll('.spill').forEach(x=>x.setAttribute('aria-pressed',x===b));draw();});
   document.getElementById('scrsearch').addEventListener('input',e=>{q=e.target.value.toLowerCase().trim();draw();});
+  window.screenerSort=function(k,dir){const col=COLS.find(c=>c.k===k);if(!col)return;
+    sortK=k;sortDir=(dir!=null)?dir:(col.t==='str'?1:-1);draw();};
   draw();
 })();
 
