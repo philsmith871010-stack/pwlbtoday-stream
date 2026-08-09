@@ -2,6 +2,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>PWLBpulse · CouncilIntel — markets & council-finance intelligence</title>
+<script>(function(){try{var t=localStorage.getItem('pwlbtheme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();</script>
 <style>
 :root{
   --paper:#f4f6f8; --card:#ffffff; --sunken:#eef1f5; --ink:#182534; --ink2:#41536a;
@@ -373,6 +374,34 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 .rk-mat-k i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}
 .rk-mat-k i.near{background:var(--alert)} .rk-mat-k i.mid{background:var(--warn)} .rk-mat-k i.far{background:var(--good)}
 .rk-partial{color:var(--warn);font-style:italic}
+/* ---- dashboard integration: sector overview, per-council sections, compact signals, theme ---- */
+.ovgrid{margin-top:12px}
+.ovgrid>.cmpc{margin-bottom:14px}
+.secvs{font-weight:400;font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0}
+.rk-sect{border-left:3px solid var(--line);padding-left:13px}
+.rk-sect.red{border-left-color:var(--alert)} .rk-sect.amber{border-left-color:var(--warn)}
+.rk-sect.green{border-left-color:var(--good)} .rk-sect.thin{border-left-color:var(--muted)}
+.board-sub{font-weight:400;font-size:12px;color:var(--muted)}
+.siglist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--card)}
+.sigc{border-bottom:1px solid var(--line)}
+.sigc:last-child{border-bottom:none}
+.sigc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 13px;font-size:13px}
+.sigc>summary::-webkit-details-marker{display:none}
+.sigc>summary:hover,.sigc[open]>summary{background:var(--sunken)}
+.sig-dot{flex:0 0 auto;width:9px;height:9px;border-radius:50%;background:var(--warn)}
+.sigc.alert .sig-dot{background:var(--alert)} .sigc.good .sig-dot{background:var(--good)} .sigc.watch .sig-dot{background:var(--warn)}
+.sig-co{flex:0 0 auto;min-width:118px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+.sig-hl{flex:1;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sigc[open] .sig-hl{white-space:normal}
+.sig-code{flex:0 0 auto;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);background:var(--sunken);border:1px solid var(--line);border-radius:99px;padding:1px 8px}
+.sig-date{flex:0 0 auto;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
+.sig-body{padding:0 13px 12px 32px;font-size:13px;color:var(--ink2)}
+.sig-body p{margin:4px 0}
+.sig-src a{font-weight:600}
+.brand{position:relative}
+.themebtn{position:absolute;top:2px;right:2px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink2);font-size:15px;cursor:pointer;line-height:1;box-shadow:var(--sh-sm)}
+.themebtn:hover{background:var(--sunken);color:var(--ink)}
+@media (max-width:620px){.sig-co{min-width:84px}.sig-hl{flex-basis:100%}}
 .rk-figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 18px;margin:12px 0 4px}
 .rk-figs>div{font-size:13px}
 .rk-figs span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
@@ -425,7 +454,8 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 </style></head><body>
 
 <header class="mast"><div class="wrap">
-  <div class="brand"><h1>PWLB<span class="p">pulse</span></h1><span class="proto">Prototype · real data · 9 August 2026</span></div>
+  <div class="brand"><h1>PWLB<span class="p">pulse</span></h1><span class="proto">Prototype · real data · 9 August 2026</span>
+    <button id="themebtn" class="themebtn" aria-label="Toggle light or dark theme" title="Toggle light / dark">◐</button></div>
   <p class="strap">Live UK rates and economics, with early warning from council publications — every figure dated, sourced and checkable against the original papers.</p>
   <div class="tiles">
     <div class="tile"><b>241</b><span>councils watched daily</span></div>
@@ -439,8 +469,6 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
     <button role="tab" aria-selected="false" data-v="pulse">Pulse</button>
     <button role="tab" aria-selected="false" data-v="news">Newsroom</button>
     <button role="tab" aria-selected="false" data-v="councils">Councils</button>
-    <button role="tab" aria-selected="false" data-v="compliance">Compliance</button>
-    <button role="tab" aria-selected="false" data-v="risk">Refi&nbsp;risk</button>
     <button role="tab" aria-selected="false" data-v="signals">Signals</button>
   </nav>
 </div></header>
@@ -504,7 +532,7 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 </section>
 
 <section id="view-councils" hidden>
-  <p class="sub">Search a council to see its assembled position: summary, signals, key figures with page references, dated events and the document trail. The daily reading loop adds councils as their documents are read.</p>
+  <p class="sub">One dashboard per council: its assembled position, council-specific signals, <b>CIPFA Code compliance</b>, <b>refinancing &amp; rate risk</b>, key figures with page references and the document trail. Search a council to open it; the landing shows the sector-wide picture.</p>
   <div class="controls" style="position:relative">
     <input id="csearch" type="search" placeholder="Search a council by name…" autocomplete="off" aria-label="Search a council">
     <div id="cresults" class="cresults" hidden></div>
@@ -515,25 +543,11 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
   <div id="cpanel" class="cgrid"></div>
 </section>
 
-<section id="view-compliance" hidden>
-  <p class="sub">Each scored council measured against the <b id="cmpnreq">—</b> requirements of the 2021 CIPFA Prudential and Treasury Management Codes — presence <i>and</i> quality (0–3), every score carrying a page reference. An aid to review, not a formal compliance opinion.</p>
-  <div id="cmpsector"></div>
-  <h3 class="board-h">Scored councils</h3>
-  <div class="spills" id="cmpspills"></div>
-  <div id="cmpcards"></div>
-</section>
-
-<section id="view-risk" hidden>
-  <p class="sub">How much new prudential borrowing each council plans, and the refinancing / interest-rate risk on it — <b>LOBOs</b> that can be called, short-term debt rolling off, and variable-rate exposure. Figures from the current TMSS and capital strategy; ratings derived by a fixed model (tune-able), sized against reserves.</p>
-  <div id="rsksector"></div>
-  <div class="spills" id="rskspills"></div>
-  <div id="rskcards"></div>
-</section>
-
 <section id="view-signals" hidden>
   <p class="sub">What's changed across the estate — cross-council distress and watch signals, and every relevant paper as it's caught. Red: distress markers · amber: watch items with dates · green: verified good news or verified quiet. Each links to its source document.</p>
-  <h3 class="board-h" style="margin-top:6px">Signals board</h3>
-  <div class="sig-grid" id="sigs"></div>
+  <h3 class="board-h" style="margin-top:6px">Signals board <span class="board-sub">— click any signal to expand</span></h3>
+  <div class="spills" id="sigspills"></div>
+  <div class="siglist" id="sigs"></div>
   <h3 class="board-h">Latest documents caught</h3>
   <div class="tablewrap"><table id="feedtab">
     <thead><tr><th>Published</th><th>Council</th><th>Document</th><th>Committee</th><th>Shelf</th></tr></thead>
@@ -591,6 +605,12 @@ const fmtd = s => { const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||''); return m?(+m
 
 /* tabs */
 const tabs = document.querySelectorAll('nav.tabs button');
+(function(){var btn=document.getElementById('themebtn');if(!btn)return;
+  btn.addEventListener('click',function(){
+    var n=(document.documentElement.getAttribute('data-theme')||'dark')==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',n);
+    try{localStorage.setItem('pwlbtheme',n);}catch(e){}});
+})();
 tabs.forEach(b => b.addEventListener('click', () => {
   tabs.forEach(x => x.setAttribute('aria-selected', x === b));
   document.querySelectorAll('main > section').forEach(s => s.hidden = true);
@@ -696,153 +716,118 @@ function applyPulse(){
     }); });
 })();
 
-/* ---------- Compliance ---------- */
-(function renderCompliance(){
-  const C = D.compliance;
-  const tabBtn = document.querySelector('nav.tabs button[data-v="compliance"]');
-  if(!C || !C.councils || !C.councils.length){ if(tabBtn) tabBtn.style.display='none'; return; }
-  const GL = C.groups;
-  const nr=document.getElementById('cmpnreq'); if(nr) nr.textContent=C.n_reqs;
-  const sevOf = s => s==null?'na':(s>=2?'good':(s>=1?'watch':'alert'));
-  // sector benchmark
-  const dist=C.sector.core_compliance_distribution||[];
-  const med = dist.length? dist[Math.floor(dist.length/2)] : null;
-  const covRows=(C.sector.worst_covered||[]).slice(0,8).map(w=>{
-    const p=w.present_pct==null?0:w.present_pct;
-    return `<div class="cmp-cov-row"><div class="cmp-cov-bar"><span style="width:${p}%"></span></div>
-      <div class="cmp-cov-p">${w.present_pct==null?'—':p+'%'}</div>
-      <div class="cmp-cov-t">${esc(w.title)}<span class="cmp-g">${esc(GL[w.group]||w.group)}</span></div></div>`;}).join('');
-  document.getElementById('cmpsector').innerHTML=`<div class="panel cmp-sector">
-    <div class="cmp-sec-head"><h3>Sector benchmark</h3>
-      <span>${C.sector.councils} councils scored · median core compliance <b>${med==null?'—':med+'%'}</b></span></div>
-    <p class="note">Least-covered mandatory requirements across the scored set — where the sector most often falls short:</p>
-    ${covRows}</div>`;
-  // per-council cards
-  const cards=C.councils, wrap=document.getElementById('cmpcards');
-  const badge=r=> r.status==='na' ? `<span class="cmp-b na" title="not applicable">–</span>`
-                                  : `<span class="cmp-b ${sevOf(r.score)}">${r.score}</span>`;
-  function groupBars(c){const gs=c.groups||{};
-    return Object.keys(GL).filter(g=>gs[g]).map(g=>{const m=gs[g].mean,pct=Math.round(100*m/3);
-      const sev=m>=2?'good':(m>=1?'watch':'alert');
-      return `<div class="cmp-gb"><span class="cmp-gb-l">${esc(GL[g])}</span>
-        <span class="cmp-gb-bar"><span class="${sev}" style="width:${pct}%"></span></span>
-        <span class="cmp-gb-v">${m.toFixed(1)}</span></div>`;}).join('');}
-  function detail(c){let h='',g=null;
-    c.rows.forEach(r=>{ if(r.group!==g){g=r.group;h+=`<div class="cmp-rg">${esc(GL[g]||g)}</div>`;}
-      const ev=r.evidence?esc(r.evidence):(r.note?esc(r.note):'');
-      h+=`<div class="cmp-row">${badge(r)}<span class="cmp-rt">${esc(r.title)}${r.core?' <span class="cmp-core">core</span>':(r.obligation==='recommended'?' <span class="cmp-rec">rec</span>':'')}</span>${ev?`<span class="cmp-ev">${ev}</span>`:''}</div>`;});
-    return h;}
-  function card(c){
-    const gaps=(c.gaps||[]).slice(0,12).map(x=>`<span class="cmp-gap ${x.core?'core':''}">${esc(x.id)} · ${esc(x.title)}</span>`).join('');
-    const d=(c.documents&&c.documents[0])||{};
-    const src=d.url?`<a class="art-src" href="${esc(d.url)}" rel="noopener">Source: ${esc(d.title||'strategy')}${d.fy?' ('+esc(d.fy)+')':''} →</a>`:'';
-    const cc=c.core_compliance_pct, tone=cc>=90?'good':(cc>=70?'watch':'alert');
-    return `<article class="cmpc" data-type="${esc(c.type||'')}">
-      <div class="cmpc-h"><div><h3>${esc(c.council)}</h3>
-        <span class="cmpc-meta">${esc(c.type||'')}${c.assessed?' · assessed '+esc(fmtd(c.assessed)):''} · ${c.n_applicable} applicable · ${c.n_na} n/a</span></div>
-        <div class="cmpc-metrics">
-          <div class="cmpm ${tone}"><b>${cc==null?'—':cc+'%'}</b><span>core</span></div>
-          <div class="cmpm"><b>${c.mandatory_present_pct==null?'—':c.mandatory_present_pct+'%'}</b><span>mandatory</span></div>
-          <div class="cmpm"><b>${c.quality_index==null?'—':c.quality_index}</b><span>quality</span></div></div></div>
-      <div class="cmpc-groups">${groupBars(c)}</div>
-      ${gaps?`<div class="cmpc-gaps"><h4>Gaps — mandatory not met (${c.gaps.length})</h4><div class="cmp-gaps-wrap">${gaps}</div></div>`:''}
-      <details><summary>All ${c.rows.length} requirements, scored with evidence</summary><div class="cmp-detail">${detail(c)}</div></details>
-      ${src}</article>`;}
-  wrap.innerHTML=cards.map(card).join('');
-  // type filter
-  const types=[...new Set(cards.map(c=>c.type).filter(Boolean))], sp=document.getElementById('cmpspills');
-  if(types.length>1){
-    sp.innerHTML=`<button class="spill" data-t="all" aria-pressed="true">All <span class="sn">${cards.length}</span></button>`+
-      types.map(t=>`<button class="spill" data-t="${esc(t)}" aria-pressed="false">${esc(t)} <span class="sn">${cards.filter(c=>c.type===t).length}</span></button>`).join('');
-    sp.querySelectorAll('.spill').forEach(b=>b.addEventListener('click',()=>{
-      sp.querySelectorAll('.spill').forEach(x=>x.setAttribute('aria-pressed',x===b));
-      const t=b.dataset.t; wrap.querySelectorAll('.cmpc').forEach(a=>{a.style.display=(t==='all'||a.dataset.type===t)?'':'none';});}));
-  } else if(sp){ sp.style.display='none'; }
-})();
+/* ---------- Compliance + Refi-risk: surfaced inside the Councils dashboard ---------- */
+const CMPD = D.compliance, RISKD = D.risk;
+const CMP = {}, RISK = {};
+(CMPD ? CMPD.councils : []).forEach(c => CMP[c.gss] = c);
+(RISKD ? RISKD.councils : []).forEach(c => RISK[c.gss] = c);
+const CMPG = CMPD ? CMPD.groups : {};
+const _sevOf = s => s==null?'na':(s>=2?'good':(s>=1?'watch':'alert'));
+const rkMoney = v => v==null?'—':(Math.abs(v)>=1000?'£'+(v/1000).toFixed(1)+'bn':'£'+(+v).toLocaleString()+'m');
+function cmpBadge(r){return r.status==='na'?`<span class="cmp-b na" title="not applicable">–</span>`:`<span class="cmp-b ${_sevOf(r.score)}">${r.score}</span>`;}
+function cmpGroupBars(c){const gs=c.groups||{};
+  return Object.keys(CMPG).filter(g=>gs[g]).map(g=>{const m=gs[g].mean,pct=Math.round(100*m/3);const sev=m>=2?'good':(m>=1?'watch':'alert');
+    return `<div class="cmp-gb"><span class="cmp-gb-l">${esc(CMPG[g])}</span><span class="cmp-gb-bar"><span class="${sev}" style="width:${pct}%"></span></span><span class="cmp-gb-v">${m.toFixed(1)}</span></div>`;}).join('');}
+function cmpDetail(c){let h='',g=null;
+  c.rows.forEach(r=>{if(r.group!==g){g=r.group;h+=`<div class="cmp-rg">${esc(CMPG[g]||g)}</div>`;}
+    const ev=r.evidence?esc(r.evidence):(r.note?esc(r.note):'');
+    h+=`<div class="cmp-row">${cmpBadge(r)}<span class="cmp-rt">${esc(r.title)}${r.core?' <span class="cmp-core">core</span>':(r.obligation==='recommended'?' <span class="cmp-rec">rec</span>':'')}</span>${ev?`<span class="cmp-ev">${ev}</span>`:''}</div>`;});
+  return h;}
+function cmpBody(c){
+  const cc=c.core_compliance_pct, tone=cc>=90?'good':(cc>=70?'watch':'alert');
+  const gaps=(c.gaps||[]).slice(0,12).map(x=>`<span class="cmp-gap ${x.core?'core':''}">${esc(x.id)} · ${esc(x.title)}</span>`).join('');
+  const d=(c.documents&&c.documents[0])||{};
+  const src=d.url?`<a class="art-src" href="${esc(d.url)}" rel="noopener">Source: ${esc(d.title||'strategy')}${d.fy?' ('+esc(d.fy)+')':''} →</a>`:'';
+  return `<div class="cmpc-metrics">
+      <div class="cmpm ${tone}"><b>${cc==null?'—':cc+'%'}</b><span>core</span></div>
+      <div class="cmpm"><b>${c.mandatory_present_pct==null?'—':c.mandatory_present_pct+'%'}</b><span>mandatory</span></div>
+      <div class="cmpm"><b>${c.quality_index==null?'—':c.quality_index}</b><span>quality</span></div></div>
+    <div class="cmpc-groups">${cmpGroupBars(c)}</div>
+    ${gaps?`<div class="cmpc-gaps"><h4>Gaps — mandatory not met (${c.gaps.length})</h4><div class="cmp-gaps-wrap">${gaps}</div></div>`:''}
+    <details><summary>All ${c.rows.length} requirements, scored with evidence</summary><div class="cmp-detail">${cmpDetail(c)}</div></details>
+    ${src}`;}
+function complianceCard(c){return `<article class="cmpc"><div class="cmpc-h"><div><h3>${esc(c.council)}</h3>
+    <span class="cmpc-meta">${esc(c.type||'')}${c.assessed?' · assessed '+esc(fmtd(c.assessed)):''} · ${c.n_applicable} applicable</span></div></div>${cmpBody(c)}</article>`;}
+function complianceSectionHTML(gss){const c=CMP[gss]; if(!c) return '';
+  return `<div class="mini cmp-sect" style="margin-top:16px"><h4>CIPFA Code compliance <span class="secvs">vs the 2021 Prudential &amp; TM Codes</span></h4>${cmpBody(c)}</div>`;}
 
-/* ---------- Refinancing & rate risk ---------- */
-(function renderRisk(){
-  const RK = D.risk;
-  const tabBtn = document.querySelector('nav.tabs button[data-v="risk"]');
-  if(!RK || !RK.councils || !RK.councils.length){ if(tabBtn) tabBtn.style.display='none'; return; }
-  const LAB = RK.labels, cards = RK.councils;
-  const dot = r => `<span class="rk-dot ${r}"></span>`;
-  const money = v => v==null?'—':(Math.abs(v)>=1000?'£'+(v/1000).toFixed(1)+'bn':'£'+(+v).toLocaleString()+'m');
-  // sector header
-  const t=RK.tally||{};
-  document.getElementById('rsksector').innerHTML=`<div class="panel cmp-sector">
-    <div class="cmp-sec-head"><h3>Refinancing &amp; rate-risk board</h3>
-      <span>${cards.length} councils profiled · ${money(RK.total_forward_borrowing)} of new borrowing planned between them</span></div>
-    <div class="rk-tally">
-      ${['red','amber','green','thin'].filter(k=>t[k]).map(k=>`<span class="rk-tk"><span class="rk-dot ${k}"></span>${t[k]} ${k}</span>`).join('')}
-    </div>
-    <p class="note">Ranked by refinancing exposure — red first. Four measures per council, each banded against the model thresholds; the composite is red if any measure is red or two are amber.</p></div>`;
-  // component chip
-  const bandpc=(v)=> v==null?'—':(+v).toFixed(0)+'%';
-  function chips(c){
-    const b=c.risk.bands, comp=c.risk.components;
-    const defs=[['forward_borrowing','Fwd borrowing'],['near_term_refi','≤2y refi'],['lobo','LOBO'],['variable','Variable']];
-    return defs.map(([k,lab])=>`<span class="rk-chip ${b[k]||'na'}">${lab} <b>${bandpc(comp[k])}</b></span>`).join('');
+/* ---------- Refinancing & rate risk (per-council + sector overview) ---------- */
+function rkChips(c){const b=c.risk.bands,comp=c.risk.components;
+  const defs=[['forward_borrowing','Fwd borrowing'],['near_term_refi','≤2y refi'],['lobo','LOBO'],['variable','Variable']];
+  return defs.map(([k,lab])=>`<span class="rk-chip ${b[k]||'na'}">${lab} <b>${comp[k]==null?'—':(+comp[k]).toFixed(0)+'%'}</b></span>`).join('');}
+function rkMaturity(c){
+  const m=c.maturity||{}, ed=(c.external_debt||{}).total;
+  const BANDS=[['le_1y','≤1y','near'],['y1_2','1–2y','near'],['y2_5','2–5y','mid'],
+    ['y5_10','5–10y','far'],['y10_20','10–20y','far'],['y10_plus','10y+','far'],['y20_plus','20y+','far']];
+  const present=BANDS.filter(([k])=>m[k]!=null); if(!present.length) return '';
+  const base = m.unit==='gbp_m' ? (ed || present.reduce((a,[k])=>a+m[k],0)) : 100;
+  let covered=0;
+  const seg=present.map(([k,lab,grp])=>{const w=Math.max(0,Math.min(100,100*m[k]/base)); covered+=w; if(!w)return '';
+    const val=m.unit==='gbp_m'?'£'+(+m[k]).toFixed(0)+'m':(+m[k]).toFixed(0)+'%';
+    return `<span class="rk-mseg ${grp}" style="width:${w}%" title="${lab}: ${val}"></span>`;}).join('');
+  const partial = covered<85 ? `<span class="rk-partial">${Math.round(covered)}% of debt profiled</span>` : '';
+  return `<div class="rk-mat"><div class="rk-mat-l">Debt maturing</div><div class="rk-mbar">${seg}</div>
+    <div class="rk-mat-k"><span><i class="near"></i>≤2y</span><span><i class="mid"></i>2–5y</span><span><i class="far"></i>5y+</span>${partial}</div></div>`;}
+function rkFigs(c){
+  const ed=c.external_debt||{}, cfr=c.cfr||{}, fb=c.forward_borrowing||{};
+  const parts=[];
+  if(ed.total!=null){let sp=[];if(ed.pwlb)sp.push(ed.pwlb+' PWLB');if(ed.lobo)sp.push(ed.lobo+' LOBO');if(ed.market)sp.push(ed.market+' mkt');
+    parts.push(`<div><span>External debt</span><b>${rkMoney(ed.total)}</b>${sp.length?' <em>'+esc(sp.join(' / '))+'</em>':''}</div>`);}
+  if(cfr.now!=null)parts.push(`<div><span>CFR (now→+3y)</span><b>${rkMoney(cfr.now)}${cfr.y3!=null?' → '+rkMoney(cfr.y3):''}</b></div>`);
+  if(fb.amount!=null)parts.push(`<div><span>New borrowing planned</span><b>${rkMoney(fb.amount)}</b>${c.risk.fb_vs_reserves_pct!=null?` <em>${c.risk.fb_vs_reserves_pct}% of reserves</em>`:''}</div>`);
+  return parts.length?`<div class="rk-figs">${parts.join('')}</div>`:'';}
+function rkEv(c){const e=c.evidence||{};const rows=Object.keys(e).map(k=>`<div class="cmp-row"><span class="cmp-rt">${esc(k.replace(/_/g,' '))}</span><span class="cmp-ev">${esc(e[k])}</span></div>`).join('');
+  return rows?`<details><summary>Sources &amp; notes</summary><div class="cmp-detail">${c.notes?`<p class="note">${esc(c.notes)}</p>`:''}${rows}</div></details>`:'';}
+function riskInner(c){return `<p class="rk-head">${esc(c.risk.headline)}</p><div class="rk-chips">${rkChips(c)}</div>${rkMaturity(c)}${rkFigs(c)}${rkEv(c)}`;}
+function riskCard(c){const r=c.risk;
+  return `<article class="cmpc rk-card ${r.rating}" data-rating="${r.rating}"><div class="cmpc-h"><div><h3><span class="rk-dot ${r.rating}"></span>${esc(c.council)}</h3>
+    <span class="cmpc-meta">${esc(c.type||'')}${c.fy?' · '+esc(c.fy):''} · refinancing risk <b class="rk-rt ${r.rating}">${r.rating}</b></span></div></div>${riskInner(c)}</article>`;}
+function riskSectionHTML(gss){const c=RISK[gss]; if(!c) return '';
+  return `<div class="mini rk-sect ${c.risk.rating}" style="margin-top:16px"><h4>Refinancing &amp; rate risk <b class="rk-rt ${c.risk.rating}">${c.risk.rating}</b></h4>${riskInner(c)}</div>`;}
+
+/* ---------- Councils dashboard: sector overview (the landing) ---------- */
+function sectorOverviewHTML(){
+  let h='';
+  if(RISKD && RISKD.councils && RISKD.councils.length){
+    const t=RISKD.tally||{};
+    h+=`<div class="panel cmp-sector"><div class="cmp-sec-head"><h3>Refinancing &amp; rate-risk board</h3>
+      <span>${RISKD.councils.length} councils profiled · ${rkMoney(RISKD.total_forward_borrowing)} of new borrowing planned between them</span></div>
+      <div class="rk-tally">${['red','amber','green','thin'].filter(k=>t[k]).map(k=>`<span class="rk-tk"><span class="rk-dot ${k}"></span>${t[k]} ${k}</span>`).join('')}</div>
+      <p class="note">How much new prudential borrowing each council plans, and the refinancing / rate risk on it — ranked red first.</p></div>
+      <div class="ovgrid">${RISKD.councils.map(riskCard).join('')}</div>`;
   }
-  function maturity(c){
-    const m=c.maturity||{}, ed=(c.external_debt||{}).total;
-    const BANDS=[['le_1y','≤1y','near'],['y1_2','1–2y','near'],['y2_5','2–5y','mid'],
-      ['y5_10','5–10y','far'],['y10_20','10–20y','far'],['y10_plus','10y+','far'],['y20_plus','20y+','far']];
-    const present=BANDS.filter(([k])=>m[k]!=null); if(!present.length) return '';
-    // width as a share of TOTAL debt (gbp_m) or of 100 (pct) — so missing bands read as unknown, not near-term
-    const base = m.unit==='gbp_m' ? (ed || present.reduce((a,[k])=>a+m[k],0)) : 100;
-    let covered=0;
-    const seg=present.map(([k,lab,grp])=>{const w=Math.max(0,Math.min(100,100*m[k]/base)); covered+=w; if(!w)return '';
-      const val=m.unit==='gbp_m'?'£'+(+m[k]).toFixed(0)+'m':(+m[k]).toFixed(0)+'%';
-      return `<span class="rk-mseg ${grp}" style="width:${w}%" title="${lab}: ${val}"></span>`;}).join('');
-    const partial = covered<85 ? `<span class="rk-partial">${Math.round(covered)}% of debt profiled</span>` : '';
-    return `<div class="rk-mat"><div class="rk-mat-l">Debt maturing</div><div class="rk-mbar">${seg}</div>
-      <div class="rk-mat-k"><span><i class="near"></i>≤2y</span><span><i class="mid"></i>2–5y</span><span><i class="far"></i>5y+</span>${partial}</div></div>`;
+  if(CMPD && CMPD.councils && CMPD.councils.length){
+    const dist=CMPD.sector.core_compliance_distribution||[]; const med=dist.length?dist[Math.floor(dist.length/2)]:null;
+    const cov=(CMPD.sector.worst_covered||[]).slice(0,6).map(w=>{const p=w.present_pct==null?0:w.present_pct;
+      return `<div class="cmp-cov-row"><div class="cmp-cov-bar"><span style="width:${p}%"></span></div><div class="cmp-cov-p">${w.present_pct==null?'—':p+'%'}</div><div class="cmp-cov-t">${esc(w.title)}<span class="cmp-g">${esc(CMPG[w.group]||w.group)}</span></div></div>`;}).join('');
+    h+=`<div class="panel cmp-sector" style="margin-top:16px"><div class="cmp-sec-head"><h3>CIPFA Code compliance — sector benchmark</h3>
+      <span>${CMPD.sector.councils} councils scored · median core compliance <b>${med==null?'—':med+'%'}</b></span></div>
+      <p class="note">Least-covered mandatory requirements — where the sector most often falls short:</p>${cov}</div>
+      <div class="ovgrid">${CMPD.councils.map(complianceCard).join('')}</div>`;
   }
-  function figs(c){
-    const ed=c.external_debt||{}, cfr=c.cfr||{}, fb=c.forward_borrowing||{}, sz=c.size||{};
-    const parts=[];
-    if(ed.total!=null){let sp=[];if(ed.pwlb)sp.push(ed.pwlb+' PWLB');if(ed.lobo)sp.push(ed.lobo+' LOBO');if(ed.market)sp.push(ed.market+' mkt');
-      parts.push(`<div><span>External debt</span><b>${money(ed.total)}</b>${sp.length?' <em>'+esc(sp.join(' / '))+'</em>':''}</div>`);}
-    if(cfr.now!=null)parts.push(`<div><span>CFR (now→+3y)</span><b>${money(cfr.now)}${cfr.y3!=null?' → '+money(cfr.y3):''}</b></div>`);
-    if(fb.amount!=null)parts.push(`<div><span>New borrowing planned</span><b>${money(fb.amount)}</b>${c.risk.fb_vs_reserves_pct!=null?` <em>${c.risk.fb_vs_reserves_pct}% of reserves</em>`:''}</div>`);
-    return parts.length?`<div class="rk-figs">${parts.join('')}</div>`:'';
-  }
-  function ev(c){const e=c.evidence||{};const rows=Object.keys(e).map(k=>`<div class="cmp-row"><span class="cmp-rt">${esc(k.replace(/_/g,' '))}</span><span class="cmp-ev">${esc(e[k])}</span></div>`).join('');
-    return rows?`<details><summary>Sources &amp; notes</summary><div class="cmp-detail">${c.notes?`<p class="note">${esc(c.notes)}</p>`:''}${rows}</div></details>`:'';}
-  function card(c){
-    const r=c.risk;
-    const doc=(c.documents&&c.documents[0])||{};
-    return `<article class="cmpc rk-card ${r.rating}" data-type="${esc(c.type||'')}" data-rating="${r.rating}">
-      <div class="cmpc-h"><div><h3>${dot(r.rating)}${esc(c.council)}</h3>
-        <span class="cmpc-meta">${esc(c.type||'')}${c.fy?' · '+esc(c.fy):''} · refinancing risk <b class="rk-rt ${r.rating}">${r.rating}</b></span></div></div>
-      <p class="rk-head">${esc(r.headline)}</p>
-      <div class="rk-chips">${chips(c)}</div>
-      ${maturity(c)}
-      ${figs(c)}
-      ${ev(c)}</article>`;
-  }
-  const wrap=document.getElementById('rskcards');
-  wrap.innerHTML=cards.map(card).join('');
-  // filter by rating
-  const sp=document.getElementById('rskspills');
-  const rs=['red','amber','green','thin'].filter(k=>t[k]);
-  sp.innerHTML=`<button class="spill" data-r="all" aria-pressed="true">All <span class="sn">${cards.length}</span></button>`+
-    rs.map(k=>`<button class="spill" data-r="${k}" aria-pressed="false"><span class="rk-dot ${k}"></span>${k} <span class="sn">${t[k]}</span></button>`).join('');
+  h+=`<p class="empty">Search a council above to open its full dashboard — summary, signals, compliance and refinancing risk together.</p>`;
+  return h;
+}
+
+/* ---------- Market-wide signals: compact rows, expand for detail, severity filter ---------- */
+(function renderSignals(){
+  const box=document.getElementById('sigs'), sp=document.getElementById('sigspills');
+  const sigs=D.signals||[];
+  box.innerHTML = sigs.map(s => `
+    <details class="sigc ${s.sev}" data-sev="${s.sev}">
+      <summary><span class="sig-dot"></span><b class="sig-co">${esc(s.council)}</b>
+        <span class="sig-hl">${esc(s.headline)}</span>
+        <span class="sig-code">${esc(s.code)}</span><span class="sig-date">${esc(fmtd(s.date))}</span></summary>
+      <div class="sig-body"><p>${esc(s.why)}</p>
+        <p class="sig-src">${s.url?`<a href="${esc(s.url)}" rel="noopener">${esc(s.doc)}</a>`:esc(s.doc)}</p></div>
+    </details>`).join('');
+  const counts={alert:0,watch:0,good:0}; sigs.forEach(s=>{if(counts[s.sev]!=null)counts[s.sev]++;});
+  const order=[['all','All',sigs.length],['alert','Red',counts.alert],['watch','Amber',counts.watch],['good','Green',counts.good]];
+  sp.innerHTML=order.filter(([k,,n])=>k==='all'||n).map(([k,lab,n],i)=>`<button class="spill" data-s="${k}" aria-pressed="${i===0}">${lab} <span class="sn">${n}</span></button>`).join('');
   sp.querySelectorAll('.spill').forEach(b=>b.addEventListener('click',()=>{
     sp.querySelectorAll('.spill').forEach(x=>x.setAttribute('aria-pressed',x===b));
-    const r=b.dataset.r; wrap.querySelectorAll('.rk-card').forEach(a=>{a.style.display=(r==='all'||a.dataset.rating===r)?'':'none';});}));
+    const k=b.dataset.s; box.querySelectorAll('.sigc').forEach(a=>{a.style.display=(k==='all'||a.dataset.sev===k)?'':'none';});}));
 })();
-
-/* ---------- Councils: signals board ---------- */
-document.getElementById('sigs').innerHTML = D.signals.map(s => `
-  <div class="sig ${s.sev}">
-    <div class="top"><b>${esc(s.council)}</b><span>${esc(s.date)}</span></div>
-    <h3>${esc(s.headline)}</h3>
-    <p>${esc(s.why)}</p>
-    <p style="margin-top:6px">${s.url ? `<a href="${esc(s.url)}" rel="noopener">${esc(s.doc)}</a>` : esc(s.doc)}
-      <span class="code">${esc(s.code)}</span></p>
-  </div>`).join('');
 
 /* ---------- Councils: latest documents ---------- */
 document.querySelector('#feedtab tbody').innerHTML = D.feed.map(r => `
@@ -857,7 +842,7 @@ document.querySelector('#feedtab tbody').innerHTML = D.feed.map(r => `
 const cchips = document.getElementById('cchips');
 const csearch = document.getElementById('csearch');
 const cresults = document.getElementById('cresults');
-let csel = [0];
+let csel = [];   // open the Councils dashboard on the sector overview; search to drill into a council
 function renderChips(){
   cchips.innerHTML = csel.map(i => {
     const c = D.councils[i];
@@ -911,7 +896,7 @@ function renderCouncils() {
   box.classList.toggle('multi', csel.length > 1);
   box.innerHTML = csel.length
     ? csel.map(i => councilHTML(D.councils[i])).join('')
-    : '<div class="empty">Search for a council above to see its assembled position.</div>';
+    : sectorOverviewHTML();
 }
 renderChips();
 /* MHCLG credit metrics: live gviz value (window.LM) preferred, baked snapshot as fallback */
@@ -1008,6 +993,8 @@ function councilHTML(c) {
       <span class="chip">${esc(c.extraction === 'full' ? 'fully read' : 'found, reading next')}</span>${chip?` · ${chip}`:''}</div>
     ${c.cover ? `<div class="cover"><span class="cover-l">On file</span> ${tmssChip(c.cover)} ${covChip('Accounts', c.cover.accounts, 'audit pack', c.cover.accounts_t)}</div>` : ''}
     <p class="summary">${esc(c.summary)}</p>
+    ${riskSectionHTML(c.gss)}
+    ${complianceSectionHTML(c.gss)}
     ${c.tiles ? creditMetrics(c) : flatFigs(c)}
     ${c.signals.length ? `<div class="mini" style="margin-top:16px"><h4>Signals</h4>` + c.signals.map(s =>
       `<div class="evt"><span class="dot" style="background:var(--${s.sev === 'alert' ? 'alert' : s.sev === 'good' ? 'good' : 'warn'})"></span>
