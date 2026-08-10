@@ -990,20 +990,10 @@ function riskSectionHTML(gss){const c=RISK[gss]; if(!c) return '';
 function sectorOverviewHTML(){
   let h='';
   const jr = RISKD&&RISKD.councils&&RISKD.councils.length, jc = CMPD&&CMPD.councils&&CMPD.councils.length, jm = D.model&&D.model.requirements;
-  if(jr||jc){ const links=[];
-    if(jr)links.push(`<a href="#ov-refi">Refinancing &amp; rate risk</a>`);
+  if(jc){ const links=[];
     if(jc)links.push(`<a href="#ov-cmp">CIPFA compliance</a>`);
     if(jm)links.push(`<a href="#ov-model">Model TMS</a>`);
     h+=`<div class="dash-jump"><span class="dj-l">Jump to</span>${links.join('<span class="dj-s">·</span>')}<span class="dj-s">·</span><span class="dj-hint">or search a council above</span></div>`; }
-  if(jr){
-    const t=RISKD.tally||{};
-    const rateLine = RISKD.total_rate_per_1pc!=null?` · every +1% on rates ≈ <b>${rkMoney(RISKD.total_rate_per_1pc)}/yr</b>`:'';
-    h+=`<div class="panel cmp-sector" id="ov-refi"><div class="cmp-sec-head"><h3>Refinancing &amp; rate-risk board</h3>
-      <span>${RISKD.councils.length} councils profiled · ${rkMoney(RISKD.total_forward_borrowing)} of new borrowing planned${rateLine}</span></div>
-      <div class="rk-tally">${['red','amber','green','thin'].filter(k=>t[k]).map(k=>`<span class="rk-tk"><span class="rk-dot ${k}"></span>${t[k]} ${k}</span>`).join('')}</div>
-      <p class="note">How much new prudential borrowing each council plans, and the refinancing / rate risk on it — ranked red first.</p></div>
-      <div class="ovgrid">${RISKD.councils.map(riskCard).join('')}</div>`;
-  }
   if(CMPD && CMPD.councils && CMPD.councils.length){
     const dist=CMPD.sector.core_compliance_distribution||[]; const med=dist.length?dist[Math.floor(dist.length/2)]:null;
     const cov=(CMPD.sector.worst_covered||[]).slice(0,6).map(w=>{const p=w.present_pct==null?0:w.present_pct;
