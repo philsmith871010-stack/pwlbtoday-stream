@@ -557,6 +557,36 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
   padding:12px 16px;margin:18px 0 6px}
 .howfold summary{cursor:pointer;font-weight:800;font-size:13px;color:var(--ink2)}
 .howfold[open] summary{margin-bottom:8px}
+/* ---- landing color pass ---- */
+.howfold{--c1:var(--accent);--c2:var(--orange);--c3:var(--warn);--c4:var(--good)}
+.howfold::before{content:'';display:block;height:3px;border-radius:99px;margin:-12px -16px 12px;
+  background:linear-gradient(90deg,var(--c1),var(--c2),var(--c3),var(--c4))}
+.howfold .step{border-top:3px solid var(--line);border-radius:var(--r)}
+.howfold .step:nth-child(1){border-top-color:var(--c1);background:color-mix(in srgb,var(--c1) 5%,var(--card))}
+.howfold .step:nth-child(2){border-top-color:var(--c2);background:color-mix(in srgb,var(--c2) 5%,var(--card))}
+.howfold .step:nth-child(3){border-top-color:var(--c3);background:color-mix(in srgb,var(--c3) 6%,var(--card))}
+.howfold .step:nth-child(4){border-top-color:var(--c4);background:color-mix(in srgb,var(--c4) 6%,var(--card))}
+.howfold .step:nth-child(1) .stepn{background:var(--c1)}
+.howfold .step:nth-child(2) .stepn{background:var(--c2)}
+.howfold .step:nth-child(3) .stepn{background:var(--c3)}
+.howfold .step:nth-child(4) .stepn{background:var(--c4)}
+.navcard{--nc:var(--accent);border-top:3px solid var(--nc)}
+.navcard[data-goto="pulse"]{--nc:var(--orange)}
+.navcard[data-goto="news"]{--nc:var(--warn)}
+.navcard[data-goto="councils"]{--nc:var(--accent)}
+.navcard[data-goto="screener"]{--nc:var(--good)}
+.navcard[data-goto="signals"]{--nc:#c8503c}
+.navcard[data-goto="cp"]{--nc:var(--accent-deep)}
+.navcard[data-goto="modeltms"]{--nc:var(--orange)}
+.navcard:hover{border-color:var(--nc)}
+.nc-k::before{content:'';display:inline-block;width:8px;height:8px;border-radius:99px;
+  background:var(--nc);margin-right:8px;vertical-align:1px}
+.lp-h b::before{content:'';display:inline-block;width:7px;height:7px;border-radius:99px;
+  background:var(--orange);margin-right:7px;vertical-align:1px}
+@media (prefers-reduced-motion: no-preference){
+  .lp-h b::before{animation:lppulse 2.2s ease-in-out infinite}
+  @keyframes lppulse{0%,100%{opacity:1}50%{opacity:.35}}
+}
 .mt-good{font-size:13px;color:var(--ink2);margin:3px 0 2px;line-height:1.45}
 .mt-ev{font-size:12px;color:var(--muted);line-height:1.4}
 .rk-figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 18px;margin:12px 0 4px}
