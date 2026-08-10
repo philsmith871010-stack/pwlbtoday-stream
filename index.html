@@ -990,19 +990,9 @@ function riskSectionHTML(gss){const c=RISK[gss]; if(!c) return '';
 function sectorOverviewHTML(){
   let h='';
   const jr = RISKD&&RISKD.councils&&RISKD.councils.length, jc = CMPD&&CMPD.councils&&CMPD.councils.length, jm = D.model&&D.model.requirements;
-  if(jc){ const links=[];
-    if(jc)links.push(`<a href="#ov-cmp">CIPFA compliance</a>`);
+  if(jm){ const links=[];
     if(jm)links.push(`<a href="#ov-model">Model TMS</a>`);
     h+=`<div class="dash-jump"><span class="dj-l">Jump to</span>${links.join('<span class="dj-s">·</span>')}<span class="dj-s">·</span><span class="dj-hint">or search a council above</span></div>`; }
-  if(CMPD && CMPD.councils && CMPD.councils.length){
-    const dist=CMPD.sector.core_compliance_distribution||[]; const med=dist.length?dist[Math.floor(dist.length/2)]:null;
-    const cov=(CMPD.sector.worst_covered||[]).slice(0,6).map(w=>{const p=w.present_pct==null?0:w.present_pct;
-      return `<div class="cmp-cov-row"><div class="cmp-cov-bar"><span style="width:${p}%"></span></div><div class="cmp-cov-p">${w.present_pct==null?'—':p+'%'}</div><div class="cmp-cov-t">${esc(w.title)}<span class="cmp-g">${esc(CMPG[w.group]||w.group)}</span></div></div>`;}).join('');
-    h+=`<div class="panel cmp-sector" id="ov-cmp" style="margin-top:16px"><div class="cmp-sec-head"><h3>CIPFA Code compliance — sector benchmark</h3>
-      <span>${CMPD.sector.councils} councils scored · median core compliance <b>${med==null?'—':med+'%'}</b></span></div>
-      <p class="note">Least-covered mandatory requirements — where the sector most often falls short:</p>${cov}</div>
-      <div class="ovgrid">${CMPD.councils.map(complianceCard).join('')}</div>`;
-  }
   if(D.model && D.model.requirements){
     const m=D.model;
     const leaders=m.leaders.map(l=>`<span class="mt-lead"><b>${esc(l.council)}</b><span class="mt-n">${l.n3}</span></span>`).join('');
