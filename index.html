@@ -534,6 +534,29 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 .tms-lib{margin:18px 0 8px;border-top:2px solid var(--line);padding-top:10px}
 .tms-lib summary{cursor:pointer;font-weight:700;color:var(--accent-ink);font-size:13.5px}
 .mt-g{margin:14px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+/* ---- lean landing ---- */
+.kpis{display:flex;flex-wrap:wrap;gap:6px 16px;margin:2px 0 14px;font-size:12px;color:var(--muted)}
+.kpi b{color:var(--ink);font-weight:800}
+.lp{margin:0 0 20px}
+.lp-h{display:flex;align-items:baseline;gap:10px;font-size:11px;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted);margin:0 0 7px}
+.lp-h b{color:var(--accent-ink)}
+.lp-open{margin-left:auto;font-weight:700;color:var(--accent-ink);cursor:pointer;
+  background:none;border:none;font:inherit;font-size:11px;text-transform:uppercase;letter-spacing:.07em}
+.lp-open:hover{text-decoration:underline}
+.navgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:4px 0 8px}
+.navcard{appearance:none;font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:6px;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px 13px;
+  box-shadow:var(--sh-sm);transition:transform .14s,box-shadow .14s,border-color .14s}
+.navcard:hover{transform:translateY(-2px);box-shadow:var(--sh);border-color:var(--accent)}
+.navcard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.nc-k{font-size:15px;font-weight:800;color:var(--accent-ink);letter-spacing:-.01em}
+.nc-d{font-size:12.5px;line-height:1.5;color:var(--ink2)}
+.nc-s{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:auto}
+.howfold{background:var(--sunken);border:1px solid var(--line);border-radius:var(--r);
+  padding:12px 16px;margin:18px 0 6px}
+.howfold summary{cursor:pointer;font-weight:800;font-size:13px;color:var(--ink2)}
+.howfold[open] summary{margin-bottom:8px}
 .mt-good{font-size:13px;color:var(--ink2);margin:3px 0 2px;line-height:1.45}
 .mt-ev{font-size:12px;color:var(--muted);line-height:1.4}
 .rk-figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 18px;margin:12px 0 4px}
@@ -591,13 +614,6 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
   <div class="brand"><h1>PWLB<span class="p">pulse</span></h1><span class="proto">Prototype · real data · 10 August 2026</span>
     <button id="themebtn" class="themebtn" aria-label="Toggle light or dark theme" title="Toggle light / dark">◐</button></div>
   <p class="strap">Live UK rates and economics, with early warning from council publications — every figure dated, sourced and checkable against the original papers.</p>
-  <div class="tiles">
-    <div class="tile"><b>241</b><span>councils watched daily</span></div>
-    <div class="tile"><b>6282</b><span>documents classified</span></div>
-    <div class="tile"><b>215</b><span>treasury strategies located</span></div>
-    <div class="tile"><b>73</b><span>counterparty policies structured</span></div>
-    <div class="tile"><b>166</b><span>signals on the board</span></div>
-  </div>
   <nav class="tabs" role="tablist">
     <button role="tab" aria-selected="true" data-v="how">How it works</button>
     <button role="tab" aria-selected="false" data-v="pulse">Pulse</button>
@@ -611,89 +627,49 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 
 <main class="wrap">
 <section id="view-how">
-  <div class="doorwrap">
-    <p class="door-lede">An early-warning and benchmarking system for the financial health of England's councils — every council's treasury and accounts papers, read in full and turned into dated, sourced, comparable positions.</p>
-    <p class="door-sub">Start where you sit — <b>26</b> councils compliance-scored, <b>18</b> refinancing-profiled, and growing weekly.</p>
-    <div class="doors">
-      <div class="door">
-        <span class="door-role"><span class="dot"></span>Local authorities</span>
-        <h3 class="door-h">See how your treasury strategy scores — and exactly where the gaps are.</h3>
-        <ul class="door-list">
-          <li>Your TMSS graded against all <b>74</b> CIPFA 2021 requirements, every gap named with page-anchored evidence.</li>
-          <li>What best-in-class looks like, requirement by requirement — backed by a real council you can copy.</li>
-          <li>Your refinancing and interest-rate exposure, ranked beside every peer.</li>
-        </ul>
-        <div class="door-cta">
-          <button class="dcta primary" data-goto="councils">Find your council →</button>
-          <button class="dcta" data-goto="screener" data-sort="core">Benchmark vs sector</button>
-          <button class="dcta" data-goto="modeltms">Model TMS</button>
-        </div>
-      </div>
-      <div class="door lender">
-        <span class="door-role"><span class="dot"></span>Lenders &amp; investors</span>
-        <h3 class="door-h">Read the borrowing pipeline and credit risk before you price.</h3>
-        <ul class="door-list">
-          <li>Who's borrowing and how much — <b>£3.2bn</b> of planned new prudential borrowing across profiled councils, ranked.</li>
-          <li>Near-term refinancing cliffs, LOBO calls and the <b>£/+1%</b> cost of each rate move, per council.</li>
-          <li>Governance quality as a credit overlay — CIPFA compliance and the gaps that matter.</li>
-        </ul>
-        <div class="door-cta">
-          <button class="dcta primary" data-goto="screener" data-sort="fwd">Borrowing pipeline →</button>
-          <button class="dcta" data-goto="screener" data-sort="per1">Rate exposure</button>
-          <button class="dcta" data-goto="signals">Early-warning signals</button>
-        </div>
-      </div>
-      <div class="door analyst">
-        <span class="door-role"><span class="dot"></span>Advisors, analysts &amp; press</span>
-        <h3 class="door-h">Track the whole estate as it moves.</h3>
-        <ul class="door-list">
-          <li>The live pulse of rates, economics and council news, newest first.</li>
-          <li>The Newsroom — what the deep reads have exposed, most serious first.</li>
-          <li>Cross-sector distress and watch signals, each sourced to a council's own papers.</li>
-        </ul>
-        <div class="door-cta">
-          <button class="dcta primary" data-goto="pulse">Live pulse →</button>
-          <button class="dcta" data-goto="news">Newsroom</button>
-          <button class="dcta" data-goto="signals">Signals</button>
-        </div>
-      </div>
-    </div>
+  <p class="door-lede">The financial health of England's councils — every treasury paper read in full, every figure sourced, live market rates alongside.</p>
+
+  <div class="lp"><div class="lp-h"><b>Latest from the Pulse</b><span>Monday 10 August 2026 · 09:20</span><button class="lp-open" data-goto="pulse">Full history →</button></div><article class="pcard rung-pulse"><h3>AM FIXING CALL — the round is striking about now: estimates 0.1–0.4bp under Friday (10y 5.979%); the morning’s oil firmness has absorbed the jobs-shock discount</h3><div class=pchips><div class="pchip"><span class="cl">PWLB 10y — last fixed</span><span class="cv">5.98%</span></div><div class="pchip"><span class="cl">PWLB 10y — next fix est</span><span class="cv">5.979% (−0.1bp)</span></div><div class="pchip"><span class="cl">PWLB 5y — next fix est</span><span class="cv">5.497% (−0.3bp)</span></div><div class="pchip"><span class="cl">1y SONIA swap</span><span class="cv">live</span></div></div><p><p>Final live look as the AM round strikes: essentially a re-fix at Friday’s levels. The rates published ~09:30 — report to follow within minutes of publication.</p></p></article></div>
+
+  <div class="navgrid">
+    <button class="navcard" data-goto="pulse"><span class="nc-k">Pulse</span>
+      <span class="nc-d">Live UK rates, economics and council news — newest first.</span>
+      <span class="nc-s">updated through the day</span></button>
+    <button class="navcard" data-goto="news"><span class="nc-k">Newsroom</span>
+      <span class="nc-d">What the deep reads exposed, most serious first.</span>
+      <span class="nc-s">from the councils' own papers</span></button>
+    <button class="navcard" data-goto="councils"><span class="nc-k">Councils</span>
+      <span class="nc-d">One dashboard per council — compliance, refinancing risk, figures, documents.</span>
+      <span class="nc-s">241 councils tracked</span></button>
+    <button class="navcard" data-goto="screener"><span class="nc-k">Screener</span>
+      <span class="nc-d">Every council in one sortable table — compare anything.</span>
+      <span class="nc-s">sort · filter · drill in</span></button>
+    <button class="navcard" data-goto="signals"><span class="nc-k">Signals</span>
+      <span class="nc-d">Cross-council distress and watch signals, each sourced.</span>
+      <span class="nc-s">166 on the board</span></button>
+    <button class="navcard" data-goto="cp"><span class="nc-k">Counterparty</span>
+      <span class="nc-d">Who each council will lend to, and up to how much.</span>
+      <span class="nc-s">73 policies structured</span></button>
+    <button class="navcard" data-goto="modeltms"><span class="nc-k">Model TMS</span>
+      <span class="nc-d">A complete treasury strategy to adapt — credited to the sector's best.</span>
+      <span class="nc-s">all 74 Code requirements</span></button>
   </div>
 
-  <div class="how">
-    <p class="how-mech-h">How the machine works</p>
-    <p class="how-lede">Behind every figure: it finds each council's treasury and accounts papers, reads them in full, and turns every one into a dated, sourced position — with each figure checkable against the original document.</p>
-    <div class="tiles how-tiles">
-      <div class="tile"><b>241</b><span>councils tracked</span></div>
-      <div class="tile"><b>215</b><span>treasury strategies located</span></div>
-      <div class="tile"><b>205</b><span>on the current year</span></div>
-      <div class="tile"><b>75</b><span>deep reads · 67 councils</span></div>
-      <div class="tile"><b>166</b><span>signals on the board</span></div>
-    </div>
+  <details class="howfold">
+    <summary>How the machine works</summary>
     <div class="steps">
-      <div class="step"><span class="stepn">1</span><h4>Find</h4><p>Every working day it scans each council's committee pages and news feeds for new treasury and accounts papers — and recovers the ones buried inside longer reports.</p></div>
-      <div class="step"><span class="stepn">2</span><h4>Read</h4><p>It reads each paper in full and pulls out what matters — borrowing, refinancing, counterparties, breaches — with every figure pinned to its page.</p></div>
-      <div class="step"><span class="stepn">3</span><h4>Judge</h4><p>It flags distress and watch signals against a fixed vocabulary and checks currency, so out-of-date strategies are caught rather than trusted.</p></div>
-      <div class="step"><span class="stepn">4</span><h4>Surface</h4><p>Findings land on the board, drive the Newsroom and build each council's page — the source document always one click away.</p></div>
+      <div class="step"><span class="stepn">1</span><h4>Find</h4><p>Every working day it scans each council's committee pages and news feeds for new treasury and accounts papers.</p></div>
+      <div class="step"><span class="stepn">2</span><h4>Read</h4><p>It reads each paper in full — borrowing, refinancing, counterparties, breaches — every figure pinned to its page.</p></div>
+      <div class="step"><span class="stepn">3</span><h4>Judge</h4><p>It flags distress and watch signals against a fixed vocabulary, and catches out-of-date strategies.</p></div>
+      <div class="step"><span class="stepn">4</span><h4>Surface</h4><p>Findings drive the boards and each council's page — the source document always one click away.</p></div>
     </div>
-    <p class="note how-cur">Strategies located for <b>215</b> of <b>241</b> councils; <b>205</b> are on the current financial year and <b>9</b> are flagged stale and queued to refresh. Collection and reading run daily and self-heal — every number on this page updates on each pass.</p>
-    <div class="how-guide">
-      <h4>How to read this</h4>
-      <ul>
-        <li><b>Pulse</b> — the live stream of markets, economics and council news, newest first.</li>
-        <li><b>Newsroom</b> — what the deep reads have exposed, most serious first.</li>
-        <li><b>Councils</b> — search any council for its assembled position: summary, council-specific signals, CIPFA Code compliance, refinancing &amp; rate risk, dated figures and the document trail. The landing shows the sector-wide picture and the Model TMS.</li>
-        <li><b>Screener</b> — every council we've read in one sortable table: compliance, refinancing &amp; rate risk and borrowing vs peers, side by side — sort, filter and drill in.</li>
-        <li><b>Signals</b> — the cross-sector board, and every relevant paper as it is caught.</li>
-      </ul>
-    </div>
-    <p class="how-foot">Prototype on real data. Every figure is sourced to a council's own published papers — always open the linked document before acting on it.</p>
-  </div>
+    <p class="note">Prototype on real data. Every figure is sourced to a council's own published papers — open the linked document before acting on it.</p>
+  </details>
 </section>
 
 <section id="view-pulse" hidden>
   <div class="pulsebar">
-    <div><p class="sub" style="margin:0">The live stream — markets, economics and council news, newest first. One card per item; open a card for the detail.</p></div>
+    <div><p class="sub" style="margin:0">Markets, economics and council news — newest first. Open a card for detail.</p></div>
     <div class="pstatus" id="pstatus"></div>
   </div>
   <div class="spills" id="spills">
@@ -707,7 +683,7 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 </section>
 
 <section id="view-news" hidden>
-  <p class="sub">What the deep reads have exposed — one article per council paper that showed something notable, most serious first. Every line is drawn from the council's own published figures; open the source to check it.</p>
+  <p class="sub">What the deep reads exposed, most serious first — every line from the council's own figures, source one click away.</p>
   <div class="spills" id="nspills">
     <button class="spill" data-n="all" aria-pressed="true">All</button>
     <button class="spill" data-n="alert" aria-pressed="false">Distress</button>
@@ -718,7 +694,8 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 </section>
 
 <section id="view-councils" hidden>
-  <p class="sub">One dashboard per council: its assembled position, council-specific signals, <b>CIPFA Code compliance</b>, <b>refinancing &amp; rate risk</b>, key figures with page references and the document trail. Search a council to open it; the landing shows the sector-wide picture.</p>
+  <p class="sub">One dashboard per council — compliance, refinancing &amp; rate risk, figures with page references, and the document trail. Search to open.</p>
+  <div class="kpis"><span class="kpi"><b>241</b> tracked</span><span class="kpi"><b>215</b> strategies located</span><span class="kpi"><b>205</b> on current year</span><span class="kpi"><b>26</b> compliance-scored</span><span class="kpi"><b>18</b> refi-profiled</span><span class="kpi"><b>75</b> deep reads</span><span class="kpi"><b>6282</b> documents</span></div>
   <div class="controls" style="position:relative">
     <input id="csearch" type="search" placeholder="Search a council by name…" autocomplete="off" aria-label="Search a council">
     <div id="cresults" class="cresults" hidden></div>
@@ -730,7 +707,7 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 </section>
 
 <section id="view-screener" hidden>
-  <p class="sub">Every council we've read, in one place — compliance, refinancing &amp; rate risk and borrowing vs peers side by side. <b>Click any column to sort</b> (least/most compliant, most borrowing, biggest rate exposure…), filter by type or refi rating, search by name, and click a row to open that council's full dashboard.</p>
+  <p class="sub">Every council in one sortable table. <b>Click a column to sort</b>, filter, or click a row for the full dashboard.</p>
   <div class="controls"><input id="scrsearch" type="search" placeholder="Search council…" autocomplete="off" aria-label="Search council"></div>
   <div class="spills" id="scrtype"></div>
   <div class="spills" id="scrrating"></div>
@@ -742,7 +719,7 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 </section>
 
 <section id="view-signals" hidden>
-  <p class="sub">What's changed across the estate — cross-council distress and watch signals, and every relevant paper as it's caught. Red: distress markers · amber: watch items with dates · green: verified good news or verified quiet. Each links to its source document.</p>
+  <p class="sub">Cross-council distress and watch signals — red distress, amber watch, green verified. Each links to its source.</p>
   <h3 class="board-h" style="margin-top:6px">Signals board <span class="board-sub">— click any signal to expand</span></h3>
   <div class="spills" id="sigspills"></div>
   <div class="siglist" id="sigs"></div>
@@ -1006,7 +983,7 @@ given.</p>
 </section>
 
 <section id="view-cp" hidden>
-  <p class="sub">Who each council will deposit with — the per-council limit for lending to a single other local authority is the column the inter-authority market prices on. Extracted from each council's own treasury strategy; page numbers included.</p>
+  <p class="sub">Each council's limit for lending to another LA — the number the inter-authority market prices on. Page-referenced.</p>
   <div class="chartcard" style="margin-bottom:16px">
     <div class="mini"><h4>Distribution of per-LA lending limits</h4>
       <div class="chart" id="dist"></div></div>
@@ -1068,7 +1045,7 @@ tabs.forEach(b => b.addEventListener('click', () => {
 }));
 
 /* persona front-door CTAs: switch tab, optionally pre-sort the screener or scroll to a panel */
-document.querySelectorAll('.dcta[data-goto]').forEach(b => b.addEventListener('click', () => {
+document.querySelectorAll('.dcta[data-goto],.navcard[data-goto],.lp-open[data-goto]').forEach(b => b.addEventListener('click', () => {
   const tab = document.querySelector('nav.tabs button[data-v="' + b.dataset.goto + '"]');
   if (tab) tab.click();
   if (b.dataset.sort && typeof window.screenerSort === 'function')
