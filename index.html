@@ -508,6 +508,32 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 .mt-req-h{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
 .mt-req-t{font-size:13.5px;font-weight:600;color:var(--ink)}
 .mt-ex{font-size:12.5px;color:var(--accent-ink);font-weight:600;white-space:nowrap}
+/* ---- Model TMS document ---- */
+.tms{max-width:860px}
+.tms-head h2{margin:2px 0 6px}
+.tms-sub{color:var(--muted);font-size:14px;margin:0 0 10px}
+.tms-banner{background:var(--sunken);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:8px;padding:9px 12px;font-size:13px;margin:0 0 10px}
+.tms-toggle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;margin:0 0 4px}
+.tt-l{color:var(--muted);font-weight:600}
+.tt-b{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--muted);
+  border-radius:99px;padding:3px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.tt-b.on{border-color:var(--accent);color:var(--accent-ink)}
+.tt-hint{color:var(--muted);flex-basis:100%}
+.tms-s{border-top:1px solid var(--line);padding:14px 0 4px;margin-top:10px}
+.tms-s h3{margin:0 0 8px}
+.tms-s h4{margin:14px 0 6px}
+.tms-s p{font-size:13.5px;line-height:1.6;margin:8px 0}
+.tms-ack{font-size:12px;color:var(--muted);margin:-2px 0 8px}
+.tms-ack b{color:var(--accent-ink);font-weight:600}
+.tms-t{width:100%;font-size:12.5px}
+.tms-t th{text-align:left}
+.hra-b{display:inline-block;background:color-mix(in srgb,var(--accent) 12%,transparent);
+  color:var(--accent-ink);border:1px solid var(--accent);border-radius:99px;
+  font-size:10.5px;font-weight:800;padding:1px 8px;vertical-align:middle;letter-spacing:.04em}
+.tms-lib{margin:18px 0 8px;border-top:2px solid var(--line);padding-top:10px}
+.tms-lib summary{cursor:pointer;font-weight:700;color:var(--accent-ink);font-size:13.5px}
+.mt-g{margin:14px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .mt-good{font-size:13px;color:var(--ink2);margin:3px 0 2px;line-height:1.45}
 .mt-ev{font-size:12px;color:var(--muted);line-height:1.4}
 .rk-figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 18px;margin:12px 0 4px}
@@ -579,6 +605,7 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
     <button role="tab" aria-selected="false" data-v="councils">Councils</button>
     <button role="tab" aria-selected="false" data-v="screener">Screener</button>
     <button role="tab" aria-selected="false" data-v="signals">Signals</button>
+    <button role="tab" aria-selected="false" data-v="modeltms">Model TMS</button>
   </nav>
 </div></header>
 
@@ -599,7 +626,7 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
         <div class="door-cta">
           <button class="dcta primary" data-goto="councils">Find your council →</button>
           <button class="dcta" data-goto="screener" data-sort="core">Benchmark vs sector</button>
-          <button class="dcta" data-goto="councils" data-scroll="ov-model">Model TMS</button>
+          <button class="dcta" data-goto="modeltms">Model TMS</button>
         </div>
       </div>
       <div class="door lender">
@@ -724,6 +751,258 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
     <thead><tr><th>Published</th><th>Council</th><th>Document</th><th>Committee</th><th>Shelf</th></tr></thead>
     <tbody></tbody>
   </table></div>
+</section>
+
+<section id="view-modeltms" hidden>
+
+<div class="tms" id="tmsdoc">
+<header class="tms-head">
+  <h2>Model Treasury Management Strategy Statement 2026/27</h2>
+  <p class="tms-sub">A complete, adaptable TMSS covering every requirement of the CIPFA Treasury
+  Management and Prudential Codes (2021) — written as the document a council would take to
+  full council, with a consistent worked example throughout.</p>
+  <div class="tms-banner">All figures are <b>illustrative</b> ("Exampleshire Council", a unitary
+  authority with retained housing stock) — replace throughout with your authority's own.
+  Passages marked <i>after a named council</i> adapt that council's published 2025/26–2026/27
+  strategy, identified from the 26 strategies scored on this site; the strongest overall
+  were Westminster City Council, Redcar and Cleveland, Cheshire East Council.</div>
+  <div class="tms-toggle" role="group" aria-label="Authority type">
+    <span class="tt-l">Authority type:</span>
+    <button class="tt-b on" data-hra="all">All sections</button>
+    <button class="tt-b" data-hra="non">Non-HRA view</button>
+    <span class="tt-hint">Sections badged "<span class="hra-b">HRA authorities</span>" apply only where housing stock is retained;
+    stock-transfer districts and counties can hide them.</span>
+  </div>
+</header>
+
+<section class="tms-s">
+<h3>1 · Introduction, adoption and governance</h3>
+<p class="tms-ack">after <b>Herefordshire</b> · <b>Redcar and Cleveland</b></p>
+<p>This Council has adopted the four clauses of CIPFA's Treasury Management in the Public
+Services: Code of Practice (2021 Edition), and maintains as its framework: a Treasury
+Management Policy Statement defining the policies and objectives of its treasury activities;
+suitable Treasury Management Practices (TMPs) with supporting schedules; the reporting cycle
+in section 12; and delegation of the execution and administration of treasury decisions to the
+Section 151 Officer, who acts in accordance with the Policy Statement, TMPs and CIPFA's
+Standard of Professional Practice.</p>
+<p><b>Policy statement.</b> The Council defines its treasury management activities as the
+management of the organisation's borrowing, investments and cash flows, its banking, money
+market and capital market transactions, the effective control of the risks associated with
+those activities, and the pursuit of optimum performance consistent with those risks. The
+Council regards the successful identification, monitoring and control of risk as the prime
+criterion by which the effectiveness of treasury activities is measured; value for money is a
+secondary objective pursued within that risk framework.</p>
+<p><b>Approval and scrutiny.</b> This strategy is approved by <b>full council</b> before the
+start of the financial year, on the recommendation of Cabinet. The <b>Audit &amp; Governance
+Committee</b> is nominated as the body responsible for effective scrutiny of the treasury
+function and receives every report in the cycle before or alongside the decision-making body.
+The prudential indicators in section 9 are set, and may only be amended, by full council.</p>
+<p><b>Third-party funds.</b> Monies held on behalf of the Exampleshire Pension Fund and jointly
+managed trust funds are identified separately and managed under the same standards of care,
+with their own counterparty records.</p>
+</section>
+
+<section class="tms-s">
+<h3>2 · External context and interest-rate outlook</h3>
+<p>[Insert, at the point of drafting: the Bank Rate level and market-implied path, gilt-yield
+levels and your treasury advisor's central forecast, and the PWLB certainty-rate margins. State
+the date of the forecast. The live market position for this is maintained on the Pulse tab of
+this site.]</p>
+<p>The strategy below is written to be robust to the forecast being wrong in either direction:
+borrowing decisions are framed against the liability benchmark (section 5), and the
+interest-rate exposure limits in section 11 cap the revenue impact of adverse moves.</p>
+</section>
+
+<section class="tms-s">
+<h3>3 · Current treasury position and capital plans</h3>
+<p class="tms-ack">after <b>Redcar and Cleveland</b></p>
+<p>The Council's external debt and investments at 31 March 2026, and the capital expenditure
+plans that drive the borrowing requirement:</p>
+<div class="tablewrap"><table class="tms-t"><tr><th>External debt (illustrative)</th><th>£m</th><th>Avg rate</th></tr><tr><td>PWLB — maturity loans</td><td>372</td><td>4.31%</td></tr><tr><td>Market loans (incl. £20m LOBO — see §11)</td><td>48</td><td>4.78%</td></tr><tr><td>Other local authorities</td><td>35</td><td>4.15%</td></tr><tr><td><b>Total external borrowing</b></td><td><b>455</b></td><td>4.35%</td></tr><tr><td>Treasury investments</td><td>(85)</td><td>4.02%</td></tr><tr><td><b>Net debt</b></td><td><b>370</b></td><td>—</td></tr></table></div>
+<div class="tablewrap"><table class="tms-t"><tr><th>Capital expenditure & CFR</th><th>2024/25 actual</th><th>2025/26 forecast</th><th>2026/27 est</th><th>2027/28 est</th><th>2028/29 est</th></tr><tr><td>Capital expenditure — General Fund £m</td><td>48.2</td><td>61.5</td><td>74.0</td><td>58.5</td><td>44.1</td></tr><tr><td><span class="hra-i">Capital expenditure — HRA £m</span></td><td>22.4</td><td>26.0</td><td>31.5</td><td>28.0</td><td>24.5</td></tr><tr><td>CFR — General Fund £m</td><td>371</td><td>389</td><td>412</td><td>428</td><td>434</td></tr><tr><td><span class="hra-i">CFR — HRA £m</span></td><td>182</td><td>184</td><td>186</td><td>189</td><td>190</td></tr><tr><td><b>CFR — total £m</b></td><td><b>553</b></td><td><b>573</b></td><td><b>598</b></td><td><b>617</b></td><td><b>624</b></td></tr></table></div><p class="note">The capital financing requirement (CFR) is the Council's underlying need to borrow for capital purposes. HRA rows apply to stock-holding authorities only.</p>
+<p><b>Gross debt and the CFR.</b> Gross external debt (£455m) does not exceed the total CFR
+(£598m), and is not expected to exceed the CFR over the three-year horizon — the key
+Prudential Code test that borrowing is for capital purposes only. The gap is internal
+borrowing: £143m of the borrowing need is currently met from the Council's own reserves and
+working capital, a position kept under review against the liability benchmark and the
+investment balances it consumes.</p>
+</section>
+
+<section class="tms-s">
+<h3>4 · Borrowing strategy</h3>
+<p class="tms-ack">after <b>Redcar and Cleveland</b></p>
+<p>The Council borrows only in sterling, and only for the purposes permitted by the Prudential
+Code: capital expenditure, refinancing maturing debt, and short-term cash-flow management. The
+Council will <b>not borrow in advance of need</b> purely to profit from the investment of the
+sums borrowed; where borrowing is undertaken ahead of a firm requirement (for example to
+de-risk a known refinancing peak) the decision and its carry cost are reported in the next
+mid-year or outturn report.</p>
+<div class="tablewrap"><table class="tms-t"><tr><th>Debt limits set by full council</th><th>Borrowing £m</th><th>Other long-term liabilities £m</th><th>Total £m</th></tr><tr><td>Authorised limit 2026/27</td><td>660</td><td>45</td><td><b>705</b></td></tr><tr><td>Operational boundary 2026/27</td><td>615</td><td>40</td><td><b>655</b></td></tr></table></div><p class="note">The authorised limit is the statutory ceiling (s3, Local Government Act 2003) that external debt must not breach; the operational boundary is the expected working maximum — a breach of the boundary triggers investigation, a breach of the limit is unlawful. Other long-term liabilities cover PFI and finance-lease obligations.</p>
+<p><b>2026/27 borrowing need.</b> £58m of new borrowing is planned (new capital £26m,
+refinancing £32m of maturing loans). The default instrument is PWLB certainty-rate maturity
+loans, tested against forward market alternatives at the point of drawing; maturities are
+chosen to fill the troughs in the maturity profile (section 9) rather than to chase the
+cheapest point on the curve, so refinancing exposure in any one year stays within the limits
+in section 11.</p>
+<p><b>Gross vs net.</b> The Council manages borrowing against the <i>gross</i> requirement,
+alongside a net position kept deliberately: internal borrowing is run down only as investment
+balances allow while maintaining the liquidity floor in section 7.</p>
+<h4>The liability benchmark</h4>
+<p class="tms-ack">after <b>Redcar and Cleveland</b></p>
+<p>The Council's core borrowing decisions are framed against the <b>liability benchmark</b> —
+the projection of existing debt against the future need for borrowing, assuming minimum
+investment balances of £30m. Where existing debt falls below the benchmark, the gap is the
+future borrowing requirement; debt above the benchmark would indicate over-borrowing. At
+31 March 2026 existing loans run £143m below the benchmark within three years, which is the
+basis of the refinancing plan above. [Insert the benchmark chart here — plotted for at least
+ten years, and ideally the full life of the debt portfolio.]</p>
+<p class="hra"><span class="hra-b">HRA authorities</span> Separate liability benchmarks are maintained and presented for the
+General Fund and the HRA, so each account's borrowing need is visible on its own.</p>
+</section>
+
+<section class="tms-s hra">
+<h3>5 · Housing Revenue Account treasury management <span class="hra-b">HRA authorities</span></h3>
+<p class="tms-ack">after <b>Redcar and Cleveland</b> · <b>Slough Borough Council</b></p>
+<p>The Council operates a <b>two-pool approach</b>: loans are assigned at inception to either
+the General Fund or the HRA pool, and interest costs follow the assignment. Borrowing shared
+across both accounts is split on the CFR ratio at the point of drawing. The Item 8
+determination governs the charge of interest between the accounts; the average rate on the
+HRA pool (4.12% illustrative) is applied to the HRA CFR of £186m.</p>
+<div class="tablewrap"><table class="tms-t"><tr><th>HRA indicators (local)</th><th>2026/27</th></tr><tr><td>HRA CFR £m</td><td>186</td></tr><tr><td>HRA share of authorised limit £m</td><td>205</td></tr><tr><td>HRA interest cover (net rents ÷ HRA interest)</td><td>2.4×</td></tr><tr><td>HRA debt per dwelling £</td><td>21,400</td></tr></table></div><p class="note">Local HRA indicators supplement the Code's minimum set, after the practice of the strongest-scoring stock-holding authorities.</p>
+<p class="note">Stock-transfer authorities and counties: delete this section, remove the HRA
+rows from sections 3 and 9, and state under section 1 that the authority holds no HRA.</p>
+</section>
+
+<section class="tms-s">
+<h3>6 · Treasury investment strategy</h3>
+<p class="tms-ack">after <b>Redcar and Cleveland</b> · <b>Telford and Wrekin</b></p>
+<p>The Council's investment priorities, in order, are <b>security</b>, then <b>liquidity</b>,
+then <b>yield</b> ("SLY"). Investments are made prudently with public money; yield is pursued
+only within the security and liquidity constraints below, and the Council does not borrow to
+invest for yield.</p>
+<div class="tablewrap"><table class="tms-t"><tr><th>Approved counterparties</th><th>Minimum credit criteria</th><th>Cash limit</th><th>Max duration</th></tr><tr><td>UK Government (DMADF, T-bills, gilts)</td><td>n/a — sovereign</td><td>Unlimited</td><td>6 months (DMADF) / 5 years (gilts)</td></tr><tr><td>UK local authorities</td><td>n/a — statutory</td><td>£10m each</td><td>2 years</td></tr><tr><td>UK banks — ring-fenced</td><td>A− / A3 long-term</td><td>£15m each</td><td>12 months</td></tr><tr><td>Building societies</td><td>A− / A3</td><td>£10m each</td><td>6 months</td></tr><tr><td>Money market funds (CNAV/LVNAV)</td><td>AAA (mmf)</td><td>£20m each, £60m total</td><td>instant access</td></tr><tr><td>Non-UK sovereign banks</td><td>AA− sovereign, A− bank</td><td>£10m per country</td><td>6 months</td></tr></table></div><p class="note">Credit criteria use the lowest of the three main agencies' ratings; ratings are monitored daily via the treasury advisor with watch/outlook taken into account, and a downgrade below criteria stops new lending and triggers recall-at-maturity.</p>
+<p><b>Specified and non-specified investments.</b> Specified investments (sterling,
+&lt;365 days, high credit quality per the table) are the default. Non-specified investments —
+anything longer than a year, the £25m strategic pooled-fund allocation, and any lower-rated
+instrument — are capped at <b>£45m in aggregate</b> with the long-term limit in section 9.</p>
+<p><b>Liquidity.</b> A minimum of £30m is held in instant-access or &lt;100-day instruments,
+sized on the cash-flow forecast's worst fortnight over the last three years.</p>
+<p><b>MiFID II.</b> The Council has opted up to professional client status with its brokers
+and fund providers, and holds the balance-sheet and experience evidence for that election.</p>
+</section>
+
+<section class="tms-s">
+<h3>7 · Commercial and non-treasury investments</h3>
+<p class="tms-ack">after <b>Redcar and Cleveland</b></p>
+<p>The Council holds a small legacy portfolio of service and commercial property investments
+(book value £18m, 1.9% of the balance sheet). In line with the Prudential Code (2021) the
+Council <b>does not borrow to invest primarily for financial return</b>, treats the portfolio
+as proportionate to its resources, reviews annually the options to exit each holding against
+sunk-cost and market conditions, and reports the portfolio's performance, valuation movement
+and cover ratios separately from treasury investments in the reporting cycle. New commercial
+investment for yield is not permitted under this strategy.</p>
+<p class="note">Authorities with no such holdings: replace this section with a one-line
+statement that the authority holds no service or commercial investments for yield — the Code
+still requires the statement.</p>
+</section>
+
+<section class="tms-s">
+<h3>8 · Minimum revenue provision statement</h3>
+<p class="tms-ack">after <b>Isle of Wight Council</b> · <b>Redcar and Cleveland</b> · <b>West Berkshire Council</b></p>
+<p>MRP is the prudent annual charge to revenue for the repayment of debt-financed capital
+expenditure. Full council approves this statement annually before the year begins.</p>
+<div class="tablewrap"><table class="tms-t"><tr><th>Expenditure type</th><th>MRP method 2026/27</th></tr><tr><td>Pre-2008 borrowing (supported)</td><td>2% of opening CFR, straight line</td></tr><tr><td>Post-2008 unsupported borrowing</td><td>Asset-life annuity, PWLB rate at inception</td></tr><tr><td>Finance leases & PFI</td><td>Charge equal to the principal element of the rental</td></tr><tr><td>Capital loans to third parties</td><td>Annuity over the loan term; expected-credit-loss reviewed annually</td></tr></table></div>
+<p>MRP begins in the year after the asset becomes operational. Overpayments (VRP) may be made
+and reclaimed only as permitted by the statutory guidance, and any change of method is applied
+prospectively with the comparison disclosed. <span class="hra-i"><span class="hra-b">HRA authorities</span> No MRP is charged to
+the HRA; the HRA makes provision through depreciation and the voluntary repayment policy in
+the HRA business plan.</span> The MRP charge and method are disclosed in the statement of
+accounts.</p>
+</section>
+
+<section class="tms-s">
+<h3>9 · Prudential and treasury management indicators</h3>
+<p class="tms-ack">after <b>Redcar and Cleveland</b> · <b>Wokingham Borough Council</b></p>
+<p>Set by full council; monitored quarterly (section 12); calculated on a consistent basis
+year-on-year so the trend is meaningful.</p>
+<div class="tablewrap"><table class="tms-t"><tr><th>Indicator</th><th>2026/27</th><th>2027/28</th><th>2028/29</th></tr><tr><td>Financing costs ÷ net revenue stream — General Fund</td><td>7.8%</td><td>8.1%</td><td>8.0%</td></tr><tr><td><span class="hra-i">Financing costs ÷ net revenue — HRA</span></td><td>11.2%</td><td>11.4%</td><td>11.3%</td></tr><tr><td>Upper limit — investments held beyond 365 days £m</td><td>25</td><td>25</td><td>25</td></tr></table></div>
+<div class="tablewrap"><table class="tms-t"><tr><th>Maturity structure of borrowing</th><th>Lower limit</th><th>Upper limit</th><th>Actual 31/3/26</th></tr><tr><td>Under 12 months</td><td>0%</td><td>25%</td><td>7%</td></tr><tr><td>12–24 months</td><td>0%</td><td>25%</td><td>6%</td></tr><tr><td>2–5 years</td><td>0%</td><td>35%</td><td>14%</td></tr><tr><td>5–10 years</td><td>5%</td><td>40%</td><td>22%</td></tr><tr><td>Over 10 years</td><td>30%</td><td>90%</td><td>51%</td></tr></table></div><p class="note">LOBO loans are classed at the next call date for this indicator — the prudent treatment, since a call is the lender's option.</p>
+</section>
+
+<section class="tms-s">
+<h3>10 · Borrowing and investment in context: affordability</h3>
+<p>The capital programme this strategy finances is affordable within the Council's revenue
+budget and reserves strategy: the incremental revenue cost of the 2026/27 borrowing plan is
+£2.9m by 2028/29 (2.1% of net revenue), provided for in the MTFS. Affordability is
+re-assessed in every quarterly indicator report, and the capital programme — not the treasury
+strategy — is the corrective lever if financing costs breach the tolerance of 9% of net
+revenue.</p>
+</section>
+
+<section class="tms-s">
+<h3>11 · Risk management</h3>
+<p class="tms-ack">after <b>Medway Council</b> · <b>Redcar and Cleveland</b></p>
+<p>TMP1 identifies and manages the nine treasury risks: credit and counterparty, liquidity,
+interest rate, exchange rate, refinancing, legal and regulatory, operational (fraud, error,
+corruption — including payment controls and segregation of duties), market, and inflation.
+The full TMP schedules record the control for each; the material exposures are:</p>
+<p><b>Interest-rate risk.</b> The Council's exposure is measured as the revenue impact of an
+immediate ±1% move in rates on variable-rate debt, investments and the year's refinancing:
+<b>+1% costs £0.58m/yr</b> on current projections (−1% saves £0.51m). Variable-rate debt is
+capped at 20% of total debt. The Council does not use standalone derivatives; embedded
+options (the £20m LOBO) are managed on the prudent call-date basis above, and any future
+derivative use would require a policy amendment approved by full council.</p>
+<p><b>Refinancing risk.</b> No more than 25% of debt may mature in any rolling 24-month
+window (section 9); the 2026/27 plan pre-funds the March 2027 £18m maturity peak in the
+autumn if forward rates are at or below the budget assumption.</p>
+<p><b>Credit risk.</b> Managed through the counterparty framework in section 6, daily rating
+monitoring, and exposure reporting by counterparty group in every cycle report. Guarantees
+and contingent commitments given by the Council are re-identified each year and listed in the
+TMP schedules.</p>
+</section>
+
+<section class="tms-s">
+<h3>12 · Reporting cycle, scrutiny and skills</h3>
+<p class="tms-ack">after <b>Redcar and Cleveland</b></p>
+<div class="tablewrap"><table class="tms-t"><tr><th>Report</th><th>Audience</th><th>Timing</th></tr><tr><td>Treasury Management Strategy Statement (this document)</td><td>Full council</td><td>Before the financial year</td></tr><tr><td>Mid-year treasury review</td><td>Full council via Audit &amp; Governance</td><td>November</td></tr><tr><td>Annual treasury outturn</td><td>Full council via Audit &amp; Governance</td><td>By 30 September after year-end</td></tr><tr><td>Prudential indicator monitoring</td><td>Audit &amp; Governance</td><td>Quarterly</td></tr><tr><td>Capital strategy (companion document)</td><td>Full council</td><td>Annually with the budget</td></tr></table></div><p class="note">Where external audit qualifies or delays the accounts, the affected figures are flagged as unaudited in every report until resolved.</p>
+<p class="tms-ack">after <b>Wakefield Council</b> · <b>City of York Council</b></p>
+<p><b>Knowledge and skills.</b> Members taking treasury decisions and officers executing them
+receive training at least annually, with attendance recorded and reported; new Audit &amp;
+Governance members receive induction training before their first treasury report. Officer
+CPD follows the CIPFA Code of Practice; where in-house capacity is insufficient the Council
+buys advice, but responsibility for decisions <i>always remains with the Council</i>, and the
+treasury advisor's performance is reviewed annually against its contract (TMP11).</p>
+<p class="tms-ack">after <b>Rutland County Council</b></p>
+<p><b>ESG.</b> Within the SLY framework the Council prefers, at equal risk and return,
+counterparties and instruments with stronger environmental and social profiles; ESG ratings
+inform but do not replace credit criteria. The Council will not knowingly invest directly in
+[state exclusions — e.g. fossil-fuel extraction] and reviews this policy annually.</p>
+</section>
+
+<section class="tms-s">
+<h3>Appendices (maintained with the TMPs)</h3>
+<p class="tms-ack">after <b>Medway Council</b></p>
+<p>A — Approved counterparty list (reviewed daily). B — Liability benchmark charts (GF<span
+class="hra-i">, HRA</span>). C — The twelve Treasury Management Practices and schedules.
+D — Glossary in plain English. E — Advisor's interest-rate forecast and the date it was
+given.</p>
+</section>
+
+<details class="tms-lib"><summary>The evidence layer — all 74 Code requirements, each with the sector's best published example</summary><h4 class="mt-g">Prudential indicators</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Capital expenditure estimates &amp; actuals <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Split by service/scheme and reconciled to how it is financed and to the CFR movement.</div><div class=mt-ev>p.55 Table 1: capital expenditure 2024/25 actual + 2025/26 forecast + 3 budget years, split by financing (grants/prudential borrowing/capital receipts/DRF); scheme detail at App 9 p.52-53; CFR movement reconciled p.57 Table 3</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Capital financing requirement (CFR) <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Reconciled year-on-year (opening + capex financed by debt − MRP = closing).</div><div class=mt-ev>p.57 Table 3: CFR split General Fund / PFI-leases, 2024/25 actual to 2028/29, with year-on-year 'Net Movement in CFR' reconciliation (borrowing requirement minus MRP and PFI/lease MRP)</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Gross debt must not exceed the CFR <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Multi-year table plus commentary on any planned breach and how it is managed.</div><div class=mt-ev>p.60 Table 5: gross debt (loans + PFI) vs CFR 2024/25-2028/29 (98-99%) plus prudence statement and commentary that position is close in the short term and may breach if liquidity borrowing needed</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Authorised limit for external debt <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Derivation from the operational boundary plus explicit headroom rationale.</div><div class=mt-ev>p.62 Table 7: Authorised Limit split Borrowing/OLTL 2024/25-2028/29 (2026/27 total 365.584); headroom derivation over operational boundary explained p.61 (10m liquidity + 15m premium + 24m DSG = 49m)</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Operational boundary for external debt <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Explained as the most-likely estimate, consistent with the authorised limit and cash-flow.</div><div class=mt-ev>p.62 Table 7: Operational Boundary split Borrowing/OLTL 2024/25-2028/29 (2026/27 total 316.584); p.61 explains it as the probable CFR during the year and a warning indicator below the Authorised Limit</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Actual external debt</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.60 Table 5: prior-year (2024/25) actual external debt split borrowing 216.345 / OLTL 54.941 against CFR; detailed instrument-level portfolio at 31/12/25 p.72 Table 3</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Financing costs to net revenue stream <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Trend commentary and the effect of the forward borrowing plan on affordability.</div><div class=mt-ev>p.65 Table 11: financing costs to net revenue stream 2024/25-2028/29, both incl PFI (14/14/12/12/12%) and excl PFI (9/9/8/9/9%); trend commentary on Fair Funding Review and 50-year revenue commitment</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Net commercial/service income to net revenue stream</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">With contingency commentary on what happens if that income falls away.</div><div class=mt-ev>p.64 Table 9: net income from service and commercial investments to net revenue stream 2024/25-2028/29 (0.57/0.46/0.36/0.03/0.01%)</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Maturity structure of borrowing <span class=cmp-core>core</span></span><span class=mt-ex>Wokingham Borough Council</span></div><div class="mt-good">Limits explicitly aligned to the liability benchmark and refinancing-risk appetite.</div><div class=mt-ev>Appendix B p.9 maturity structure of borrowing with lower/upper limits across all standard bands plus the actual profile at 31/3/26; limits set 'to match actual loan maturities to the authority gross loans requirement (see liability benchmark)'</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Upper limit on long-term investments</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.84 price-risk indicator: limit on principal invested beyond year-end set at 25m for 2025/26, 2026/27, 2027/28 and no-fixed-date</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Indicators on a prudent, consistent basis</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>Indicators span 2024/25 actual to 2028/29 on a single-entity basis (e.g. p.57 Table 3, p.62 Table 7); OLTL comprises PFI/leases only, pensions excluded</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Additional local &amp; HRA indicators</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.82 voluntary value-weighted average credit-score security indicator (target portfolio average A); p.83 interest-rate exposure (1% impact) and p.84 price-risk indicator</div></div><h4 class="mt-g">Liability benchmark</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Liability benchmark indicator <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Charted to at least 10 years (ideally to the end of the debt profile).</div><div class=mt-ev>p.74 Table 6 (Prudential Indicator Liability Benchmark) plus Arlingclose chart plotting loans CFR, liability benchmark and net loans requirement against the existing-borrowing maturity profile from 2025 to 2075</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Liability benchmark constructed correctly</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Presented as a chart with a clear liquidity buffer and forecasting assumptions stated.</div><div class=mt-ev>p.74 Table 6: Loans CFR, less balance-sheet resources = Net Loans Requirement, plus 15m liquidity allowance = Liability Benchmark; chart shows existing fixed-rate and LOBO loan blocks (LOBOs at call); assumptions (borrowing-funded capex, MRP on average asset life, inflation) stated</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Analyse &amp; explain the benchmark</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Used as a live tool to shape the borrowing and investment decisions in the strategy.</div><div class=mt-ev>p.61 and p.74: explains the Council remains borrowed above the benchmark in the short term (LOBO redemption premium, DSG deficit, working-balance assumptions); p.78 uses the benchmark to conclude the Council is a long-term borrower and shape the investment approach</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Separate HRA / General Fund benchmarks</span><span class=mt-ex>Slough Borough Council</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>separate GF (Table 6 / chart p.7) and HRA (Table 7 / chart p.8) benchmarks; two-pool debt approach explained p.6 s10.2; both charted to 2075</div></div><h4 class="mt-g">Capital strategy</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Produce a capital strategy <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Genuinely strategic and long-term, not a restatement of the capital programme.</div><div class=mt-ev>p.54 Capital and Investment Strategy Report 2026/27 (Appendix 10/A); high-level long-term overview of capital, financing, treasury and risk, with 50-year liability benchmark, asset-management strategy and governance; reviewed by Governance Committee 9 Feb 2026 and approved by Full Council 26 Feb 2026</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Capital strategy: expenditure &amp; financing</span><span class=mt-ex>Hertsmere Borough Council</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>Cap Strat p.11 sec 7 capital programme by service (GBP39.613m) AND by funding source (capital receipts, DFG, EMR, revenue contribution, internal borrowing, grants, CIL, S106), plus a Revenue Impact of Capital Investment table (cost of borrowing @5.91%, opportunity cost of lost investment income @3.5%)</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Capital strategy: debt, borrowing &amp; treasury</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.59-62: debt (4.59% avg rate, 225.864m at 31/12/25), borrowing strategy and treasury management addressed within the strategy, with CFR/liability-benchmark comparison and cross-reference to the full TMS at Appendix B</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Capital strategy: other long-term liabilities</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.57/p.60: PFI and lease OLTL quantified (70.115m CFR / 51.457m debt 2025/26); p.64 Table 10 other provisions (insurance, collection fund, bad debt = 15.841m); p.89 guarantees/loan commitments stated nil</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Affordability of capital plans <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Quantified against future revenue with sensitivity to rates and income risk.</div><div class=mt-ev>p.65 Table 11 financing-cost proportions; p.83 interest-rate sensitivity (1% move = 0.909m revenue impact); CFO Section 25 statement p.31-33 confirms affordability, sustainability and sensitivity to interest-rate risk considered</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Minimum treasury content if delegated</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.59-62: the capital strategy carries a full treasury summary for members (treasury policies/objectives, borrowing strategy, liability benchmark, investment position, limits) alongside the full TMS at Appendix B</div></div><h4 class="mt-g">Commercial &amp; non-treasury investment</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">No borrowing to invest for yield <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Backed by the PWLB certification and evidence in the capital plans.</div><div class=mt-ev>p.60: 'The Council does not borrow to invest for the primary purpose of financial return and therefore retains full access to the Public Works Loan Board'; p.76 confirms no commercial-yield property in the Capital Investment Programme</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Statement of compliance (paras 51-53)</span><span class=mt-ex>Leicestershire County Council</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.1 para 3 enumerated compliance list (no borrowing for return, CFR increases only for functions, annual exit review, proportionate risk); cover report para 4-6</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Proportionality of commercial investment <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Quantified headroom test and a stated maximum tolerable loss.</div><div class=mt-ev>p.63-64: commercial income immaterial and losses absorbable without unmanageable detriment; p.87 service-loan exposure kept proportionate via upper limits; total investment exposure 17.5m p.90 Table 2, with general reserves available to cover losses p.80</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Report non-treasury investments separately</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.86 Appendix C defines three purposes (treasury / service loans and shares / commercial property) and reports non-treasury investments separately from treasury investments</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Investment management practices (IMPs)</span><span class=mt-ex>City of York Council</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>Annex D p.2: S151 to create Treasury Management Practices specifically for non-treasury investments, covering risk-management/investment criteria, performance measurement, decision-making/governance/due diligence, reporting/MI and training</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Due diligence &amp; independent scrutiny</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.88: service loans assessed via financial assessment of the organisation (accounts + business plan) before contract; p.57 Green Book five-case business cases via Programme Management Group; Governance Committee scrutiny</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Statutory investment-strategy disclosures</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.87-88 security of service loans (loss allowance, credit control); p.88-89 fair-value basis for shares (FVOCI) and investment property; income dependence in Table 9 p.64; contingency (losses absorbable)</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Review options to exit</span><span class=mt-ex>Thurrock</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>TMSS s4.12/6.1/16.2: divestment strategy plus asset-disposals strategy, receipts applied to reduce debt/Capitalisation Direction; cap strat s6.2</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Limits on service/commercial investment</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.87 Table 1 approved limits on service loans by borrower category (total 3.000m); p.88 non-specified (shares) upper limits equal current holdings</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Monitor investment performance</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.90 Table 4 investment rate-of-return indicator by category; p.82 individual counterparty listings and investments reported in quarterly performance updates to Cabinet</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Statement where no material investments</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.63: 'The Council currently does not invest in commercial activities... income... is immaterial'; p.89: does not currently hold investment property purchased primarily/partially to generate a profit</div></div><h4 class="mt-g">Treasury investment strategy</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Security, liquidity then yield <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Explicitly drives the counterparty list and duration limits, not just asserted.</div><div class=mt-ev>p.78 security and liquidity before yield; p.80 'the Council will give paramount importance to the security aspect... risk and return... secondary', driving the counterparty framework and duration limits</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Investment strategy approved &amp; published</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>Annual Treasury Management Strategy (Appendix B p.67) and Non-Treasury Annual Investment Strategy (Appendix C p.86) approved by Full Council and published within the budget papers</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Counterparty / creditworthiness policy <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Uses CDS/other data beyond ratings and defines 'high credit quality'.</div><div class=mt-ev>p.78-79 creditworthiness policy: ratings monitored by advisers plus CDS prices, financial statements, potential government support, quality press and adviser analysis; minimum criteria A- (p.80)</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Counterparty &amp; country limits</span><span class=mt-ex>Telford and Wrekin</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>Appx B p.21-22 (money limit £15m per counterparty by band, time limits; country min sovereign AA-, £15m per non-UK country, group/sector limits) and Bv p.46 approved-countries list</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Specified &amp; non-specified categories</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.88 non-specified investments explicitly defined (shares) with upper limits; specified investments governed by the counterparty framework p.80</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Quantitative risk-exposure indicator</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.82 voluntary value-weighted average credit-score indicator (target portfolio average A); p.89-90 total investment exposure indicator</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">MiFID II status &amp; pooled funds</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.85 MiFID II: opted up to professional client status with most providers, S151 judgement; pooled funds (MMFs, strategic pooled/property funds, CCLA, REITs) classified p.82</div></div><h4 class="mt-g">Borrowing strategy</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Integrated borrowing strategy <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Explains the under-/over-borrowing position and the plan across the forward years.</div><div class=mt-ev>p.72-73 integrated borrowing strategy: maintains an under-borrowed position, internal borrowing quantified 2024/25-2028/29, consistent with CFR/limits; p.75-76 forward plan and rationale</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Borrowing in advance of need</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.77 Borrowing in Advance of Need: policy plus controls - within the Authorised Limit, limited to no more than 80% of the expected 3-year CFR increase, and no more than 36 months ahead, with prior appraisal and reporting</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Borrow only in sterling</span><span class=mt-ex>North Somerset Council</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>Cab TMSS p.8 legal section 'must not... borrow in foreign currency'; risk register p.30 'All transactions must be in sterling'</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Align maturity to benchmark; gross vs net</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.72-73: under-borrowed (internal borrowing) position explained - cash/reserves used as a temporary source of finance in lieu of external loans, internal borrowing quantified across the forecast</div></div><h4 class="mt-g">Minimum revenue provision</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Charge prudent MRP <span class=cmp-core>core</span></span><span class=mt-ex>Isle of Wight Council</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>CS p.12-14 §8 MRP charged over asset life on an annuity basis (freehold land 50y; capitalised non-asset expenditure 20y; leases/PFI to write down the liability); CS p.14 Table 3 2026/27 MRP £14.8m across debt categories</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Annual MRP policy statement <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Method justified against asset life, with any voluntary/overpayment position disclosed.</div><div class=mt-ev>p.91-93 MRP Policy Statement 2026/27 approved annually by Full Council; methods justified against asset useful life (annuity basis capped at 50 years), with overpayment and capital-receipts adjustments disclosed</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">MRP disclosure in the accounts</span><span class=mt-ex>West Berkshire Council</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>MRP charge disclosed and quantified in the TMSS CFR reconciliation (p.9, 'Less MRP' £4.5m-£9.8m) and MRP policy (§7)</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Scotland loans-fund repayments</span><span class=scr-na>—</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div></div><h4 class="mt-g">Reporting cycle</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Annual strategy before the year (full council) <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.67 clause 2: Full Council approves the annual strategy in advance of the year; TMS/prudential indicators set for 2026/27 at the 26 Feb 2026 budget meeting</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Mid-year review report <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.67 clause 2 and p.80: in-year treasury/investment monitoring reported to Cabinet quarterly as part of the Quarterly Financial Position reports</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Annual outturn report <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.68 TMP6 and p.80: year-end investment activity reported to Cabinet within the Consolidated Financial Outturn report</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Quarterly indicator monitoring</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.58/p.63/p.80: prudential and treasury indicators monitored and reported to Cabinet quarterly</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Flag audit qualification of data</span><span class=mt-ex>Herefordshire</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>Revenue report paras 123-126: 2024/25 accounts received a timely unqualified audit opinion with no significant weaknesses in value-for-money arrangements</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Financial-instruments accounting disclosures</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.78 IFRS 9 business model / amortised-cost basis; p.88 shares held at FVOCI; p.28/p.54 CCLA fair-value movement (1.454m) and statutory override to 31/3/29</div></div><h4 class="mt-g">Governance &amp; roles</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Adopt the TM Code four clauses <span class=cmp-core>core</span></span><span class=mt-ex>Herefordshire</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>TMS Annex E p.14-15: adopts the CIPFA TM Code 2021, its three key principles and four clauses (policy statement/TMPs; full-council reporting; delegation to Cabinet/Director of Resources and Assurance; scrutiny by Scrutiny Management Board)</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Treasury management policy statement <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.59: treasury management policies and objectives set out in three numbered statements with risk identification/monitoring/control as the prime criterion</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Delegation &amp; approval levels</span><span class=mt-ex>Hertsmere Borough Council</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>TMSS p.28-30 sec 11 scheme of delegation (Full Council, Audit Committee, Financial Monitoring Panel, Chief Executive, S151) plus the dealing-limits table (p.30) with approver/dealer roles and treasury limits</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Nominate a scrutiny body</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.67 clause 4 and p.63: the Governance Committee is nominated as responsible for scrutinising/challenging the Treasury Management Strategy and decisions</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Full council sets the indicators</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.67 clause 2 (Full Council approves the annual strategy and indicators) with the statutory duty to set the Authorised Limit p.61/p.72</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">S151 monitoring &amp; affordability report</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.31-33 CFO Section 25 statement (robustness of estimates, adequacy of reserves, affordability, borrowing/rate-risk); S151 monitoring role p.63/p.85</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Third-party &amp; pension monies identified</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.84 third-party monies: the Council becomes lead authority for Tees Valley Energy Recovery Ltd with a separate bank account; p.86 collects precepts on behalf of police/fire and Central Government</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Segregation of duties &amp; governance</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.68: TMP5 (organisation, clarity and segregation of responsibilities and dealing arrangements) and TMP12 (corporate governance) adopted</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Manage external service providers</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.66: Arlingclose appointed as treasury advisers following a full tender (five years, 2022), services monitored and reviewed, with an explicit undue-reliance caveat; TMP11 p.68</div></div><h4 class="mt-g">Risk management</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">TMP1 risk framework (nine risks)</span><span class=mt-ex>Medway Council</span></div><div class="mt-good">Each risk has a stated management approach, not just a list.</div><div class=mt-ev>TMP (Appendix C) TMP1 addresses credit/counterparty (1.2), liquidity (1.16), interest-rate (1.22), exchange-rate (1.34), refinancing (1.38), legal/regulatory (1.55), fraud/error/corruption-operational (1.71), market/price (1.3) risk plus ESG (1.15), each with a stated management approach</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Interest-rate exposure strategy <span class=cmp-core>core</span></span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.83 interest-rate risk strategy with an exposure limit: upper limit on the one-year revenue impact of a 1% rise set at 0.909m (fall 0); maturity structure controls fixed-rate exposure</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Refinancing-risk management</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.83 maturity-structure indicator set specifically to control refinancing risk; p.77 LOBO management (repay on call to reduce refinancing risk in later years)</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Stated risk appetite / benchmarks</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.80 security paramount / risk of loss constrained; quantified benchmarks - portfolio average credit target A (p.82) and the 1% interest-rate benchmark (p.83); counterparty and duration limits p.80</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Identify &amp; reassess guarantees</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.89 loan commitments and financial guarantees stated nil with a commitment to update the strategy if entered; p.64-65 Table 10 provisions/contingent liabilities identified, monitored and reported quarterly</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Derivatives / instruments policy</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.84 policy on the use of financial derivatives: standalone derivatives used only where they demonstrably reduce overall financial risk, credit exposure counted against limits, external advice sought</div></div><h4 class="mt-g">Knowledge &amp; skills</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Knowledge &amp; skills policy <span class=cmp-core>core</span></span><span class=mt-ex>Wakefield Council</span></div><div class="mt-good">A formal schedule mapping roles to required competencies and training done.</div><div class=mt-ev>Cap Strat p.16 §7.3-7.4 formal K&amp;S - learning plans, competency self-assessment (CIPFA tool), attendance records; TMSS p.8 §1.5 member training 24/9/25 (10 attended) &amp; officer training with formal records</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Member &amp; governance training</span><span class=mt-ex>City of York Council</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>TMSS p.6 para 27 and CapStrat p.4: internal treasury training offered to Audit &amp; Governance members on an annual basis</div></div><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Skills for wider portfolios</span><span class=mt-ex>Redcar and Cleveland</span></div><div class="mt-good">Exemplary — complete, forward-looking and clearly reasoned; a sector model.</div><div class=mt-ev>p.66: Strategic Assets team act as internal valuers (RICS-registered, Red Book assessed) for the property/commercial portfolio, with external specialist consultants used where in-house skills are lacking</div></div><h4 class="mt-g">Treasury management practices</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">Maintain the full suite of TMPs</span><span class=mt-ex>Medway Council</span></div><div class="mt-good">Documented schedules covering performance, decision-making, instruments, budgeting/audit, cash-flow and money-laundering.</div><div class=mt-ev>TMP (Appendix C, 42pp) documents the full suite - TMP2 performance measurement, TMP3 decision-making/analysis, TMP4 approved instruments, TMP7 budgeting/accounting/audit, TMP8 cash and cash-flow management, TMP9 money laundering (plus TMP1/5/6/10/11/12)</div></div><h4 class="mt-g">ESG</h4><div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">ESG risk-management policy</span><span class=mt-ex>Rutland County Council</span></div><div class="mt-good">ESG criteria integrated into the counterparty policy, not a standalone aspiration.</div><div class=mt-ev>TMSS p.20 s6.2.5-6.2.7 ESG credit factors (environmental/social/governance) integrated into the creditworthiness assessment</div></div></details>
+</div>
+<script>
+(function(){
+  var doc=document.getElementById('tmsdoc'); if(!doc) return;
+  doc.querySelectorAll('.tt-b').forEach(function(b){
+    b.addEventListener('click',function(){
+      var non=b.dataset.hra==='non';
+      doc.querySelectorAll('.tt-b').forEach(function(x){x.className='tt-b'+(x===b?' on':'');});
+      doc.querySelectorAll('.hra').forEach(function(el){el.style.display=non?'none':'';});
+      doc.querySelectorAll('.hra-i').forEach(function(el){el.style.display=non?'none':'';});
+    });
+  });
+})();
+</script>
 </section>
 
 <section id="view-cp" hidden>
@@ -990,24 +1269,7 @@ function riskSectionHTML(gss){const c=RISK[gss]; if(!c) return '';
 function sectorOverviewHTML(){
   let h='';
   const jr = RISKD&&RISKD.councils&&RISKD.councils.length, jc = CMPD&&CMPD.councils&&CMPD.councils.length, jm = D.model&&D.model.requirements;
-  if(jm){ const links=[];
-    if(jm)links.push(`<a href="#ov-model">Model TMS</a>`);
-    h+=`<div class="dash-jump"><span class="dj-l">Jump to</span>${links.join('<span class="dj-s">·</span>')}<span class="dj-s">·</span><span class="dj-hint">or search a council above</span></div>`; }
-  if(D.model && D.model.requirements){
-    const m=D.model;
-    const leaders=m.leaders.map(l=>`<span class="mt-lead"><b>${esc(l.council)}</b><span class="mt-n">${l.n3}</span></span>`).join('');
-    const byg={}; m.requirements.forEach(r=>{(byg[r.group]=byg[r.group]||[]).push(r);});
-    const groups=Object.keys(m.groups).filter(g=>byg[g]).map(g=>{
-      const rows=byg[g].map(r=>{const ex=(r.exemplars||[])[0];
-        return `<div class="mt-req"><div class="mt-req-h"><span class="mt-req-t">${esc(r.title)}${r.core?' <span class="cmp-core">core</span>':''}</span>${ex?`<span class="mt-ex">${esc(ex.council)}</span>`:'<span class="scr-na">—</span>'}</div>`+
-          `<div class="mt-good">${esc(r.good)}</div>${(ex&&ex.evidence)?`<div class="mt-ev">${esc(ex.evidence)}</div>`:''}</div>`;}).join('');
-      return `<details class="mt-grp"><summary>${esc(m.groups[g])}<span class="sn">${byg[g].length}</span></summary><div class="mt-reqs">${rows}</div></details>`;}).join('');
-    h+=`<div class="panel cmp-sector" id="ov-model" style="margin-top:16px"><div class="cmp-sec-head"><h3>Model TMS — best-in-class, requirement by requirement</h3><span>from ${m.n_scored} scored councils</span></div>
-      <p class="note">For each Code requirement, the sector's strongest example — what "good" looks like, the council doing it, and the page reference. A template built from the best.</p>
-      <div class="mt-leaders"><span class="mt-leaders-l">Model councils</span>${leaders}</div>
-      <div class="mt-groups">${groups}</div></div>`;
-  }
-  h+=`<p class="empty">Search a council above to open its full dashboard — summary, signals, compliance and refinancing risk together.</p>`;
+
   return h;
 }
 
