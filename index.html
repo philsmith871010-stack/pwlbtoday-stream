@@ -1191,9 +1191,23 @@ function pchipsHTML(e){
   return (e.chips||[]).map(c =>
     `<span class="pchip"><span class="cl">${esc(c.label)}</span><span class="cv">${esc(String(c.value))}</span></span>`).join('');
 }
+/* Is there anything in the modal the open card does not already show? The card
+   carries the first paragraph clipped to 190 characters, so "more" means extra
+   paragraphs, an attached brief, a weekend page — or simply that the clip cut
+   something off. Quiet passes often have one short paragraph and nothing else,
+   and offering to "read the full edition" there is a promise we cannot keep. */
+function pulseMore(e){
+  const full = (e.paras && e.paras.length) ? _txt(e.paras[0]) : '';
+  if (e.paras && e.paras.length > 1) return 'Read the full edition →';
+  if (e.brief) return 'Read the full edition →';
+  if (e.weekend) return 'Read the weekend edition →';
+  if (full && _clip(full, 190) !== full) return 'Read the rest →';
+  return '';
+}
 function pulseMini(e,i){
   const chips=pchipsHTML(e);
   const lede=e.paras&&e.paras.length ? _clip(_txt(e.paras[0]), 190) : '';
+  const cta=pulseMore(e);
   /* the newest edition is open on arrival; everything below it is a headline
      until asked for. */
   return `<details class="pmini rung-${esc(e.rung.toLowerCase())}"${i===0?' open':''}>
@@ -1205,7 +1219,7 @@ function pulseMini(e,i){
     <div class="mini-body">
       ${chips?`<div class="pchips">${chips}</div>`:''}
       ${lede?`<p class="pmini-lede">${esc(lede)}</p>`:''}
-      <button class="mini-cta" data-pi="${i}">Read the full edition →</button>
+      ${cta?`<button class="mini-cta" data-pi="${i}">${esc(cta)}</button>`:''}
     </div></details>`;
 }
 function openPulse(i){
@@ -1243,8 +1257,16 @@ let pshown=0;
 /* own gss->index map: the screener's IDX is const-scoped inside its own IIFE */
 const GSSIDX={}; (D.councils||[]).forEach((c,i)=>{GSSIDX[c.gss]=i;});
 const NSEVL={alert:'Distress',watch:'Watch',good:'Positive'};
+function cnewsMore(n){
+  if ((n.points||[]).length) return true;
+  if ((n.figs||[]).length) return true;
+  if (n.url) return true;
+  return _clip(n.headline||'',120) !== (n.headline||'')
+      || _clip(n.standfirst||'',170) !== (n.standfirst||'');
+}
 function cnewsMini(n,i){
   const head=_clip(n.headline||'',120);
+  const more=cnewsMore(n);
   return `<details class="cnews art-${esc(n.sev)}"${i===0?' open':''}>
     <summary>
       <div class="cnews-kick"><b>${esc(n.council)}</b><span>${esc(fmtd(n.date))}</span>
@@ -1253,7 +1275,7 @@ function cnewsMini(n,i){
     </summary>
     <div class="mini-body">
       <p class="cnews-stand">${esc(_clip(n.standfirst||'',170))}</p>
-      <button class="mini-cta" data-ni="${i}">More from this paper →</button>
+      ${more?`<button class="mini-cta" data-ni="${i}">More from this paper →</button>`:''}
     </div></details>`;
 }
 function openPaper(i){
