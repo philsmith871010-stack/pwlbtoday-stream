@@ -48,6 +48,8 @@ body{margin:0;background:var(--paper);color:var(--ink);-webkit-font-smoothing:an
 a{color:var(--accent-ink);text-decoration:none}
 a:hover{text-decoration:underline}
 .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+main.wrap{padding-top:28px;padding-bottom:44px}
+@media(max-width:640px){main.wrap{padding-top:20px}}
 ::selection{background:var(--accent-soft)}
 /* ---------- masthead ---------- */
 header.mast{position:relative;border-bottom:1px solid var(--line);padding:24px 0 0;
@@ -69,6 +71,7 @@ header.mast::before{content:"";position:absolute;top:0;left:0;right:0;height:3px
   letter-spacing:-.02em;line-height:1.05}
 .tile span{display:block;font-size:11.5px;color:var(--muted);margin-top:3px}
 /* ---------- tabs (segmented) ---------- */
+@media(max-width:520px){nav.tabs{display:flex;width:100%}nav.tabs button{flex:1}}
 nav.tabs{display:inline-flex;gap:3px;background:var(--sunken);border:1px solid var(--line);
   border-radius:12px;padding:4px;margin-bottom:16px}
 nav.tabs button{appearance:none;border:none;background:transparent;color:var(--muted);
@@ -540,92 +543,51 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 .tms-lib{margin:18px 0 8px;border-top:2px solid var(--line);padding-top:10px}
 .tms-lib summary{cursor:pointer;font-weight:700;color:var(--accent-ink);font-size:13.5px}
 .mt-g{margin:14px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-/* ---- Pulse landing: two columns, everything heavy behind a modal ---- */
-/* Column identity: markets navy, councils orange — the brand's two ends. */
-.pgrid>.pcol:first-child{--col:var(--accent)}
-.pgrid>.pcol:last-child{--col:var(--orange)}
-.colhead{border-bottom:none;position:relative}
+/* ---- Pulse / Councils: one full-width column per tab, heavy detail in a modal ---- */
+/* Each tab owns a colour — markets navy, councils orange, the brand's two ends. */
+#view-pulse{--col:var(--accent)}
+#view-councils{--col:var(--orange)}
+.colhead{display:flex;align-items:baseline;gap:10px;margin:0 0 12px;padding-bottom:8px;position:relative}
 .colhead::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:2px;
-  background:linear-gradient(90deg,var(--col),transparent 78%)}
-.colhead h2{color:var(--col)}
-.colsub{color:var(--muted)}
+  background:linear-gradient(90deg,var(--col),transparent 92%)}
+.colhead h2{margin:0;font-size:19px;letter-spacing:-.015em;color:var(--col)}
+.colhead h3{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.colhead.sub2{margin-top:26px}
+.colsub{margin-left:auto;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 /* live counter */
 #pstatus::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
   background:var(--good);margin-right:6px;vertical-align:middle;animation:livedot 2.2s ease-in-out infinite}
 @keyframes livedot{0%,100%{opacity:1}50%{opacity:.3}}
 @media(prefers-reduced-motion:reduce){#pstatus::before{animation:none}}
-/* Card colour follows meaning: rung for editions, severity for papers. */
-.pmini,.cnews{--tone:var(--line2);--tone-t:transparent}
-.pmini.rung-pulse{--tone:var(--accent);--tone-t:var(--accent-soft)}
-.pmini.rung-story{--tone:var(--orange);--tone-t:var(--orange-soft)}
-.pmini.rung-alert{--tone:var(--alert);--tone-t:var(--alert-t)}
-.cnews.art-alert{--tone:var(--alert);--tone-t:var(--alert-t)}
-.cnews.art-watch{--tone:var(--warn);--tone-t:var(--warn-t)}
-.cnews.art-good{--tone:var(--good);--tone-t:var(--good-t)}
-.pmini,.cnews{border-left-color:var(--tone)}
-.pmini[open],.cnews[open]{background:linear-gradient(180deg,var(--tone-t),transparent 74px),var(--card);
-  border-color:var(--tone);box-shadow:var(--sh-sm)}
-.pmini[open]>summary::after,.cnews[open]>summary::after{border-color:var(--tone)}
-.pmini>summary:hover h3,.cnews>summary:hover h3{color:var(--tone)}
-.mini-cta{color:var(--tone)}
-/* severity tag on council papers: filled, not outlined */
-.cnews .art-tag{margin-left:auto;padding:2px 8px;border-radius:99px;font-size:9.5px;font-weight:800;
-  border:1px solid var(--tone);color:var(--tone);background:var(--tone-t)}
-/* the rate chips are the page's numbers — let them read as figures */
-.pmini .pchips{border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;
-  display:flex;flex-wrap:wrap;gap:1px;background:var(--line)}
-.pmini .pchip .cv{color:var(--accent-ink)}
-/* search + stat line pick up the council column's colour */
-.csearchwrap input:focus{outline-color:var(--orange);border-color:var(--orange)}
-.ckpi b{color:var(--orange)}
-
-.pgrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:26px;align-items:start}
-@media(max-width:900px){.pgrid{grid-template-columns:1fr;gap:30px}}
-/* On a desktop the page itself does not scroll: the frame fills the viewport and
-   each column scrolls inside it, so the two columns always end on the same line. */
-@media(min-width:901px){
-  /* a definite height all the way down, or the grid row sizes to its content
-     and the columns grow past the viewport instead of scrolling inside it */
-  html{height:100%}
-  body{height:100%;overflow:hidden;display:flex;flex-direction:column}
-  main.wrap{flex:1;display:flex;flex-direction:column;min-height:0;padding-top:30px;padding-bottom:22px}
-  #view-pulse{flex:1;display:flex;min-height:0}
-  .pgrid{flex:1;min-height:0;align-items:stretch;grid-template-rows:minmax(0,1fr)}
-  .pcol{display:flex;flex-direction:column;min-height:0}
-  .pgrid .pscroll{flex:1;max-height:none;min-height:140px}
-}
-@media(max-width:900px){main.wrap{padding-top:22px}}
-.colhead{display:flex;align-items:baseline;gap:10px;margin:0 0 10px;
-  border-bottom:1px solid var(--line);padding-bottom:7px}
-.colhead h2{margin:0;font-size:17px;letter-spacing:-.01em;color:var(--accent-ink)}
-.colhead h3{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.colhead.sub2{margin-top:20px}
-.colsub{margin-left:auto;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
-.pscroll{max-height:74vh;overflow-y:auto;overscroll-behavior:contain;padding-right:6px;
-  display:flex;flex-direction:column;gap:10px}
-.pscroll::-webkit-scrollbar{width:8px}
-.pscroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
-.colmore{margin:10px 0 0;width:100%;appearance:none;font:inherit;font-size:12px;cursor:pointer;
-  padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);color:var(--ink2)}
-.colmore:hover{border-color:var(--accent);color:var(--accent-ink)}
-.csearchwrap{position:relative;margin:0 0 8px}
-.csearchwrap input{width:100%;font:inherit;font-size:14px;padding:11px 13px;border-radius:var(--r);
+.feed{display:flex;flex-direction:column;gap:10px}
+.colmore{margin:14px 0 0;width:100%;appearance:none;font:inherit;font-size:12.5px;cursor:pointer;
+  padding:10px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);color:var(--ink2)}
+.colmore:hover{border-color:var(--col);color:var(--col)}
+.csearchwrap{position:relative;margin:0 0 10px}
+.csearchwrap input{width:100%;font:inherit;font-size:15px;padding:13px 15px;border-radius:var(--r);
   border:1px solid var(--line);background:var(--card);color:var(--ink)}
-.csearchwrap input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
-.ckpi{margin:0 0 10px;font-size:11.5px;color:var(--muted)}
-.ckpi b{color:var(--ink2);font-weight:700}
+.csearchwrap input:focus{outline:2px solid var(--orange);outline-offset:1px;border-color:var(--orange)}
+.ckpi{margin:0 0 4px;font-size:12px;color:var(--muted)}
+.ckpi b{color:var(--orange);font-weight:700}
+.lmstat{font-size:11.5px;display:block;margin-top:3px;color:var(--muted)}
+.lmstat.ok{color:var(--good)} .lmstat.err{color:var(--warn)}
+.pempty{padding:22px;text-align:center;font-size:13px;color:var(--muted);
+  border:1px dashed var(--line);border-radius:var(--r)}
 /* expandable cards: the top one open, the rest a headline until asked for */
 .pmini,.cnews{background:var(--card);border:1px solid var(--line);border-left-width:3px;
   border-radius:var(--r);transition:border-color .13s,box-shadow .13s}
 .pmini:hover,.cnews:hover{box-shadow:var(--sh-sm);border-color:var(--accent)}
-.pmini>summary,.cnews>summary{list-style:none;cursor:pointer;padding:11px 34px 11px 14px;position:relative}
+.pmini>summary,.cnews>summary{list-style:none;cursor:pointer;padding:13px 40px 13px 16px;position:relative}
 .pmini>summary::-webkit-details-marker,.cnews>summary::-webkit-details-marker{display:none}
-.pmini>summary::after,.cnews>summary::after{content:"";position:absolute;right:14px;top:16px;
+.pmini>summary::after,.cnews>summary::after{content:"";position:absolute;right:16px;top:19px;
   width:7px;height:7px;border-right:1.5px solid var(--faint);border-bottom:1.5px solid var(--faint);
   transform:rotate(45deg);transition:transform .16s}
 .pmini[open]>summary::after,.cnews[open]>summary::after{transform:rotate(-135deg)}
 .pmini>summary:focus-visible,.cnews>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--r)}
-.mini-body{padding:0 14px 12px}
+.mini-body{padding:0 16px 14px}
+/* full-width cards, but prose kept to a readable measure */
+.pmini-lede,.cnews-stand{max-width:96ch}
+.pmini h3,.cnews h3{max-width:104ch}
 .pmini h3,.cnews h3{margin:5px 0 0;font-size:14px;line-height:1.4;letter-spacing:-.01em;color:var(--ink)}
 .pmini:not([open]) h3,.cnews:not([open]) h3{font-weight:600;color:var(--ink2)}
 .pmini-lede,.cnews-stand{margin:0;font-size:12.5px;line-height:1.5;color:var(--ink2)}
@@ -791,32 +753,30 @@ body.noscroll{overflow:hidden}
   <div class="brand"><h1>PWLB<span class="p">pulse</span></h1><span class="proto">Prototype · real data · 10 August 2026</span>
     <button id="themebtn" class="themebtn" aria-label="Toggle light or dark theme" title="Toggle light / dark">◐</button></div>
   <p class="strap">Live UK rates and economics, with early warning from council publications — every figure dated, sourced and checkable against the original papers.</p>
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-v="pulse">Market pulse</button>
+    <button role="tab" aria-selected="false" data-v="councils">Councils</button>
+  </nav>
 </div></header>
 
 <main class="wrap">
 <section id="view-pulse">
-  <div class="pgrid">
+  <div class="colhead"><h2>Market pulse</h2><span class="colsub" id="pstatus"></span></div>
+  <div class="feed" id="pulsefeed"></div>
+  <button class="colmore" id="pmore">Show earlier editions</button>
+</section>
 
-    <div class="pcol">
-      <div class="colhead"><h2>Market pulse</h2><span class="colsub" id="pstatus"></span></div>
-      <div class="pscroll" id="pulsefeed"></div>
-      <button class="colmore" id="pmore">Show earlier editions</button>
-    </div>
-
-    <div class="pcol">
-      <div class="colhead"><h2>Councils</h2><span class="colsub">241 searchable</span></div>
-      <div class="csearchwrap">
-        <input id="csearch" type="search" placeholder="Search a council by name…" autocomplete="off" aria-label="Search a council">
-        <div id="cresults" class="cresults" hidden></div>
-      </div>
-      <p class="ckpi"><b>37</b> compliance-scored · <b>18</b> refi-profiled
-        · <b>75</b> deep reads · <b>6282</b> documents indexed<span id="lmstat" class="lmstat load"></span></p>
-      <div class="colhead sub2"><h3>Latest from council papers</h3></div>
-      <div class="pscroll" id="cnewsfeed"></div>
-      <button class="colmore" id="cnmore">Show more papers</button>
-    </div>
-
+<section id="view-councils" hidden>
+  <div class="colhead"><h2>Councils</h2><span class="colsub">241 searchable</span></div>
+  <div class="csearchwrap">
+    <input id="csearch" type="search" placeholder="Search a council by name…" autocomplete="off" aria-label="Search a council">
+    <div id="cresults" class="cresults" hidden></div>
   </div>
+  <p class="ckpi"><b>37</b> compliance-scored · <b>18</b> refi-profiled
+    · <b>75</b> deep reads · <b>6282</b> documents indexed<span id="lmstat" class="lmstat load"></span></p>
+  <div class="colhead sub2"><h3>Latest from council papers</h3></div>
+  <div class="feed" id="cnewsfeed"></div>
+  <button class="colmore" id="cnmore">Show more papers</button>
 </section>
 
 <section id="view-news" hidden>
