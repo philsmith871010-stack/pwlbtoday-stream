@@ -583,7 +583,11 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
   background:var(--nc);margin-right:8px;vertical-align:1px}
 .lp-h b::before{content:'';display:inline-block;width:7px;height:7px;border-radius:99px;
   background:var(--orange);margin-right:7px;vertical-align:1px}
+.lp-morep{margin:12px 0 0}
+.lp-more{font-size:11.5px}
+.pcard.pflash{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
 @media (prefers-reduced-motion: no-preference){
+  .pcard.pflash{transition:box-shadow .3s,border-color .3s}
   .lp-h b::before{animation:lppulse 2.2s ease-in-out infinite}
   @keyframes lppulse{0%,100%{opacity:1}50%{opacity:.35}}
 }
@@ -659,7 +663,7 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 <section id="view-how">
   <p class="door-lede">The financial health of England's councils — every treasury paper read in full, every figure sourced, live market rates alongside.</p>
 
-  <div class="lp"><div class="lp-h"><b>Latest from the Pulse</b><span>Monday 10 August 2026 · 09:34</span><button class="lp-open" data-goto="pulse">Full history →</button></div><article class="pcard rung-story"><h3>AM FIXING REPORT — all tenors −1bp: 10y standard 5.97%, 5y 5.49%, 20y 6.52% (notice 305/26); lunchtime round priced flat to the new levels</h3><div class=pchips><div class="pchip"><span class="cl">PWLB 10y — last fixed</span><span class="cv">5.97%</span></div><div class="pchip"><span class="cl">PWLB 10y — next fix est</span><span class="cv">5.970% (+0.0bp)</span></div><div class="pchip"><span class="cl">PWLB 5y — next fix est</span><span class="cv">5.493% (+0.3bp)</span></div><div class="pchip"><span class="cl">1y SONIA swap</span><span class="cv">live</span></div></div><p><p>Friday’s jobs-shock discount survived the weekend’s oil rise with 1bp intact. Struck 09:15, published ~09:30, reported minutes later. Lunchtime round ~12:25 priced +0.0–0.3bp from these levels; the week’s scheduled movers are US inflation Wednesday and UK Q2 GDP Thursday.</p></p></article></div>
+  <div class="lp"><div class="lp-h"><b>Latest from the Pulse</b><span>Monday 10 August 2026 · 09:34</span><button class="lp-open" data-goto="pulse">Full history →</button></div><article class="pcard rung-story"><h3>AM FIXING REPORT — all tenors −1bp: 10y standard 5.97%, 5y 5.49%, 20y 6.52% (notice 305/26); lunchtime round priced flat to the new levels</h3><div class=pchips><div class="pchip"><span class="cl">PWLB 10y — last fixed</span><span class="cv">5.97%</span></div><div class="pchip"><span class="cl">PWLB 10y — next fix est</span><span class="cv">5.970% (+0.0bp)</span></div><div class="pchip"><span class="cl">PWLB 5y — next fix est</span><span class="cv">5.493% (+0.3bp)</span></div><div class="pchip"><span class="cl">1y SONIA swap</span><span class="cv">live</span></div></div><p><p>Friday’s jobs-shock discount survived the weekend’s oil rise with 1bp intact. Struck 09:15, published ~09:30, reported minutes later. Lunchtime round ~12:25 priced +0.0–0.3bp from these levels; the week’s scheduled movers are US inflation Wednesday and UK Q2 GDP Thursday.</p></p><p class="lp-morep"><button class="dcta lp-more" data-goto="pulse" data-openpulse="pc0">Read the full edition →</button></p></article></div>
 
   <div class="navgrid">
     <button class="navcard" data-goto="pulse"><span class="nc-k">Pulse</span>
@@ -1084,6 +1088,15 @@ document.querySelectorAll('.dcta[data-goto],.navcard[data-goto],.lp-open[data-go
     const el = document.getElementById(b.dataset.scroll);
     if (el) { setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'start'}), 60); return; }
   }
+  if (b.dataset.openpulse != null) {
+    const t = document.getElementById(b.dataset.openpulse);
+    if (t) {
+      t.querySelectorAll('details').forEach(d => d.open = true);
+      setTimeout(() => { t.scrollIntoView({behavior:'smooth', block:'start'});
+        t.classList.add('pflash'); setTimeout(() => t.classList.remove('pflash'), 1800); }, 60);
+      return;
+    }
+  }
   window.scrollTo(0, 0);
 }));
 
@@ -1091,7 +1104,7 @@ document.querySelectorAll('.dcta[data-goto],.navcard[data-goto],.lp-open[data-go
 const PK={morning:'morning brief',hourly:'update',eod:'end of day',catchup:'update',
   backstop:'update',weekend:'weekend read',heartbeat:'check'};
 const SLABEL={markets:'markets',economics:'economics','council-news':'council news',consultations:'consultations'};
-function pulseCard(e){
+function pulseCard(e,i){
   const strm = e.stream!=='markets'
     ? `<span class="strm strm-${esc(e.stream)}">${esc(SLABEL[e.stream]||e.stream)}</span>` : '';
   const seen = e.surfaced ? `<span class="pk">surfaced ${esc(fmtd(e.surfaced))}</span>` : '';
@@ -1105,7 +1118,7 @@ function pulseCard(e){
     const label = paras.length>1 ? 'More' : 'Full brief';
     body = (paras[0]||'') + `<details><summary>${label}</summary>${paras.slice(1).join('')}${brief}${wk}</details>`;
   } else { body = paras.join('') + wk; }
-  return `<article class="pcard rung-${esc(e.rung.toLowerCase())}" data-stream="${esc(e.stream)}">
+  return `<article ${i!=null?`id="pc${i}"`:""} class="pcard rung-${esc(e.rung.toLowerCase())}" data-stream="${esc(e.stream)}">
     <div class="pmeta"><span class="pt">${esc(e.time)}</span><span class="ppill">${esc(e.rung)}</span>
       <span class="pk">${esc(PK[e.kind]||e.kind)}</span>${strm}${seen}</div>
     <h3>${esc(e.headline)}</h3>${chips?`<div class="pchips">${chips}</div>`:''}${body}</article>`;
@@ -1115,10 +1128,10 @@ function pulseCard(e){
   if (!D.pulse || !D.pulse.length) { feed.innerHTML = '<p class="empty">No stream entries yet.</p>';
     document.getElementById('pmore').style.display='none'; return; }
   let html='', cur=null;
-  D.pulse.forEach(e => {
+  D.pulse.forEach((e,i) => {
     if (e.date !== cur) { if (cur!==null) html+='</div></section>';
       html += `<section class="pday"><h3 class="pdl">${esc(e.dl)}</h3><div class="pentries">`; cur=e.date; }
-    html += pulseCard(e);
+    html += pulseCard(e,i);
   });
   if (cur!==null) html+='</div></section>';
   feed.innerHTML = html;
