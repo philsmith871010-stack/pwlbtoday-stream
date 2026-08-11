@@ -41,7 +41,10 @@ WANT="${WANT:-high}"
 #     COUNCIL=Lincoln ./fetch-council-papers.command
 # Leave it unset and you get everything on the list, which is the usual case.
 COUNCIL="${COUNCIL:-}"
-UA="PWLBtoday-CouncilPapers/1.0 (+https://pwlbtoday.org)"
+# Same identity the rest of the platform uses, with a contact address that
+# reaches someone. A council seeing this in its logs can look us up or write
+# to us; that is the whole point of the line.
+UA="PWLBtoday/1.0 (+https://pwlbtoday.org; UK local-authority treasury monitor; admin@pwlbtoday.org)"
 DELAY="${DELAY:-1}"
 
 bold=$'\033[1m'; dim=$'\033[2m'; grn=$'\033[32m'; ylw=$'\033[33m'
