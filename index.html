@@ -865,6 +865,15 @@ grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(
 .curlist a{font-size:13px;font-weight:560;color:var(--ink);text-decoration:none;line-height:1.4}
 .curlist a:hover{color:var(--accent-ink);text-decoration:underline}
 .cur-m{font-size:11px;color:var(--muted)}
+.cur-v,.cur-c{font-style:normal;font-size:9px;letter-spacing:.05em;padding:1px 5px;
+margin-left:6px;border:1px solid var(--good);color:var(--good)}
+.cur-c{border-color:var(--warn);color:var(--warn)}
+.cur-alt{margin-top:5px}
+.cur-alt>summary{cursor:pointer;font-size:10.5px;color:var(--muted);list-style:none}
+.cur-alt>summary::-webkit-details-marker{display:none}
+.cur-alt>summary:hover{color:var(--accent-ink);text-decoration:underline}
+.cur-alt a{display:block;margin-top:5px;font-size:11.5px;font-weight:400}
+.cur-alt span{display:block;font-size:10px;color:var(--muted)}
 .cl-n{font-family:var(--mono,ui-monospace);font-size:10.5px;color:var(--muted);
 font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px}
 .clpage{appearance:none;font:inherit;font-size:12.5px;font-weight:520;cursor:pointer;
@@ -2074,13 +2083,20 @@ function drawCouncil(c){
   let curBox = '';
   if (cur.length){
     curBox = `<section class="clbox cur"><h3>Current papers</h3>
-      <p class="clsrc">The most recent of each kind — the strategy in force now, the last
-        accounts, the latest outturn. Everything older is in the archive below.</p>
+      <p class="clsrc">Our best identification of the paper in force for each kind — chosen from
+        the title, the committee that took it and the year it names. <b>None of these has been
+        read to confirm it.</b> Where several papers were close, the runners-up are listed so you
+        can judge for yourself.</p>
       <ul class="curlist">${cur.map(p => `<li>
-        <span class="cur-t">${esc(p.type_label)}</span>
+        <span class="cur-t">${esc(p.type_label)}${
+          p.verified ? '<i class="cur-v" title="confirmed by reading">confirmed</i>' : ''}</span>
         <a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
         <span class="cur-m">${esc(p.committee || '')}${p.meeting_date ? ' · ' + clDay(p.meeting_date) : ''}${
-          p.n_of_kind > 1 ? ` · ${p.n_of_kind} on file` : ''}</span></li>`).join('')}</ul>
+          p.n_of_kind > 1 ? ` · ${p.n_of_kind} on file` : ''}</span>
+        ${(p.alternatives || []).length ? `<details class="cur-alt"><summary>other candidates</summary>
+          ${p.alternatives.map(a => `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.title)}</a>
+            <span>${esc(a.committee || '')}${a.date ? ' · ' + clDay(a.date) : ''}</span>`).join('')}</details>` : ''}
+      </li>`).join('')}</ul>
     </section>`;
   }
 
