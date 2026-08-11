@@ -64,22 +64,26 @@ find_drive() {
   # before the CloudStorage mount is the whole fix: the mount exists on this Mac
   # too, and preferring it would drop the papers into My Drive/Council Papers
   # while the backup kept syncing an empty Documents folder.
+  # This sets DEST and SYNCED directly rather than printing the path, because
+  # the obvious DEST="$(find_drive)" runs the function in a subshell: SYNCED=1
+  # is set in the child and thrown away when it exits, so the parent always
+  # believed Drive was missing and told everyone to upload by hand.
   local c
   local backup="$HOME/Documents/PWLBtoday Council Papers"
-  if [ -d "$backup" ]; then SYNCED=1; printf '%s' "$backup"; return; fi
+  if [ -d "$backup" ]; then DEST="$backup"; SYNCED=1; return; fi
 
   for c in "$HOME"/Library/CloudStorage/GoogleDrive-*/"My Drive" \
            "$HOME/Google Drive/My Drive" \
            "$HOME/Google Drive"; do
-    [ -d "$c" ] && { SYNCED=1; printf '%s/Council Papers' "$c"; return; }
+    [ -d "$c" ] && { DEST="$c/Council Papers"; SYNCED=1; return; }
   done
   # No Drive at all. Create the Documents folder anyway and say so loudly — a
   # silent fallback would leave the papers sitting on one Mac while the platform
   # waited for files that were never coming.
-  printf '%s' "$backup"
+  DEST="$backup"
 }
 
-DEST="${DEST:-$(find_drive)}"
+if [ -n "${DEST:-}" ]; then SYNCED=1; else find_drive; fi
 mkdir -p "$DEST" || { echo "${red}Cannot create $DEST${off}"; exit 1; }
 echo "${cyn}Saving to:${off} $DEST"
 if [ "$SYNCED" -eq 0 ] && [ -z "${DEST_OVERRIDE:-}" ]; then
