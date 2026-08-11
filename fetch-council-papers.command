@@ -144,8 +144,16 @@ while IFS=$'\t' read -r fname url council title priority; do
 
   # Download to .part and rename on success, so an interrupted run never leaves
   # a half-file that looks complete.
+  # A sixth of these URLs are plain http. Ask for https first — it works on
+  # most of those hosts and means the paper is not fetched in clear — and fall
+  # back to the council's own URL if it does not.
+  try_url="${url/#http:\/\//https://}"
   code=$(curl -sSL --max-time 120 -A "$UA" -w '%{http_code}' \
-              -o "$DEST/$fname.part" "$url" 2>/dev/null) || code="000"
+              -o "$DEST/$fname.part" "$try_url" 2>/dev/null) || code="000"
+  if [ "$code" != "200" ] && [ "$try_url" != "$url" ]; then
+    code=$(curl -sSL --max-time 120 -A "$UA" -w '%{http_code}' \
+                -o "$DEST/$fname.part" "$url" 2>/dev/null) || code="000"
+  fi
   size=0
   [ -f "$DEST/$fname.part" ] && size=$(wc -c < "$DEST/$fname.part" | tr -d ' ')
 

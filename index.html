@@ -951,6 +951,14 @@ cursor:pointer;background:var(--card);color:var(--accent-ink);border:1px solid v
 .mailstale{margin:11px 0 0;padding:10px 13px;background:var(--warnbg,rgba(200,160,60,.1));
 border-left:2px solid var(--warn);font-size:12.5px;line-height:1.5;color:var(--ink2)}
 .mailstale b{color:var(--warn)}
+.docwrap{display:flex;flex-direction:column;height:min(78vh,860px)}
+.doch{margin:0 0 8px;font-size:15px;font-weight:640;line-height:1.35}
+.docbar{display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;padding-bottom:10px;
+border-bottom:1px solid var(--line);margin-bottom:10px}
+.docbar a{font-size:12.5px;font-weight:560;color:var(--accent-ink)}
+.dochint{font-size:11px;color:var(--muted);flex:1;min-width:200px}
+.docframe{flex:1;width:100%;border:1px solid var(--line);background:var(--sunken);min-height:340px}
+@media(max-width:640px){.docwrap{height:82vh}.dochint{display:none}}
 @media (prefers-reduced-motion: no-preference){
   .tile,.sig,.panel,.pcard,.chipbtn,.morebtn{transition:transform .14s,box-shadow .14s,border-color .14s}
   .tile:hover,.pcard:hover{transform:translateY(-1px);box-shadow:var(--sh)}
@@ -2087,6 +2095,50 @@ function covDraw(){
   });
 })();
 
+/* ---------- Reading a paper without leaving the site ----------
+   Council document servers send Content-Disposition: inline and set neither
+   X-Frame-Options nor a frame-ancestors policy — measured across the hosts we
+   can reach — so the PDF displays in a frame perfectly well.
+
+   The ones we could not measure are the reason the external link is always
+   visible rather than being a fallback that appears on failure. A blocked frame
+   is genuinely hard to detect: onload fires for a refused frame in some
+   browsers, so a "did it work" check would sometimes lie. A permanent, obvious
+   way out costs one line of chrome and never lies.
+
+   Modifier-clicks and middle-clicks are left alone. Someone who wants a new tab
+   has said so, and intercepting that is the kind of cleverness people hate. */
+function openDoc(a){
+  const url = a.href, title = a.dataset.t || a.textContent.trim();
+  // 16% of council document URLs are plain http, and this page is served over
+  // https, so embedding one is blocked as mixed content before it even leaves
+  // the browser — a guaranteed blank frame. Ten of fourteen such hosts answer
+  // on https when asked, so the frame asks for https; the escape link keeps the
+  // council's own URL untouched, so a council that genuinely has no https still
+  // opens normally in a tab.
+  const framed = url.replace(/^http:\/\//, 'https://');
+  const meta = a.dataset.m || '';
+  openModal(
+    `<span>${esc(meta)}</span>`,
+    `<div class="docwrap">
+       <h3 class="doch">${esc(title)}</h3>
+       <div class="docbar">
+         <a href="${esc(url)}" target="_blank" rel="noopener">Open on the council's site ↗</a>
+         <a href="${esc(url)}" download>Download</a>
+         <span class="dochint">If nothing appears below, the council's server has declined to
+           be embedded — use the link above.</span>
+       </div>
+       <iframe class="docframe" src="${esc(framed)}" title="${esc(title)}" loading="lazy"></iframe>
+     </div>`);
+}
+clPage.addEventListener('click', e => {
+  const a = e.target.closest('a[href$=".pdf"], a[href*=".pdf?"]');
+  if (!a) return;
+  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;   // they asked for a tab
+  e.preventDefault();
+  openDoc(a);
+});
+
 function openCouncilPage(sl){
   if (!sl) return;
   clPage.hidden = false; clHome.hidden = true;
@@ -2312,7 +2364,8 @@ function drawCouncil(c){
       <ul class="curlist">${cur.map(p => `<li>
         <span class="cur-t">${esc(p.type_label)}${
           p.verified ? '<i class="cur-v" title="confirmed by reading">confirmed</i>' : ''}</span>
-        <a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
+        <a href="${esc(p.url)}" target="_blank" rel="noopener" data-t="${esc(p.title)}"
+           data-m="${esc([c.name, p.type_label, p.committee, p.meeting_date ? clDay(p.meeting_date) : ''].filter(Boolean).join(' · '))}">${esc(p.title)}</a>
         <span class="cur-m">${esc(p.committee || '')}${p.meeting_date ? ' · ' + clDay(p.meeting_date) : ''}${
           p.n_of_kind > 1 ? ` · ${p.n_of_kind} on file` : ''}</span>
         ${(p.alternatives || []).length ? `<details class="cur-alt"><summary>other candidates</summary>
@@ -2372,7 +2425,8 @@ function drawCouncil(c){
       <ul class="cllist">${byType[t].sort((a,b)=>(b.meeting_date||'').localeCompare(a.meeting_date||''))
         .map(p => `<li class="clrow">
         <span class="cl-d">${p.meeting_date ? clDay(p.meeting_date) : ''}</span>
-        <span class="cl-c"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
+        <span class="cl-c"><a href="${esc(p.url)}" target="_blank" rel="noopener" data-t="${esc(p.title)}"
+            data-m="${esc([c.name, p.type_label, p.committee, p.meeting_date ? clDay(p.meeting_date) : ''].filter(Boolean).join(' · '))}">${esc(p.title)}</a>
           <span>${esc(p.committee||'')}</span></span></li>`).join('')}</ul></details>`).join('')}
   </section>` : `<section class="clbox quiet"><h3>Finance papers on file</h3>
     <p class="clnone">No finance papers found yet for this council. That usually means its recent
