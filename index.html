@@ -1005,7 +1005,8 @@ cursor:pointer;background:var(--card);color:var(--accent-ink);border:1px solid v
     <button class="spill" data-f="email" aria-pressed="false">Email ready</button>
     <button class="spill" data-f="meeting" aria-pressed="false">Meeting with papers</button>
     <button class="spill" data-f="notmss" aria-pressed="false">No treasury strategy</button>
-    <button class="spill" data-f="nodocs" aria-pressed="false">No papers at all</button>
+    <button class="spill" data-f="gap" aria-pressed="false">Genuine gaps</button>
+    <button class="spill" data-f="blocked" aria-pressed="false">Out of scope</button>
   </div>
   <div class="tablewrap"><table id="covtab" class="scrtab">
     <thead><tr id="covhead"></tr></thead><tbody id="covbody"></tbody>
@@ -1966,6 +1967,11 @@ const COV_COLS = [
   {k:'email',  lbl:'Email',     t:'num', a:'c', f:v=>v?'ready':'—', tone:v=>v?'good':''},
   {k:'next_paper_meeting', lbl:'Next money meeting', t:'str', a:'l',
    f:v=>v?clDay(v)+' · '+clWhen(v):'—'},
+  {k:'access', lbl:'Access', t:'str', a:'l',
+   f:v=>({ok:'', robots:'robots.txt', not_mg:'not ModernGov', non_uk:'not UK',
+          not_a_council:'not a council', no_xml:'no XML', no_meetings:'no calendar',
+          none_found:'none found'}[v] ?? v),
+   tone:v=>v==='ok'?'':(v==='robots'||v==='not_mg'||v==='non_uk'||v==='not_a_council')?'alert':'watch'},
 ];
 
 function covRows(){
@@ -1976,7 +1982,9 @@ function covRows(){
   if (COV_F === 'email')    rows = rows.filter(r => r.email);
   if (COV_F === 'meeting')  rows = rows.filter(r => r.next_paper_meeting);
   if (COV_F === 'notmss')   rows = rows.filter(r => !r.tmss);
-  if (COV_F === 'nodocs')   rows = rows.filter(r => !r.papers);
+  const OUTS = new Set(['robots','not_mg','non_uk','not_a_council']);
+  if (COV_F === 'gap')      rows = rows.filter(r => !r.papers && !OUTS.has(r.access));
+  if (COV_F === 'blocked')  rows = rows.filter(r => OUTS.has(r.access));
   const col = COV_COLS.find(c => c.k === COV_SORT) || COV_COLS[0];
   rows.sort((a,b) => {
     let x = a[COV_SORT], y = b[COV_SORT];
@@ -1989,28 +1997,40 @@ function covRows(){
 
 function covDraw(){
   if (!CL_INDEX){ document.getElementById('covbody').innerHTML =
-    '<tr><td colspan="11" class="empty">Loading…</td></tr>'; return; }
+    '<tr><td colspan="12" class="empty">Loading…</td></tr>'; return; }
   const all = CL_INDEX;
+  // Reachable is the only fair denominator. A robots.txt refusal we respect, a
+  // council that does not use ModernGov, and City of Adelaide are not coverage
+  // failures, and counting them as such measures nothing.
+  const OUT = new Set(['robots','not_mg','non_uk','not_a_council']);
+  const reach = all.filter(r => !OUT.has(r.access));
   const k = {
-    councils: all.length,
+    reach:    reach.length,
+    excluded: all.length - reach.length,
     papers:   all.reduce((s,r)=>s+(r.papers||0),0),
-    tmss:     all.filter(r=>r.tmss).length,
+    hold:     reach.filter(r=>r.papers).length,
+    tmss:     reach.filter(r=>r.tmss).length,
     confirmed:all.reduce((s,r)=>s+(r.confirmed||0),0),
     written:  all.filter(r=>r.written).length,
     assessed: all.filter(r=>r.assessed && !r.written).length,
     email:    all.filter(r=>r.email).length,
-    nodocs:   all.filter(r=>!r.papers).length,
+    gap:      reach.filter(r=>!r.papers).length,
     meetings: all.filter(r=>r.next_paper_meeting).length,
+    robots:   all.filter(r=>r.access==='robots').length,
+    notmg:    all.filter(r=>r.access==='not_mg').length,
   };
   document.getElementById('covkpi').innerHTML = [
-    ['Councils tracked', k.councils.toLocaleString(), ''],
+    ['Councils we can reach', k.reach, `${k.excluded} out of scope`],
+    ['Papers held for', k.hold, `${Math.round(k.hold/k.reach*100)}% of reachable`],
     ['Finance papers', k.papers.toLocaleString(), ''],
-    ['With a treasury strategy', k.tmss, `${Math.round(k.tmss/k.councils*100)}% of councils`],
-    ['Papers confirmed by reading', k.confirmed, k.confirmed ? '' : 'nothing verified yet'],
+    ['With a treasury strategy', k.tmss, `${Math.round(k.tmss/k.reach*100)}% of reachable`],
+    ['Confirmed by reading', k.confirmed, k.confirmed ? '' : 'nothing verified yet'],
     ['Written up', k.written, k.assessed ? `${k.assessed} more assessed` : ''],
-    ['Emails ready to send', k.email, ''],
+    ['Emails ready', k.email, ''],
     ['Money meetings ahead', k.meetings, 'with papers published'],
-    ['No papers found at all', k.nodocs, k.nodocs ? 'the real gap' : ''],
+    ['Genuine gaps', k.gap, 'reachable, swept, nothing found'],
+    ['Declined by robots.txt', k.robots, 'respected — not a gap'],
+    ['Not on ModernGov', k.notmg, 'needs another source'],
   ].map(([l,v,s]) => `<div class="kpi"><div class="kpi-v">${v}</div>
      <div class="kpi-l">${esc(l)}</div>${s?`<div class="kpi-s">${esc(s)}</div>`:''}</div>`).join('');
 
@@ -2022,9 +2042,10 @@ function covDraw(){
     `<tr data-slug="${esc(r.slug)}">${COV_COLS.map(c => {
       const v = r[c.k], txt = c.f ? c.f(v) : (v==null?'—':v);
       const tn = c.tone ? c.tone(v) : '';
-      return `<td class="ta-${c.a}${tn?' t-'+tn:''}">${esc(String(txt))}</td>`;
+      const ttl = c.k==='access' && r.access_note ? ` title="${esc(r.access_note)}"` : '';
+      return `<td class="ta-${c.a}${tn?' t-'+tn:''}"${ttl}>${esc(String(txt))}</td>`;
     }).join('')}</tr>`).join('')
-    : '<tr><td colspan="11" class="empty">No council matches.</td></tr>';
+    : '<tr><td colspan="12" class="empty">No council matches.</td></tr>';
   document.getElementById('covcount').textContent =
     `${rows.length} of ${all.length} councils shown`;
 }
