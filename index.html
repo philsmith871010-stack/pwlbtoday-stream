@@ -947,6 +947,10 @@ color:var(--muted);font-weight:400;margin-bottom:2px}
 cursor:pointer;background:var(--card);color:var(--accent-ink);border:1px solid var(--line)}
 .cp2:hover{border-color:var(--accent)}
 .cp2.ok{border-color:var(--good);color:var(--good);font-weight:640}
+.cp2.regen{margin-left:8px}
+.mailstale{margin:11px 0 0;padding:10px 13px;background:var(--warnbg,rgba(200,160,60,.1));
+border-left:2px solid var(--warn);font-size:12.5px;line-height:1.5;color:var(--ink2)}
+.mailstale b{color:var(--warn)}
 @media (prefers-reduced-motion: no-preference){
   .tile,.sig,.panel,.pcard,.chipbtn,.morebtn{transition:transform .14s,box-shadow .14s,border-color .14s}
   .tile:hover,.pcard:hover{transform:translateY(-1px);box-shadow:var(--sh)}
@@ -2253,15 +2257,41 @@ function drawCouncil(c){
   // nobody sends something they have not read.
   let mail = '';
   if (n.email && n.email.body){
+    // Does the market paragraph still hold? The email records the PWLB rate it
+    // quoted; the newest pulse card carries today's. A drafted email that cites
+    // a stale rate is worse than one that cites none, because the reader checks
+    // the one number they can check. Nobody should have to remember to look —
+    // the page works it out.
+    let stale = '';
+    const em = n.email.market || {};
+    const chip = ((D.pulse||[])[0]||{}).chips || [];
+    const nowStr = (chip.find(c => /last fixed/i.test(c.label||'')) || {}).value;
+    const now10 = nowStr ? parseFloat(String(nowStr).replace('%','')) : null;
+    const wrote = _CLD(em.as_at);
+    const age = wrote ? Math.round((_CLTODAY - wrote) / 86400000) : null;
+    const moved = (now10 != null && em.pwlb_10y != null)
+      ? Math.round((now10 - em.pwlb_10y) * 100) : null;
+    const reasons = [];
+    if (moved != null && Math.abs(moved) >= 10)
+      reasons.push(`the 10-year PWLB rate has moved ${moved > 0 ? '+' : ''}${moved}bp since
+        — quoted at ${em.pwlb_10y}%, now ${now10}%`);
+    if (age != null && age >= 14)
+      reasons.push(`drafted ${age} days ago`);
+    if (reasons.length){
+      stale = `<div class="mailstale"><b>Worth regenerating.</b> ${reasons.join('; ')}.</div>`;
+    }
     mail = `<section class="clbox mail">
       <h3>Suggested email to members</h3>
       <p class="clsrc">Drafted ${esc(n.email.written||'')}${n.email.send_by ? ' · best sent by '+esc(n.email.send_by) : ''}.
         Nothing is sent from here — this is a draft to read, edit and send yourself.</p>
+      ${stale}
       <div class="mailcard">
         <div class="mailsub"><span>Subject</span>${esc(n.email.subject||'')}</div>
         <div class="mailbody">${esc(n.email.body||'').replace(/\n/g,'<br>')}</div>
       </div>
       <button class="cp2" data-copy="mail">Copy the email</button>
+      <button class="cp2 regen" data-slug="${esc(c.slug)}"
+        data-mid="${esc(String(n.email.meeting_id||''))}">Regenerate with today's data</button>
     </section>`;
   }
 
@@ -2294,10 +2324,17 @@ function drawCouncil(c){
 
   // Calendar. Forward first — that is what the campaign runs on — with the last
   // few past meetings after it for context.
+  // Money committees only, by default. A council's full diary is mostly
+  // standards panels, member development and outside-body appointments — real
+  // business, none of it ours, and it buries the four meetings a year where
+  // borrowing gets decided. The rest is one click away rather than gone.
   const cal = c.calendar || [];
   const todayISO = _CLTODAY.toISOString().slice(0,10);
-  const fut = cal.filter(x => x.date >= todayISO);
-  const past = cal.filter(x => x.date < todayISO).slice(-16).reverse();
+  const futAll  = cal.filter(x => x.date >= todayISO);
+  const pastAll = cal.filter(x => x.date < todayISO);
+  const fut  = futAll.filter(x => x.key);
+  const past = pastAll.filter(x => x.key).slice(-16).reverse();
+  const hiddenFut = futAll.length - fut.length;
   const row = x => {
     const pc = (c.papers||[]).filter(p => p.meeting_id === x.id).length;
     return `<li class="clrow${x.key ? ' key':''}">
@@ -2310,14 +2347,17 @@ function drawCouncil(c){
   // not a calendar, it is a wall — and the meeting that matters is almost always
   // in the first few.
   const calBox = `<section class="clbox"><h3>Meeting calendar</h3>
-    <p class="clsrc">Straight from the council's own calendar. Committees that decide money are
-      marked; planning and licensing are left out.</p>
+    <p class="clsrc">Committees where money is decided — cabinet, council, audit, scrutiny,
+      pensions. ${hiddenFut ? hiddenFut + ' other scheduled meetings are hidden; ' : ''}planning
+      and licensing are left out entirely.</p>
     ${fut.length ? `<h4>Coming up <span class="cl-n">${fut.length} scheduled</span></h4>
       <ul class="cllist" id="clfut">${fut.slice(0,10).map(row).join('')}</ul>
       ${fut.length > 10 ? `<button class="clpage" data-more="clfut">Show 10 more
         <span>${fut.length - 10} left</span></button>` : ''}`
-      : '<p class="clnone">Nothing further scheduled yet.</p>'}
-    ${past.length ? '<details class="clmore"><summary>Recent meetings <span>'+past.length+'</span></summary><ul class="cllist">'+past.map(row).join('')+'</ul></details>' : ''}
+      : '<p class="clnone">No money committee scheduled yet.</p>'}
+    ${hiddenFut ? `<details class="clmore"><summary>Everything else in the diary <span>${hiddenFut}</span></summary>
+      <ul class="cllist">${futAll.filter(x=>!x.key).slice(0,60).map(row).join('')}</ul></details>` : ''}
+    ${past.length ? '<details class="clmore"><summary>Recent money committees <span>'+past.length+'</span></summary><ul class="cllist">'+past.map(row).join('')+'</ul></details>' : ''}
   </section>`;
 
   // Papers, grouped by what they are.
@@ -2365,12 +2405,26 @@ function drawCouncil(c){
     };
   }
 
-  const cp = clPage.querySelector('.cp2');
+  const cp = clPage.querySelector('.cp2[data-copy="mail"]');
   if (cp) cp.onclick = () => {
     const t = (n.email.subject||'') + '\n\n' + (n.email.body||'');
     const done = () => { cp.textContent = 'copied'; cp.classList.add('ok');
                          setTimeout(()=>{cp.textContent='Copy the email'; cp.classList.remove('ok');}, 2400); };
     if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, ()=>{}); else done();
+  };
+
+  // This site is static, so there is nowhere to record a request. Rather than
+  // pretend otherwise with a button that silently does nothing, it puts a plain
+  // instruction on the clipboard to paste into the workshop. Crude, works from a
+  // phone, and needs no infrastructure to go wrong.
+  const rg = clPage.querySelector('.cp2.regen');
+  if (rg) rg.onclick = () => {
+    const req = `Regenerate the ${c.name} member email for meeting ${rg.dataset.mid} `
+      + `(${rg.dataset.slug}) with today's market data`
+      + `, and add a peer comparison if enough councils have been read.`;
+    const done = () => { rg.textContent = 'copied — paste it to me'; rg.classList.add('ok');
+      setTimeout(()=>{rg.textContent="Regenerate with today's data"; rg.classList.remove('ok');}, 3200); };
+    if (navigator.clipboard) navigator.clipboard.writeText(req).then(done, ()=>{}); else done();
   };
 }
 /* live LA-metrics arriving late re-paints the open dashboard, nothing else */
