@@ -849,6 +849,13 @@ font-variant-numeric:tabular-nums;text-transform:none;letter-spacing:-.02em}
 .clq li{margin:0 0 11px;font-size:13.5px;line-height:1.5}
 .clq li b{font-weight:600;color:var(--ink)}
 .clq li span{display:block;margin-top:3px;font-size:12.5px;color:var(--muted)}
+.clfig{list-style:none;margin:6px 0 0;padding:0;display:grid;
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.clfig li{border-left:2px solid var(--line2);padding:2px 0 2px 11px;font-size:13px}
+.clfig li b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
+color:var(--muted);font-weight:600}
+.clfig li span{display:block;margin-top:2px;color:var(--ink);line-height:1.45}
+.clfig li i{display:block;margin-top:2px;font-style:normal;font-size:11px;color:var(--muted)}
 .cllist{list-style:none;margin:6px 0 0;padding:0}
 .clrow{display:grid;grid-template-columns:130px 1fr auto;gap:14px;padding:8px 0;
 border-bottom:1px solid var(--line);font-size:13px;align-items:baseline}
@@ -1849,8 +1856,13 @@ function drawCouncil(c){
       </div>
     </div>`;
 
-  // What we know. Absent for most councils today, and the page says so plainly
-  // rather than pretending the silence means nothing is wrong.
+  // What we know. Three states, and getting them mixed up is what makes a page
+  // look emptier than the data behind it. A council can have a standing summary
+  // written for the campaign, OR an earlier deep read of one of its papers, OR
+  // neither — and saying "not written up yet" above a full deep-read dashboard
+  // is simply false.
+  const dcg = GSSIDX[c.gss], dc = (dcg != null ? D.councils[dcg] : null);
+  const deepSummary = dc && dc.extraction === 'full' && (dc.summary||'').trim() ? dc : null;
   let know = '';
   if (n.summary && n.summary.text){
     know = `<section class="clbox"><h3>What we know</h3>
@@ -1858,6 +1870,20 @@ function drawCouncil(c){
       <p class="clsrc">Written ${esc(n.summary.written||'')}${
         (n.summary.sources||[]).length ? ' from ' + n.summary.sources.map(s =>
           `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a>`).join(', ') : ''}.</p>
+    </section>`;
+  } else if (deepSummary){
+    const figs = (deepSummary.figures||[]).slice(0,6).map(f =>
+      `<li><b>${esc(f.label)}</b><span>${esc(f.value)}</span>${
+        f.meta ? `<i>${esc(f.meta)}</i>` : ''}</li>`).join('');
+    know = `<section class="clbox"><h3>What we know</h3>
+      <div class="clprose"><p>${esc(deepSummary.summary)}</p></div>
+      ${figs ? `<h4>The figures behind that</h4><ul class="clfig">${figs}</ul>` : ''}
+      <p class="clsrc">From our deep read of
+        ${deepSummary.doc_url ? `<a href="${esc(deepSummary.doc_url)}" target="_blank" rel="noopener">${esc(deepSummary.doc_title||'the council’s own paper')}</a>`
+                              : esc(deepSummary.doc_title||'the council’s own paper')}${
+        deepSummary.committee ? ', ' + esc(deepSummary.committee) : ''}${
+        deepSummary.date ? ', ' + clDay(deepSummary.date) : ''}. Every figure is page-referenced.
+        No meeting-specific questions have been written for this council yet.</p>
     </section>`;
   } else {
     know = `<section class="clbox quiet"><h3>What we know</h3>
