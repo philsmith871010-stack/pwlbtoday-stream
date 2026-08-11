@@ -1968,7 +1968,7 @@ const COV_COLS = [
   {k:'next_paper_meeting', lbl:'Next money meeting', t:'str', a:'l',
    f:v=>v?clDay(v)+' · '+clWhen(v):'—'},
   {k:'access', lbl:'Access', t:'str', a:'l',
-   f:v=>({ok:'', robots:'robots.txt', not_mg:'not ModernGov', non_uk:'not UK',
+   f:v=>({ok:'', robots:'robots.txt', robots_alt:'via main site', not_mg:'not ModernGov', non_uk:'not UK',
           not_a_council:'not a council', no_xml:'no XML', no_meetings:'no calendar',
           none_found:'none found'}[v] ?? v),
    tone:v=>v==='ok'?'':(v==='robots'||v==='not_mg'||v==='non_uk'||v==='not_a_council')?'alert':'watch'},
@@ -2002,6 +2002,8 @@ function covDraw(){
   // Reachable is the only fair denominator. A robots.txt refusal we respect, a
   // council that does not use ModernGov, and City of Adelaide are not coverage
   // failures, and counting them as such measures nothing.
+  // robots_alt is not out of scope — the council's own website permits us, the
+  // democracy subdomain does not. It is outstanding work, not a closed door.
   const OUT = new Set(['robots','not_mg','non_uk','not_a_council']);
   const reach = all.filter(r => !OUT.has(r.access));
   const k = {
@@ -2031,6 +2033,8 @@ function covDraw(){
     ['Genuine gaps', k.gap, 'reachable, swept, nothing found'],
     ['Declined by robots.txt', k.robots, 'respected — not a gap'],
     ['Not on ModernGov', k.notmg, 'needs another source'],
+    ['Reachable via main site', all.filter(r=>r.access==='robots_alt').length,
+     'democracy site says no, council site does not'],
   ].map(([l,v,s]) => `<div class="kpi"><div class="kpi-v">${v}</div>
      <div class="kpi-l">${esc(l)}</div>${s?`<div class="kpi-s">${esc(s)}</div>`:''}</div>`).join('');
 
