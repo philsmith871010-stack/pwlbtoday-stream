@@ -881,6 +881,27 @@ width:100%;margin-top:10px;padding:9px 14px;background:var(--card);color:var(--a
 border:1px solid var(--line);display:flex;justify-content:center;gap:8px;align-items:baseline}
 .clpage:hover{border-color:var(--accent)}
 .clpage span{font-size:11px;color:var(--muted)}
+
+/* ---- Coverage: the operations table ---- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+gap:1px;background:var(--line);border:1px solid var(--line);margin:0 0 18px}
+.kpi{background:var(--card);padding:13px 15px}
+.kpi-v{font-size:24px;font-weight:680;letter-spacing:-.02em;color:var(--ink);
+font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi-l{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:4px}
+.kpi-s{font-size:11px;color:var(--muted);margin-top:2px;opacity:.8}
+#covtab td{font-size:12.5px}
+#covtab tbody tr{cursor:pointer}
+#covtab tbody tr:hover{background:var(--sunken)}
+#covtab th button{appearance:none;background:none;border:none;font:inherit;
+font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+cursor:pointer;padding:0;font-weight:600}
+#covtab th button.on{color:var(--accent-ink)}
+#covtab th button:hover{color:var(--ink)}
+.ta-l{text-align:left}.ta-r{text-align:right}.ta-c{text-align:center}
+.t-good{color:var(--good);font-weight:600}
+.t-watch{color:var(--warn)}
+.t-alert{color:var(--muted)}
 .clthr{list-style:none;margin:10px 0 0;padding:0}
 .thr{border-top:1px solid var(--line);padding:12px 0}
 .thr:first-child{border-top:0}
@@ -938,6 +959,7 @@ cursor:pointer;background:var(--card);color:var(--accent-ink);border:1px solid v
   <nav class="tabs" role="tablist">
     <button role="tab" aria-selected="true" data-v="pulse">Market pulse</button>
     <button role="tab" aria-selected="false" data-v="councils">Councils</button>
+    <button role="tab" aria-selected="false" data-v="coverage">Coverage</button>
   </nav>
 </div></header>
 
@@ -967,6 +989,28 @@ cursor:pointer;background:var(--card);color:var(--accent-ink);border:1px solid v
   </div>
 
   <div id="cl-council" hidden></div>
+</section>
+
+<section id="view-coverage" hidden>
+  <p class="sub">Where the work actually stands, council by council. This is the operations
+    view — what we hold, what has been read, what is still a gap. Click any row to open
+    that council.</p>
+  <div class="kpis" id="covkpi"></div>
+  <div class="controls">
+    <input id="covq" type="search" placeholder="Search council…" autocomplete="off" aria-label="Search council">
+  </div>
+  <div class="spills" id="covfilt">
+    <button class="spill" data-f="all" aria-pressed="true">All</button>
+    <button class="spill" data-f="written" aria-pressed="false">Written up</button>
+    <button class="spill" data-f="email" aria-pressed="false">Email ready</button>
+    <button class="spill" data-f="meeting" aria-pressed="false">Meeting with papers</button>
+    <button class="spill" data-f="notmss" aria-pressed="false">No treasury strategy</button>
+    <button class="spill" data-f="nodocs" aria-pressed="false">No papers at all</button>
+  </div>
+  <div class="tablewrap"><table id="covtab" class="scrtab">
+    <thead><tr id="covhead"></tr></thead><tbody id="covbody"></tbody>
+  </table></div>
+  <p class="hint" id="covcount"></p>
 </section>
 
 <section id="view-news" hidden>
@@ -1321,6 +1365,11 @@ tabs.forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('main > section').forEach(s => s.hidden = true);
   document.getElementById('view-' + b.dataset.v).hidden = false;
   if (b.dataset.v === 'councils' && typeof clInit === 'function') clInit();
+  // The coverage table reads the same index the council search does, so it
+  // needs the same load to have happened.
+  if (b.dataset.v === 'coverage' && typeof clInit === 'function'){
+    clInit(); if (typeof covDraw === 'function') covDraw();
+  }
 }));
 
 /* persona front-door CTAs: switch tab, optionally pre-sort the screener or scroll to a panel */
@@ -1855,6 +1904,10 @@ function clInit(){
     CL_UP = up.meetings_list || [];
     csearch.placeholder = `Search ${CL_INDEX.length} councils — try Croydon, Medway, Somerset…`;
     renderUpcoming();
+    // The coverage table reads the same index. It may have been asked to draw
+    // before this resolved — in which case it printed "Loading…" and had
+    // nothing to tell it the data had since arrived.
+    if (typeof covDraw === 'function') covDraw();
   }).catch(() => {
     // A council list that fails to load must say so. Silently showing the old
     // in-page list would look identical to working and quietly be a year stale.
@@ -1890,6 +1943,113 @@ function renderUpcoming(){
 document.getElementById('upboard').addEventListener('click', e => {
   const b = e.target.closest('.uprow'); if (b) openCouncilPage(b.dataset.slug);
 });
+
+/* ---------- Coverage: the operations table ----------
+   Every council, what we hold, what has been read, what is still a gap. Reads
+   the same councils/index.json the search box does — one fetch, not 281.
+
+   Deliberately shows absence as loudly as presence. A dash in the TMSS column
+   for 45 councils is the most useful thing on this page. */
+let COV_F = 'all', COV_SORT = 'name', COV_DIR = 1;
+const COV_COLS = [
+  {k:'name',   lbl:'Council',   t:'str', a:'l'},
+  {k:'type',   lbl:'Type',      t:'str', a:'l'},
+  {k:'papers', lbl:'Papers',    t:'num', a:'r'},
+  {k:'core',   lbl:'Core docs', t:'num', a:'r', f:v=>v+'/6',
+   tone:v=>v>=5?'good':v>=3?'watch':'alert'},
+  {k:'tmss',   lbl:'TMSS',      t:'num', a:'c', f:v=>v?'✓':'—', tone:v=>v?'good':'alert'},
+  {k:'accounts',lbl:'Accounts', t:'num', a:'c', f:v=>v?'✓':'—', tone:v=>v?'good':''},
+  {k:'outturn',lbl:'Outturn',   t:'num', a:'c', f:v=>v?'✓':'—', tone:v=>v?'good':''},
+  {k:'confirmed',lbl:'Confirmed',t:'num',a:'r', f:v=>v?v:'—',
+   tone:v=>v?'good':''},
+  {k:'written',lbl:'Written up',t:'num', a:'c', f:v=>v?'✓':'—', tone:v=>v?'good':''},
+  {k:'email',  lbl:'Email',     t:'num', a:'c', f:v=>v?'ready':'—', tone:v=>v?'good':''},
+  {k:'next_paper_meeting', lbl:'Next money meeting', t:'str', a:'l',
+   f:v=>v?clDay(v)+' · '+clWhen(v):'—'},
+];
+
+function covRows(){
+  const q = (document.getElementById('covq').value||'').toLowerCase().trim();
+  let rows = (CL_INDEX||[]).slice();
+  if (q) rows = rows.filter(r => (r.name+' '+(r.type||'')+' '+(r.nation||'')).toLowerCase().includes(q));
+  if (COV_F === 'written')  rows = rows.filter(r => r.written);
+  if (COV_F === 'email')    rows = rows.filter(r => r.email);
+  if (COV_F === 'meeting')  rows = rows.filter(r => r.next_paper_meeting);
+  if (COV_F === 'notmss')   rows = rows.filter(r => !r.tmss);
+  if (COV_F === 'nodocs')   rows = rows.filter(r => !r.papers);
+  const col = COV_COLS.find(c => c.k === COV_SORT) || COV_COLS[0];
+  rows.sort((a,b) => {
+    let x = a[COV_SORT], y = b[COV_SORT];
+    if (col.t === 'str'){ x=(x||'').toString().toLowerCase(); y=(y||'').toString().toLowerCase();
+      return x<y?-COV_DIR:x>y?COV_DIR:0; }
+    return ((+y||0)-(+x||0)) * COV_DIR;
+  });
+  return rows;
+}
+
+function covDraw(){
+  if (!CL_INDEX){ document.getElementById('covbody').innerHTML =
+    '<tr><td colspan="11" class="empty">Loading…</td></tr>'; return; }
+  const all = CL_INDEX;
+  const k = {
+    councils: all.length,
+    papers:   all.reduce((s,r)=>s+(r.papers||0),0),
+    tmss:     all.filter(r=>r.tmss).length,
+    confirmed:all.reduce((s,r)=>s+(r.confirmed||0),0),
+    written:  all.filter(r=>r.written).length,
+    assessed: all.filter(r=>r.assessed && !r.written).length,
+    email:    all.filter(r=>r.email).length,
+    nodocs:   all.filter(r=>!r.papers).length,
+    meetings: all.filter(r=>r.next_paper_meeting).length,
+  };
+  document.getElementById('covkpi').innerHTML = [
+    ['Councils tracked', k.councils.toLocaleString(), ''],
+    ['Finance papers', k.papers.toLocaleString(), ''],
+    ['With a treasury strategy', k.tmss, `${Math.round(k.tmss/k.councils*100)}% of councils`],
+    ['Papers confirmed by reading', k.confirmed, k.confirmed ? '' : 'nothing verified yet'],
+    ['Written up', k.written, k.assessed ? `${k.assessed} more assessed` : ''],
+    ['Emails ready to send', k.email, ''],
+    ['Money meetings ahead', k.meetings, 'with papers published'],
+    ['No papers found at all', k.nodocs, k.nodocs ? 'the real gap' : ''],
+  ].map(([l,v,s]) => `<div class="kpi"><div class="kpi-v">${v}</div>
+     <div class="kpi-l">${esc(l)}</div>${s?`<div class="kpi-s">${esc(s)}</div>`:''}</div>`).join('');
+
+  document.getElementById('covhead').innerHTML = COV_COLS.map(c =>
+    `<th class="ta-${c.a}"><button data-k="${c.k}"${c.k===COV_SORT?' class="on"':''}>${esc(c.lbl)}${
+      c.k===COV_SORT?(COV_DIR>0?' ↓':' ↑'):''}</button></th>`).join('');
+  const rows = covRows();
+  document.getElementById('covbody').innerHTML = rows.length ? rows.map(r =>
+    `<tr data-slug="${esc(r.slug)}">${COV_COLS.map(c => {
+      const v = r[c.k], txt = c.f ? c.f(v) : (v==null?'—':v);
+      const tn = c.tone ? c.tone(v) : '';
+      return `<td class="ta-${c.a}${tn?' t-'+tn:''}">${esc(String(txt))}</td>`;
+    }).join('')}</tr>`).join('')
+    : '<tr><td colspan="11" class="empty">No council matches.</td></tr>';
+  document.getElementById('covcount').textContent =
+    `${rows.length} of ${all.length} councils shown`;
+}
+
+(function covWire(){
+  const q = document.getElementById('covq');
+  if (q) q.addEventListener('input', covDraw);
+  document.querySelectorAll('#covfilt .spill').forEach(b =>
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#covfilt .spill').forEach(x =>
+        x.setAttribute('aria-pressed', x===b));
+      COV_F = b.dataset.f; covDraw();
+    }));
+  document.getElementById('covhead').addEventListener('click', e => {
+    const b = e.target.closest('button[data-k]'); if (!b) return;
+    if (COV_SORT === b.dataset.k) COV_DIR = -COV_DIR;
+    else { COV_SORT = b.dataset.k; COV_DIR = 1; }
+    covDraw();
+  });
+  document.getElementById('covbody').addEventListener('click', e => {
+    const tr = e.target.closest('tr[data-slug]'); if (!tr) return;
+    document.querySelector('nav.tabs button[data-v="councils"]').click();
+    openCouncilPage(tr.dataset.slug);
+  });
+})();
 
 function openCouncilPage(sl){
   if (!sl) return;
