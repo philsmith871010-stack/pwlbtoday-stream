@@ -1925,9 +1925,29 @@ function drawCouncil(c){
         No meeting-specific questions have been written for this council yet.</p>
     </section>`;
   } else {
-    know = `<section class="clbox quiet"><h3>What we know</h3>
-      <p class="clnone">This council has not been written up yet. Its calendar and papers below are
-      complete; the standing summary is what is missing.</p></section>`;
+    // Work short of a standing summary is still work. A council whose papers we
+    // have read, whose figures we have recorded, or whose meeting we assessed
+    // and decided not to write to, must not be described as untouched — the
+    // reader would conclude nothing had been done and the recorded facts sitting
+    // directly below would make the page look like it was arguing with itself.
+    const nf = (n.facts || []).filter(f => f.superseded_by == null).length;
+    const mn = Object.values(meetNotes);
+    const declined = mn.filter(m => m.no_email_reason);
+    const done = [];
+    if (mn.length) done.push(`read for ${mn.length} meeting${mn.length>1?'s':''}`);
+    if (nf) done.push(`${nf} figure${nf>1?'s':''} recorded from its own papers`);
+    know = done.length
+      ? `<section class="clbox"><h3>What we know</h3>
+          <p class="clnone" style="font-style:normal">Assessed but not yet written up in full —
+            ${esc(done.join(', '))}. ${declined.length
+              ? 'We looked at ' + (declined.length > 1 ? 'these meetings' : 'this meeting') +
+                ' and judged there was nothing worth putting to members: ' +
+                esc(declined[0].no_email_reason)
+              : 'The standing summary is what is missing.'}</p>
+          </section>`
+      : `<section class="clbox quiet"><h3>What we know</h3>
+          <p class="clnone">This council has not been written up yet. Its calendar and papers below are
+          complete; the standing summary is what is missing.</p></section>`;
   }
 
   // The next meeting that decides money, with anything we have prepared for it.
