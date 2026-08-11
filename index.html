@@ -856,6 +856,24 @@ grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
 color:var(--muted);font-weight:600}
 .clfig li span{display:block;margin-top:2px;color:var(--ink);line-height:1.45}
 .clfig li i{display:block;margin-top:2px;font-style:normal;font-size:11px;color:var(--muted)}
+.clbox.mem{border-left:3px solid var(--accent)}
+.clthr{list-style:none;margin:10px 0 0;padding:0}
+.thr{border-top:1px solid var(--line);padding:12px 0}
+.thr:first-child{border-top:0}
+.thr-h{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.thr-h b{font-size:13.5px;font-weight:600;line-height:1.4}
+.thr-s{flex:none;font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;
+padding:2px 7px;border:1px solid var(--line2);color:var(--muted);white-space:nowrap}
+.thr-s.late{border-color:var(--warn);color:var(--warn);font-weight:600}
+.thr-s.ok{border-color:var(--good);color:var(--good)}
+.thr-s.new{border-color:var(--accent);color:var(--accent-ink)}
+.thr-b{margin-top:7px;padding-left:2px}
+.thr-e{font-size:12.5px;line-height:1.5;color:var(--ink2);margin:0 0 7px;
+padding-left:11px;border-left:2px solid var(--line)}
+.thr-e span{display:block;font-size:10.5px;color:var(--muted);margin-bottom:2px}
+.thr-e a{color:var(--accent-ink)}
+.thr-e.thr-a{border-left-color:var(--good)}
+.thr-w{font-size:12px;color:var(--muted);padding-left:11px;font-style:italic}
 .cllist{list-style:none;margin:6px 0 0;padding:0}
 .clrow{display:grid;grid-template-columns:130px 1fr auto;gap:14px;padding:8px 0;
 border-bottom:1px solid var(--line);font-size:13px;align-items:baseline}
@@ -1910,6 +1928,63 @@ function drawCouncil(c){
     </section>`;
   }
 
+  // The running thread. A question asked in public and not answered is a fact
+  // about the council, so unanswered ones lead and say how long they have been
+  // outstanding. Nothing here closes because time passed — only on evidence.
+  let mem = '';
+  const threads = n.threads || [];
+  if (threads.length){
+    const todayISO = _CLTODAY.toISOString().slice(0,10);
+    const rank = t => {
+      const asks = t.entries.filter(e => e.kind === 'asked');
+      const past = asks.filter(e => (e.date||'9999') < todayISO);
+      return {asks, past, open: t.state === 'open',
+              score: (t.state === 'open' ? 0 : 2) + (past.length ? 0 : 1)};
+    };
+    const rows = threads.map(t => ({t, ...rank(t)}))
+                        .sort((a,b) => a.score - b.score || b.past.length - a.past.length);
+    mem = `<section class="clbox mem"><h3>What we have asked</h3>
+      <p class="clsrc">Questions we put to this council, and what came back. A question
+        stays open until there is an answer to point at — not until enough time has passed.</p>
+      <ul class="clthr">${rows.map(({t, asks, past}) => {
+        const ans = t.entries.filter(e => e.kind === 'answer');
+        const tag = t.state === 'answered' ? '<span class="thr-s ok">answered</span>'
+                  : past.length ? `<span class="thr-s late">unanswered${past.length>1?` · asked ${past.length}×`:''}</span>`
+                  : '<span class="thr-s new">to ask</span>';
+        const first = asks[0] || {};
+        return `<li class="thr thr-${esc(t.state)}">
+          <div class="thr-h">${tag}<b>${esc(t.topic)}</b></div>
+          <div class="thr-b">
+            ${asks.map(e => `<div class="thr-e"><span>${e.date ? clDay(e.date) : ''}${
+              e.committee ? ' · ' + esc(e.committee) : ''}${
+              e.repeat_of ? ' · asked again' : ''}</span>${esc(e.q||'')}</div>`).join('')}
+            ${ans.map(e => `<div class="thr-e thr-a"><span>${e.date ? clDay(e.date) : ''} · answer${
+              e.complete === false ? ' (partial)' : ''}</span>${esc(e.text||'')}${
+              e.source && e.source.url ? ` <a href="${esc(e.source.url)}" target="_blank" rel="noopener">source ↗</a>` : ''}</div>`).join('')}
+            ${!ans.length && first.why ? `<div class="thr-w">${esc(first.why)}</div>` : ''}
+          </div></li>`;
+      }).join('')}</ul></section>`;
+  }
+
+  // The fact ledger. Only the current reading is shown; where we have more than
+  // one, the movement is the point and gets its own line.
+  let ledger = '';
+  const facts = (n.facts || []).filter(f => f.superseded_by == null);
+  if (facts.length){
+    const hist = {};
+    (n.facts || []).forEach(f => { (hist[f.key] = hist[f.key] || []).push(f); });
+    ledger = `<section class="clbox"><h3>What we have recorded</h3>
+      <p class="clsrc">Dated readings from this council's own papers. A figure is never
+        overwritten — a new reading supersedes the old one and both are kept, so the
+        direction of travel survives.</p>
+      <ul class="clfig">${facts.map(f => {
+        const prior = (hist[f.key]||[]).filter(x => x.as_at !== f.as_at);
+        return `<li><b>${esc(f.key.replace(/_/g,' '))}</b><span>${esc(f.value)}</span>
+          <i>at ${esc(f.as_at)}${f.note ? ' · ' + esc(f.note) : ''}${
+            prior.length ? ` · ${prior.length} earlier reading${prior.length>1?'s':''}` : ''}</i></li>`;
+      }).join('')}</ul></section>`;
+  }
+
   // A drafted email, ready to send. Shown in full rather than behind a button:
   // nobody sends something they have not read.
   let mail = '';
@@ -1976,7 +2051,7 @@ function drawCouncil(c){
         <div class="cldeepbody">${councilHTML(D.councils[gi])}</div></details></section>`;
   }
 
-  clPage.innerHTML = head + know + next + mail + calBox + papBox + deep;
+  clPage.innerHTML = head + know + next + mem + mail + ledger + calBox + papBox + deep;
 
   const cp = clPage.querySelector('.cp2');
   if (cp) cp.onclick = () => {
