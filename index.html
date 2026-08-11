@@ -1007,6 +1007,7 @@ cursor:pointer;background:var(--card);color:var(--accent-ink);border:1px solid v
     <button class="spill" data-f="notmss" aria-pressed="false">No treasury strategy</button>
     <button class="spill" data-f="gap" aria-pressed="false">Genuine gaps</button>
     <button class="spill" data-f="blocked" aria-pressed="false">Out of scope</button>
+    <button class="spill" data-f="dlfail" aria-pressed="false">Downloads failing</button>
   </div>
   <div class="tablewrap"><table id="covtab" class="scrtab">
     <thead><tr id="covhead"></tr></thead><tbody id="covbody"></tbody>
@@ -1967,6 +1968,8 @@ const COV_COLS = [
   {k:'email',  lbl:'Email',     t:'num', a:'c', f:v=>v?'ready':'—', tone:v=>v?'good':''},
   {k:'next_paper_meeting', lbl:'Next money meeting', t:'str', a:'l',
    f:v=>v?clDay(v)+' · '+clWhen(v):'—'},
+  {k:'fetch_fail', lbl:'Failed downloads', t:'num', a:'r',
+   f:v=>v?v:'', tone:v=>v?'watch':''},
   {k:'access', lbl:'Access', t:'str', a:'l',
    f:v=>({ok:'', robots:'robots.txt', robots_alt:'via main site', not_mg:'not ModernGov', non_uk:'not UK',
           not_a_council:'not a council', no_xml:'no XML', no_meetings:'no calendar',
@@ -1985,6 +1988,7 @@ function covRows(){
   const OUTS = new Set(['robots','not_mg','non_uk','not_a_council']);
   if (COV_F === 'gap')      rows = rows.filter(r => !r.papers && !OUTS.has(r.access));
   if (COV_F === 'blocked')  rows = rows.filter(r => OUTS.has(r.access));
+  if (COV_F === 'dlfail')   rows = rows.filter(r => r.fetch_fail);
   const col = COV_COLS.find(c => c.k === COV_SORT) || COV_COLS[0];
   rows.sort((a,b) => {
     let x = a[COV_SORT], y = b[COV_SORT];
@@ -1997,7 +2001,7 @@ function covRows(){
 
 function covDraw(){
   if (!CL_INDEX){ document.getElementById('covbody').innerHTML =
-    '<tr><td colspan="12" class="empty">Loading…</td></tr>'; return; }
+    '<tr><td colspan="13" class="empty">Loading…</td></tr>'; return; }
   const all = CL_INDEX;
   // Reachable is the only fair denominator. A robots.txt refusal we respect, a
   // council that does not use ModernGov, and City of Adelaide are not coverage
@@ -2035,6 +2039,8 @@ function covDraw(){
     ['Not on ModernGov', k.notmg, 'needs another source'],
     ['Reachable via main site', all.filter(r=>r.access==='robots_alt').length,
      'democracy site says no, council site does not'],
+    ['Downloads failing', all.filter(r=>r.fetch_fail).length,
+     all.filter(r=>r.fetch_fail).length ? 'same council every time — will not self-heal' : ''],
   ].map(([l,v,s]) => `<div class="kpi"><div class="kpi-v">${v}</div>
      <div class="kpi-l">${esc(l)}</div>${s?`<div class="kpi-s">${esc(s)}</div>`:''}</div>`).join('');
 
@@ -2046,10 +2052,11 @@ function covDraw(){
     `<tr data-slug="${esc(r.slug)}">${COV_COLS.map(c => {
       const v = r[c.k], txt = c.f ? c.f(v) : (v==null?'—':v);
       const tn = c.tone ? c.tone(v) : '';
-      const ttl = c.k==='access' && r.access_note ? ` title="${esc(r.access_note)}"` : '';
+      const ttl = c.k==='access' && r.access_note ? ` title="${esc(r.access_note)}"` :
+                  c.k==='fetch_fail' && r.fetch_why ? ` title="${esc(r.fetch_why)}"` : '';
       return `<td class="ta-${c.a}${tn?' t-'+tn:''}"${ttl}>${esc(String(txt))}</td>`;
     }).join('')}</tr>`).join('')
-    : '<tr><td colspan="12" class="empty">No council matches.</td></tr>';
+    : '<tr><td colspan="13" class="empty">No council matches.</td></tr>';
   document.getElementById('covcount').textContent =
     `${rows.length} of ${all.length} councils shown`;
 }
