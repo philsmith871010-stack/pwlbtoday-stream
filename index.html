@@ -835,6 +835,23 @@ font-variant-numeric:tabular-nums;text-transform:none;letter-spacing:-.02em}
 .clbox.quiet{background:transparent}
 .clbox.next{border-left:3px solid var(--orange)}
 .clbox.mail{border-left:3px solid var(--good)}
+.clbox.courses{border-left:3px solid var(--accent)}
+.ctabs{display:flex;gap:6px;margin:12px 0 10px}
+.ctab{border:1px solid var(--line);background:transparent;color:var(--ink2);border-radius:999px;
+  padding:5px 13px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.ctab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.clist{margin:0;padding:0 0 0 4px;list-style:none;counter-reset:c}
+.clist.off{display:none}
+.crow{counter-increment:c;padding:10px 0 10px 30px;border-top:1px solid var(--line);position:relative}
+.crow:first-child{border-top:0}
+.crow::before{content:counter(c);position:absolute;left:0;top:11px;width:20px;height:20px;
+  border-radius:50%;background:var(--sunken);color:var(--muted);font-size:11px;font-weight:700;
+  display:grid;place-items:center}
+.chead{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.chead b{font-size:13.5px}
+.ctrack{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.cwhy{margin:5px 0 0;padding:0 0 0 14px;font-size:12.5px;line-height:1.55;color:var(--ink2)}
+.cwhy q{display:block;margin:3px 0 0;color:var(--muted);font-size:12px;font-style:italic}
 .clbox h3{margin:0 0 4px;font-size:15px;font-weight:640}
 .clbox h4{margin:16px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .clprose{font-size:14px;line-height:1.62;color:var(--ink2);max-width:74ch;margin-top:8px}
@@ -2347,6 +2364,36 @@ function drawCouncil(c){
     </section>`;
   }
 
+
+  // The courses this council's own papers argue for. It sits after the email
+  // because it is the ask, not the offer: everything above is what we found in
+  // their papers, and this is what to do about it. Each row keeps the fact or
+  // the sentence that produced it — a course with nothing behind it is an
+  // advert, and the reader can tell the difference at a glance.
+  let cbox = '';
+  const cs = n.courses || {};
+  if ((cs.officer||[]).length || (cs.member||[]).length){
+    const rows = who => (cs[who]||[]).map(x => {
+      const ev = (x.because||[]).map(b =>
+        `<li>${esc(b.why)}${b.quote ? `<q>${esc(b.quote)}</q>` : ''}</li>`).join('');
+      return `<li class="crow">
+        <div class="chead"><b>${esc(x.title)}</b><span class="ctrack">${esc(x.track)}</span></div>
+        ${ev ? `<ul class="cwhy">${ev}</ul>` : ''}</li>`; }).join('');
+    const tabs = [['officer','For officers'],['member','For members']]
+      .filter(([k]) => (cs[k]||[]).length);
+    cbox = `<section class="clbox courses">
+      <h3>Where the Academy fits</h3>
+      <p class="clsrc">Scored against this council's own papers on ${esc(cs.scored||'')} —
+        ${(cs.read||[]).length ? esc((cs.read||[]).join(', ')) + ' read' : 'no papers read'}.
+        ${cs.text_held ? '' : 'We hold figures but not the full text, so nothing is claimed about what the papers leave out. '}
+        Both lists are the whole catalogue; the order differs because the audience does.</p>
+      <div class="ctabs">${tabs.map(([k,l],i) =>
+        `<button class="ctab${i?'':' on'}" data-a="${k}">${l}</button>`).join('')}</div>
+      ${tabs.map(([k],i) =>
+        `<ol class="clist${i?' off':''}" data-a="${k}">${rows(k)}</ol>`).join('')}
+    </section>`;
+  }
+
   // The current position: latest of each core paper. Sits above the archive
   // because it is what somebody opening a council actually came for, and it
   // doubles as the reading queue — anything here without a summary is a
@@ -2442,7 +2489,7 @@ function drawCouncil(c){
         <div class="cldeepbody">${councilHTML(D.councils[gi])}</div></details></section>`;
   }
 
-  clPage.innerHTML = head + know + next + mem + mail + curBox + ledger + calBox + papBox + deep;
+  clPage.innerHTML = head + know + next + mem + mail + cbox + curBox + ledger + calBox + papBox + deep;
 
   // Paging is stateful per council, so it is wired here rather than delegated —
   // reopening a council should start from ten again, not from wherever the last
@@ -2458,6 +2505,12 @@ function drawCouncil(c){
       else pager.querySelector('span').textContent = `${left} left`;
     };
   }
+
+  clPage.querySelectorAll('.ctab').forEach(b => b.onclick = () => {
+    clPage.querySelectorAll('.ctab').forEach(x => x.classList.toggle('on', x === b));
+    clPage.querySelectorAll('.clist').forEach(l =>
+      l.classList.toggle('off', l.dataset.a !== b.dataset.a));
+  });
 
   const cp = clPage.querySelector('.cp2[data-copy="mail"]');
   if (cp) cp.onclick = () => {
