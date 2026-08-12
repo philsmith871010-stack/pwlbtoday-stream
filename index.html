@@ -2247,12 +2247,41 @@ function drawCouncil(c){
   }
 
   // The next meeting that decides money, with anything we have prepared for it.
+  //
+  // An empty box here used to read as "we did nothing", which was wrong twice
+  // over at Blaby: nobody had published an agenda for the meeting yet, and the
+  // questions we *had* written were waiting on the meeting after it. Both are
+  // ordinary — agendas appear about five working days out, and the meeting that
+  // decides treasury is often not the next one in the diary — so say which it
+  // is rather than leaving the reader to guess we had not bothered.
   let next = '';
   if (nx){
     const nn = meetNotes[String(nx.id)] || {};
     const papers = (c.papers||[]).filter(p => p.meeting_id === nx.id);
     const qs = (nn.questions||[]).map(q =>
       `<li><b>${esc(q.q)}</b>${q.why ? '<span>'+esc(q.why)+'</span>' : ''}</li>`).join('');
+
+    // Is anything prepared for a *later* meeting? If so it belongs here, because
+    // the reader's question is "are you ready for this council", not "for this date".
+    const laterPrepped = (c.calendar||[])
+      .filter(m => m.date > nx.date && (meetNotes[String(m.id)]||{}).questions)
+      .sort((a,b) => a.date < b.date ? -1 : 1)[0];
+
+    let none = '';
+    if (!nn.summary && !qs){
+      none = papers.length
+        ? '<p class="clnone">Papers are published but not yet read — they are listed below.</p>'
+        : `<p class="clnone">No agenda published for this meeting yet — councils
+             normally post papers about five working days beforehand, so there is
+             nothing to read for it. The papers listed below are its predecessors.</p>`;
+      if (laterPrepped){
+        const lq = (meetNotes[String(laterPrepped.id)].questions||[]).length;
+        none += `<p class="clsrc">Questions are ready for the
+          <b>${esc(laterPrepped.committee)}</b> on ${clDay(laterPrepped.date)} —
+          ${lq} of them, in <em>What we have asked</em> below. That is the meeting
+          where this council's treasury decisions land.</p>`;
+      }
+    }
     next = `<section class="clbox next">
       <h3>Next ${nx.key ? 'meeting that decides money' : 'meeting'}</h3>
       <p class="clnext"><b>${esc(nx.committee)}</b> — ${clDay(nx.date)}${nx.time ? ', '+esc(nx.time) : ''}
@@ -2261,7 +2290,7 @@ function drawCouncil(c){
       ${nn.summary ? '<div class="clprose">'+nn.summary+'</div>' : ''}
       ${qs ? '<h4>Questions worth asking</h4><ol class="clq">'+qs+'</ol>' : ''}
       ${papers.length ? '<p class="clsrc">'+papers.length+' paper'+(papers.length===1?'':'s')+' published for it — listed below.</p>' : ''}
-      ${!nn.summary && !qs ? '<p class="clnone">Not yet read. The papers below are what it will decide on.</p>' : ''}
+      ${none}
     </section>`;
   }
 
