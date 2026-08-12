@@ -33,10 +33,27 @@ set -uo pipefail
 MANIFEST_URL="${MANIFEST_URL:-https://philsmith871010-stack.github.io/pwlbtoday-stream/fetch-manifest.tsv}"
 # Only fetch what is actually needed. The list knows about thousands of papers
 # across every council and every date; almost none of them are wanted today.
-# "high" is the live window at the committees where money is decided — roughly
-# seven papers a day once you are current. Widen deliberately, never by default:
-#     WANT=all ./fetch-council-papers.command
+# Three settings, each a superset of the one before:
+#
+#   high      the live window at the committees where money is decided —
+#             roughly seven papers a day once you are current. The default.
+#   reading   everything the platform could ever open: every fallback link of
+#             every document type it reads, for every council. About 900 more
+#             than "high" and the right setting for a one-off catch-up.
+#   all       every paper on the list, including thousands the platform has no
+#             use for. Hours, and gigabytes. Rarely the right answer.
+#
+#     WANT=reading ./fetch-council-papers.command
 WANT="${WANT:-high}"
+# The tiers nest, so asking for "reading" must also take "high" — otherwise the
+# widest setting silently skips the most urgent papers.
+tier_wanted() {
+  case "$WANT" in
+    all)     return 0 ;;
+    reading) case "${1:-normal}" in high|reading) return 0 ;; *) return 1 ;; esac ;;
+    *)       [ "${1:-normal}" = "$WANT" ] ;;
+  esac
+}
 # Limit to one council if you want, by name or part of it:
 #     COUNCIL=Lincoln ./fetch-council-papers.command
 # Leave it unset and you get everything on the list, which is the usual case.
@@ -109,7 +126,7 @@ total=0; pending=0
 while IFS=$'\t' read -r fname url council title priority; do
   [ -z "${fname:-}" ] && continue
   case "$fname" in \#*) continue;; esac
-  [ "$WANT" != "all" ] && [ "${priority:-normal}" != "$WANT" ] && continue
+  tier_wanted "${priority:-normal}" || continue
   if [ -n "$COUNCIL" ]; then
     case "$(printf '%s' "$council" | tr 'A-Z' 'a-z')" in
       *"$(printf '%s' "$COUNCIL" | tr 'A-Z' 'a-z')"*) ;; *) continue;;
@@ -132,7 +149,7 @@ ok=0; refused=0; failed=0; n=0
 while IFS=$'\t' read -r fname url council title priority; do
   [ -z "${fname:-}" ] && continue
   case "$fname" in \#*) continue;; esac
-  [ "$WANT" != "all" ] && [ "${priority:-normal}" != "$WANT" ] && continue
+  tier_wanted "${priority:-normal}" || continue
   if [ -n "$COUNCIL" ]; then
     case "$(printf '%s' "$council" | tr 'A-Z' 'a-z')" in
       *"$(printf '%s' "$COUNCIL" | tr 'A-Z' 'a-z')"*) ;; *) continue;;
