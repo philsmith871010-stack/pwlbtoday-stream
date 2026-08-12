@@ -836,6 +836,10 @@ font-variant-numeric:tabular-nums;text-transform:none;letter-spacing:-.02em}
 .clbox.next{border-left:3px solid var(--orange)}
 .clbox.mail{border-left:3px solid var(--good)}
 .clbox.courses{border-left:3px solid var(--accent)}
+.mailone.off{display:none}
+.mtab{border:1px solid var(--line);background:transparent;color:var(--ink2);border-radius:999px;
+  padding:5px 13px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.mtab.on{background:var(--good);border-color:var(--good);color:#fff}
 .ctabs{display:flex;gap:6px;margin:12px 0 10px}
 .ctab{border:1px solid var(--line);background:transparent;color:var(--ink2);border-radius:999px;
   padding:5px 13px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
@@ -2351,75 +2355,58 @@ function drawCouncil(c){
       }).join('')}</ul></section>`;
   }
 
-  // A drafted email, ready to send. Shown in full rather than behind a button:
+  // Drafted emails, ready to send. Shown in full rather than behind a button:
   // nobody sends something they have not read.
+  //
+  // Two of them, because the two audiences want opposite things from the same
+  // papers. A member wants to know what to ask; an officer wants to know what
+  // they are about to be asked. Writing one email and hoping it lands with both
+  // produces something that is slightly wrong for each.
   let mail = '';
-  if (n.email && n.email.body){
+  const mails = n.emails || (n.email ? {member: n.email} : {});
+  const mailKeys = ['member','officer'].filter(k => (mails[k]||{}).body);
+  if (mailKeys.length){
     // Does the market paragraph still hold? The email records the PWLB rate it
     // quoted; the newest pulse card carries today's. A drafted email that cites
     // a stale rate is worse than one that cites none, because the reader checks
     // the one number they can check. Nobody should have to remember to look —
     // the page works it out.
-    let stale = '';
-    const em = n.email.market || {};
     const chip = ((D.pulse||[])[0]||{}).chips || [];
     const nowStr = (chip.find(c => /last fixed/i.test(c.label||'')) || {}).value;
     const now10 = nowStr ? parseFloat(String(nowStr).replace('%','')) : null;
-    const wrote = _CLD(em.as_at);
-    const age = wrote ? Math.round((_CLTODAY - wrote) / 86400000) : null;
-    const moved = (now10 != null && em.pwlb_10y != null)
-      ? Math.round((now10 - em.pwlb_10y) * 100) : null;
-    const reasons = [];
-    if (moved != null && Math.abs(moved) >= 10)
-      reasons.push(`the 10-year PWLB rate has moved ${moved > 0 ? '+' : ''}${moved}bp since
-        — quoted at ${em.pwlb_10y}%, now ${now10}%`);
-    if (age != null && age >= 14)
-      reasons.push(`drafted ${age} days ago`);
-    if (reasons.length){
-      stale = `<div class="mailstale"><b>Worth regenerating.</b> ${reasons.join('; ')}.</div>`;
-    }
+    const staleOf = em => {
+      const wrote = _CLD(em.as_at);
+      const age = wrote ? Math.round((_CLTODAY - wrote) / 86400000) : null;
+      const moved = (now10 != null && em.pwlb_10y != null)
+        ? Math.round((now10 - em.pwlb_10y) * 100) : null;
+      const reasons = [];
+      if (moved != null && Math.abs(moved) >= 10)
+        reasons.push(`the 10-year PWLB rate has moved ${moved > 0 ? '+' : ''}${moved}bp since
+          — quoted at ${em.pwlb_10y}%, now ${now10}%`);
+      if (age != null && age >= 14) reasons.push(`drafted ${age} days ago`);
+      return reasons.length
+        ? `<div class="mailstale"><b>Worth regenerating.</b> ${reasons.join('; ')}.</div>` : '';
+    };
+    const LBL = {member: 'To members', officer: 'To officers'};
+    const one = k => {
+      const e = mails[k];
+      return `<div class="mailone${k === mailKeys[0] ? '' : ' off'}" data-m="${k}">
+        <p class="clsrc">Drafted ${esc(e.written||'')}${e.send_by ? ' · best sent by '+esc(e.send_by) : ''}.
+          Nothing is sent from here — this is a draft to read, edit and send yourself.</p>
+        ${staleOf(e.market || {})}
+        <div class="mailcard">
+          <div class="mailsub"><span>Subject</span>${esc(e.subject||'')}</div>
+          <div class="mailbody">${esc(e.body||'').replace(/\n/g,'<br>')}</div>
+        </div>
+        <button class="cp2" data-copy="${k}">Copy this email</button>
+        <button class="cp2 regen" data-slug="${esc(c.slug)}" data-aud="${k}"
+          data-mid="${esc(String(e.meeting_id||''))}">Regenerate with today's data</button>
+      </div>`; };
     mail = `<section class="clbox mail">
-      <h3>Suggested email to members</h3>
-      <p class="clsrc">Drafted ${esc(n.email.written||'')}${n.email.send_by ? ' · best sent by '+esc(n.email.send_by) : ''}.
-        Nothing is sent from here — this is a draft to read, edit and send yourself.</p>
-      ${stale}
-      <div class="mailcard">
-        <div class="mailsub"><span>Subject</span>${esc(n.email.subject||'')}</div>
-        <div class="mailbody">${esc(n.email.body||'').replace(/\n/g,'<br>')}</div>
-      </div>
-      <button class="cp2" data-copy="mail">Copy the email</button>
-      <button class="cp2 regen" data-slug="${esc(c.slug)}"
-        data-mid="${esc(String(n.email.meeting_id||''))}">Regenerate with today's data</button>
-    </section>`;
-  }
-
-
-  // The courses this council's own papers argue for. It sits after the email
-  // because it is the ask, not the offer: everything above is what we found in
-  // their papers, and this is what to do about it. Each row keeps the fact or
-  // the sentence that produced it — a course with nothing behind it is an
-  // advert, and the reader can tell the difference at a glance.
-  let cbox = '';
-  const cs = n.courses || {};
-  if ((cs.officer||[]).length || (cs.member||[]).length){
-    const rows = who => (cs[who]||[]).map(x => {
-      const ev = (x.because||[]).map(b =>
-        `<li>${esc(b.why)}${b.quote ? `<q>${esc(b.quote)}</q>` : ''}</li>`).join('');
-      return `<li class="crow">
-        <div class="chead"><b>${esc(x.title)}</b><span class="ctrack">${esc(x.track)}</span></div>
-        ${ev ? `<ul class="cwhy">${ev}</ul>` : ''}</li>`; }).join('');
-    const tabs = [['officer','For officers'],['member','For members']]
-      .filter(([k]) => (cs[k]||[]).length);
-    cbox = `<section class="clbox courses">
-      <h3>Where the Academy fits</h3>
-      <p class="clsrc">Scored against this council's own papers on ${esc(cs.scored||'')} —
-        ${(cs.read||[]).length ? esc((cs.read||[]).join(', ')) + ' read' : 'no papers read'}.
-        ${cs.text_held ? '' : 'We hold figures but not the full text, so nothing is claimed about what the papers leave out. '}
-        Both lists are the whole catalogue; the order differs because the audience does.</p>
-      <div class="ctabs">${tabs.map(([k,l],i) =>
-        `<button class="ctab${i?'':' on'}" data-a="${k}">${l}</button>`).join('')}</div>
-      ${tabs.map(([k],i) =>
-        `<ol class="clist${i?' off':''}" data-a="${k}">${rows(k)}</ol>`).join('')}
+      <h3>Suggested email${mailKeys.length > 1 ? 's' : ''}</h3>
+      ${mailKeys.length > 1 ? `<div class="ctabs">${mailKeys.map((k,i) =>
+        `<button class="mtab${i?'':' on'}" data-m="${k}">${LBL[k]}</button>`).join('')}</div>` : ''}
+      ${mailKeys.map(one).join('')}
     </section>`;
   }
 
@@ -2541,27 +2528,34 @@ function drawCouncil(c){
       l.classList.toggle('off', l.dataset.a !== b.dataset.a));
   });
 
-  const cp = clPage.querySelector('.cp2[data-copy="mail"]');
-  if (cp) cp.onclick = () => {
-    const t = (n.email.subject||'') + '\n\n' + (n.email.body||'');
-    const done = () => { cp.textContent = 'copied'; cp.classList.add('ok');
-                         setTimeout(()=>{cp.textContent='Copy the email'; cp.classList.remove('ok');}, 2400); };
-    if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, ()=>{}); else done();
-  };
+  clPage.querySelectorAll('.mtab').forEach(b => b.onclick = () => {
+    clPage.querySelectorAll('.mtab').forEach(x => x.classList.toggle('on', x === b));
+    clPage.querySelectorAll('.mailone').forEach(m =>
+      m.classList.toggle('off', m.dataset.m !== b.dataset.m));
+  });
+  clPage.querySelectorAll('.cp2[data-copy]').forEach(b => {
+    const e = mails[b.dataset.copy] || {};
+    b.onclick = () => { navigator.clipboard.writeText((e.subject||'') + '\n\n' + (e.body||''));
+      b.textContent = 'Copied'; b.classList.add('ok');
+      setTimeout(() => { b.textContent = 'Copy this email'; b.classList.remove('ok'); }, 2400); };
+  });
+
 
   // This site is static, so there is nowhere to record a request. Rather than
   // pretend otherwise with a button that silently does nothing, it puts a plain
   // instruction on the clipboard to paste into the workshop. Crude, works from a
   // phone, and needs no infrastructure to go wrong.
-  const rg = clPage.querySelector('.cp2.regen');
-  if (rg) rg.onclick = () => {
-    const req = `Regenerate the ${c.name} member email for meeting ${rg.dataset.mid} `
-      + `(${rg.dataset.slug}) with today's market data`
+  // One handler per button, and the audience goes in the request — a page with
+  // two drafts on it used to wire only the first and ask for the member one
+  // whichever tab you were looking at.
+  clPage.querySelectorAll('.cp2.regen').forEach(rg => rg.onclick = () => {
+    const req = `Regenerate the ${c.name} ${rg.dataset.aud||'member'} email for meeting `
+      + `${rg.dataset.mid} (${rg.dataset.slug}) with today's market data`
       + `, and add a peer comparison if enough councils have been read.`;
     const done = () => { rg.textContent = 'copied — paste it to me'; rg.classList.add('ok');
       setTimeout(()=>{rg.textContent="Regenerate with today's data"; rg.classList.remove('ok');}, 3200); };
     if (navigator.clipboard) navigator.clipboard.writeText(req).then(done, ()=>{}); else done();
-  };
+  });
 }
 /* live LA-metrics arriving late re-paints the open dashboard, nothing else */
 function renderCouncils(){
