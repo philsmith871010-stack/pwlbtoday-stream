@@ -147,13 +147,26 @@ while IFS=$'\t' read -r fname url council title priority; do
   # A sixth of these URLs are plain http. Ask for https first — it works on
   # most of those hosts and means the paper is not fetched in clear — and fall
   # back to the council's own URL if it does not.
+  # Two flags earn their place here.
+  #
+  # -c/-b give curl a cookie jar for the request. Several committee systems
+  # hand out a session cookie partway through a redirect chain and then check
+  # for it on the next hop. Without a jar the cookie is dropped, the check
+  # fails, a fresh session is issued, and the chain never terminates: Exeter
+  # cost 62 papers and about two minutes each that way, all recorded as "000"
+  # because curl gave up before any status came back.
+  #
+  # --max-redirs 10 turns whatever is left of that into a fast, honest answer.
+  # No council publishes a paper ten redirects deep.
+  JAR="$(mktemp)"
   try_url="${url/#http:\/\//https://}"
-  code=$(curl -sSL --max-time 120 -A "$UA" -w '%{http_code}' \
-              -o "$DEST/$fname.part" "$try_url" 2>/dev/null) || code="000"
+  code=$(curl -sSL --max-time 120 --max-redirs 10 -A "$UA" -c "$JAR" -b "$JAR" \
+              -w '%{http_code}' -o "$DEST/$fname.part" "$try_url" 2>/dev/null) || code="000"
   if [ "$code" != "200" ] && [ "$try_url" != "$url" ]; then
-    code=$(curl -sSL --max-time 120 -A "$UA" -w '%{http_code}' \
-                -o "$DEST/$fname.part" "$url" 2>/dev/null) || code="000"
+    code=$(curl -sSL --max-time 120 --max-redirs 10 -A "$UA" -c "$JAR" -b "$JAR" \
+                -w '%{http_code}' -o "$DEST/$fname.part" "$url" 2>/dev/null) || code="000"
   fi
+  rm -f "$JAR"
   size=0
   [ -f "$DEST/$fname.part" ] && size=$(wc -c < "$DEST/$fname.part" | tr -d ' ')
 
