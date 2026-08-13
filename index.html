@@ -701,12 +701,24 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 
 /* appendix */
 .edapx{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
-.edapx>summary{cursor:pointer;font-size:11px;font-weight:800;text-transform:uppercase;
-  letter-spacing:.07em;color:var(--muted);list-style:none}
+.edapx>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;
+  padding:9px 13px;border:1px solid var(--line2);border-radius:var(--r-sm);
+  background:var(--card);transition:border-color .12s,background .12s}
 .edapx>summary::-webkit-details-marker{display:none}
-.edapx>summary::before{content:"+ ";color:var(--faint)}
-.edapx[open]>summary::before{content:"− "}
-.edapx>summary:hover{color:var(--accent-ink)}
+.edapx>summary:hover{border-color:var(--accent);background:var(--sunken)}
+.edapx>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.edapx-cv{flex:0 0 auto;width:8px;height:8px;border-right:2px solid var(--accent);
+  border-bottom:2px solid var(--accent);transform:rotate(-45deg);transition:transform .15s;margin-left:2px}
+.edapx[open] .edapx-cv{transform:rotate(45deg)}
+.edapx-t{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink)}
+.edapx-s{font-size:11.5px;color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.edapx-x{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--accent-ink);white-space:nowrap}
+.edapx-x b,.edapx-x i{font-weight:700;font-style:normal}
+.edapx-x i{display:none}
+.edapx:not([open]) .edapx-x b{display:none}
+.edapx:not([open]) .edapx-x i{display:inline}
+@media(max-width:560px){.edapx-s{display:none}}
 .edapx-b{padding-top:12px}
 .edapx-b h6{margin:16px 0 7px;font-size:10.5px;font-weight:800;text-transform:uppercase;
   letter-spacing:.06em;color:var(--ink2);display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
@@ -1794,7 +1806,10 @@ function edAppendix(d){
   if(h.checked_at_uk) P.push(`<p class="edp-note apx-foot">Sources checked ${esc(h.checked_at_uk)} UK · status ${esc(h.overall||'')}`
     +((h.issues||[]).length?' — '+esc((h.issues||[]).join(', ')):'')
     +'. Data: PWLB/DMO, Bank of England, official release calendars, curated news wires.</p>');
-  return '<details class="edapx" open><summary>Everything this edition was built from</summary>'
+  return '<details class="edapx" open><summary><span class="edapx-cv"></span>'
+    +'<span class="edapx-t">Sources &amp; data</span>'
+    +'<span class="edapx-s">everything this edition was built from</span>'
+    +'<span class="edapx-x"><b>hide</b><i>show</i></span></summary>'
     +`<div class="edapx-b">${P.join('')}</div></details>`;
 }
 
