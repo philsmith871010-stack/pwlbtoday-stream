@@ -660,7 +660,7 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 .ed-rule{display:flex;align-items:center;gap:10px;margin:0 0 11px;font-size:10.5px;
   text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap}
 .ed-rule::after{content:"";flex:1;height:1px;background:var(--line)}
-.edition p{font-size:13.5px;line-height:1.62;color:var(--ink2);max-width:78ch;margin:0 0 11px}
+.edition p{font-size:14px;line-height:1.68;color:var(--ink2);margin:0 0 11px}
 .edition p:last-of-type{margin-bottom:0}
 .ed-out{margin-top:13px}
 .ed-out a{color:var(--accent-ink);font-weight:650}
@@ -678,11 +678,11 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 .ed-less{display:block;margin-top:15px}
 
 /* ---- the edition rendered natively: writing, then numbers, then sources ---- */
-.edlead{font-size:15px;line-height:1.6;color:var(--ink);max-width:76ch;margin:2px 0 14px}
+.edlead{font-size:15.5px;line-height:1.62;color:var(--ink);margin:2px 0 15px}
 .edlead b{font-weight:750}
 .edco{display:flex;gap:10px;align-items:flex-start;padding:11px 13px;border-radius:var(--r-sm);
   margin:0 0 10px;border:1px solid var(--line);background:var(--card);font-size:13px;line-height:1.55}
-.edco>div{max-width:78ch;color:var(--ink2)}
+.edco>div{color:var(--ink2);flex:1}
 .edco b{color:var(--ink)}
 .edco-i{flex:0 0 18px;height:18px;border-radius:50%;display:grid;place-items:center;
   font-size:10px;font-weight:800;color:#fff;background:var(--muted);margin-top:1px}
@@ -693,10 +693,10 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 .edsec{margin:18px 0 0}
 .edsec h5{margin:0 0 8px;font-size:11px;font-weight:800;text-transform:uppercase;
   letter-spacing:.07em;color:var(--ink)}
-.edsec p{font-size:13.5px;line-height:1.62;color:var(--ink2);max-width:78ch;margin:0 0 10px}
+.edsec p{font-size:14px;line-height:1.68;color:var(--ink2);margin:0 0 11px}
 .edsec b{color:var(--ink);font-weight:700}
-.edsec ul{margin:6px 0 10px 18px;padding:0;max-width:78ch}
-.edsec li{font-size:13px;line-height:1.6;color:var(--ink2);margin:0 0 3px}
+.edsec ul{margin:7px 0 11px 20px;padding:0}
+.edsec li{font-size:13.5px;line-height:1.65;color:var(--ink2);margin:0 0 4px}
 .edsec a{color:var(--accent-ink)}
 
 /* appendix */
@@ -717,7 +717,7 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 .apx th{text-align:right;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;
   color:var(--muted);font-weight:700;padding:6px 9px;background:var(--sunken);white-space:nowrap}
 .apx td{text-align:right;padding:5px 9px;color:var(--ink2);border-top:1px solid var(--line);white-space:nowrap}
-.apx th.l,.apx td.l,.apx th:nth-child(3),.apx td:nth-child(3){text-align:left;white-space:normal}
+.apx th.l,.apx td.l{text-align:left;white-space:normal}
 .apx td b{color:var(--ink)} .apx a{color:var(--accent-ink)}
 .apx-foot{margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}
 
@@ -1757,8 +1757,9 @@ function edProse(sp){
 /* The appendix — everything the edition was built from — kept behind a
    disclosure so it is available without crowding the writing. */
 function edAppendix(d){
+  const LEFT=new Set(['Release','Headline','Gilt','Source']);
   const T=(head,rows)=>`<div class="apxwrap"><table class="apx"><thead><tr>${
-    head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    head.map(h=>`<th${LEFT.has(h)?' class="l"':''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
   const dash='—', P=[];
   const ag=(d.agenda||[]).map(r=>`<tr><td>${esc(r.uk||'')}</td><td>${esc(r.ccy||'')}</td>`
     +`<td class="l">${esc(r.title||'')}</td><td>${esc(r.impact||'')}</td>`
@@ -1771,10 +1772,10 @@ function edAppendix(d){
     +`<td>${esc(r.ccy||'')}</td><td class="l">${esc(r.title||'')}</td></tr>`).join('');
   if(wk) P.push('<h6>Week ahead — top high-impact</h6>'+T(['Date','UK time','Ccy','Release'],wk));
   const lnk=r=>r.link?`<a href="${esc(r.link)}" target="_blank" rel="noopener">${esc(r.title||'')}</a>`:esc(r.title||'');
-  const nw=(d.news||[]).map(r=>`<tr><td>${esc(r.uk||'')}</td><td>${esc(r.src||'')}</td><td class="l">${lnk(r)}</td></tr>`).join('');
+  const nw=(d.news||[]).map(r=>`<tr><td>${esc(r.uk||'')}</td><td class="l">${esc(r.src||'')}</td><td class="l">${lnk(r)}</td></tr>`).join('');
   P.push('<h6>Screened headlines this pass</h6>'
     +(nw?T(['UK time','Source','Headline'],nw):'<p class="edp-note">No fresh screened headlines this pass.</p>'));
-  const sn=(d.seen||[]).map(r=>`<tr><td>${esc(r.ts||'')}</td><td>${esc(r.src||'')}</td><td class="l">${lnk(r)}</td></tr>`).join('');
+  const sn=(d.seen||[]).map(r=>`<tr><td>${esc(r.ts||'')}</td><td class="l">${esc(r.src||'')}</td><td class="l">${lnk(r)}</td></tr>`).join('');
   if(sn) P.push('<h6>Already reported — recent</h6>'+T(['When','Source','Headline'],sn));
   const gn=d.gilt_names||{};
   const gr=((d.gilts||{}).rows||[]).map(r=>`<tr><td>${esc(r.t||'')}</td><td class="l">${esc(gn[r.t]||'')}</td>`
@@ -1793,7 +1794,7 @@ function edAppendix(d){
   if(h.checked_at_uk) P.push(`<p class="edp-note apx-foot">Sources checked ${esc(h.checked_at_uk)} UK · status ${esc(h.overall||'')}`
     +((h.issues||[]).length?' — '+esc((h.issues||[]).join(', ')):'')
     +'. Data: PWLB/DMO, Bank of England, official release calendars, curated news wires.</p>');
-  return '<details class="edapx"><summary>Everything this edition was built from</summary>'
+  return '<details class="edapx" open><summary>Everything this edition was built from</summary>'
     +`<div class="edapx-b">${P.join('')}</div></details>`;
 }
 
