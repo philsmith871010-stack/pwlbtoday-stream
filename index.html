@@ -1758,15 +1758,44 @@ function edFoot(d){
   return `<p class="edfoot">${ED_KEY}<br>Predictions use the same models as pwlbtoday.org. `
     +`Data as of ${esc((d||{}).asof||'')} UK. All times UK (Europe/London). Indicative, not advice.</p>`;
 }
-function edProse(sp){
+/* The headline, the lead and the callout were written for an email, where the
+   prediction hero and the charts sit between them. Stacked straight down a page
+   they can read as the same sentence three times — a colleague's words, and
+   they were right. So each block has to earn its place against what the reader
+   has already been shown.
+
+   The lead goes if it restates the headline. An info/good callout goes if it
+   restates what is already above it. An alert or warn callout NEVER goes: those
+   carry corrections and integrity notices, and suppressing one to tidy the
+   layout would be the worst trade in the product. */
+function _sig(t){
+  const d=document.createElement('div'); d.innerHTML=t||'';
+  return new Set((d.textContent||'').toLowerCase().match(/[a-z0-9.%]{3,}/g)||[]);
+}
+function _restates(block, shown){
+  const A=_sig(block), B=_sig(shown);
+  if(!A.size) return true;
+  let hit=0; A.forEach(w=>{ if(B.has(w)) hit++; });
+  return hit/A.size >= 0.75;
+}
+function edProse(sp, headline){
   if(!sp) return '';
-  const cos=(sp.callouts||[]).map(c=>{const k=(c.kind||'info');
-    return `<div class="edco ${esc(k)}"><span class="edco-i">${CO_ICON[k]||'i'}</span><div>${c.html||''}</div></div>`;
-  }).join('');
-  const lead=sp.headline_html?`<div class="edlead">${sp.headline_html}</div>`:'';
-  const secs=(sp.sections||[]).map(x=>
+  let shown = headline||'';
+  let out = '';
+  if(sp.headline_html && !_restates(sp.headline_html, shown)){
+    out += `<div class="edlead">${sp.headline_html}</div>`;
+    shown += ' ' + sp.headline_html;
+  }
+  (sp.callouts||[]).forEach(c=>{
+    const k=(c.kind||'info');
+    const loud=(k==='alert'||k==='warn');
+    if(!loud && _restates(c.html, shown)) return;
+    out += `<div class="edco ${esc(k)}"><span class="edco-i">${CO_ICON[k]||'i'}</span><div>${c.html||''}</div></div>`;
+    shown += ' ' + (c.html||'');
+  });
+  out += (sp.sections||[]).map(x=>
     `<section class="edsec"><h5>${x.heading||''}</h5>${x.html||''}</section>`).join('');
-  return lead+cos+secs;
+  return out;
 }
 
 /* The appendix — everything the edition was built from — kept behind a
@@ -1897,7 +1926,7 @@ function openPulse(i){
      carries everything; showing the charts alone once lost the writing, and
      the fallback must never be able to do that again. */
   const full = e.spec && e.data;
-  const panels = full ? (edBanner(e.data) + edProse(e.spec) + edPanels(e.data)
+  const panels = full ? (edBanner(e.data) + edProse(e.spec, e.headline) + edPanels(e.data)
                         + edAppendix(e.data) + edFoot(e.data))
                       : (e.brief?`<div class="ed-brief">${e.brief}</div>`
                                 : (e.data?edPanels(e.data):''));
