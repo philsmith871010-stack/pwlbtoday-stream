@@ -1727,8 +1727,12 @@ function openPulse(i){
   const lede=(e.paras&&e.paras.length)?e.paras[0]:'';
   /* Editions carrying their numbers get drawn at the reader's width; the rest
      still show the embedded brief, which is what every edition did before. */
-  const panels = e.data ? edPanels(e.data)
-                        : (e.brief?`<div class="ed-brief">${e.brief}</div>`:'');
+  /* Native panels lead; the brief follows in full. The brief carries the
+     edition's prose, callouts and data appendix — dropping it to show only the
+     charts lost the writing, which is the edition. Its own chart tables are
+     duplicated below for now; removing just those is the next step. */
+  const panels = (e.data ? edPanels(e.data) : '')
+               + (e.brief?`<div class="ed-brief">${e.brief}</div>`:'');
   host.innerHTML=`<div class="ed-rule"><span>${esc(e.dl)} · ${esc(e.time)} · ${esc(SLABEL[e.stream]||e.stream)}</span></div>`
     + lede + rest + panels
     + wk + `<button class="mini-cta ed-less" data-pi="${i}">Close edition ↑</button>`;
