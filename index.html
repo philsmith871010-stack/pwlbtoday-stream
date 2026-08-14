@@ -1756,6 +1756,12 @@ function svgCurve(d){
    Drawn from the source's own minute prints — ~450 rows a session, not the
    dozen our passes happen to file.
 
+   The x-axis is OBSERVATION time, not market time. Our newest row trails the
+   wall clock by minutes and the prices underneath may be delayed further; we
+   cannot measure that from here. So the fixing rules locate each round on the
+   path approximately, and the panel says so rather than implying we can show
+   what the market was doing at a given second.
+
    Anchored on YESTERDAY'S CLOSE, not on the London open. The overnight move is
    part of the borrower's day — this week it has been most of it — so the chart
    carries a baseline at the prior close and the gap up to the first print is
@@ -1995,10 +2001,10 @@ function edPanels(d, e){
       : '';
     P.push(`<section class="edp edp-wide"><h4>Through the session<span>${esc(pk)}-year gilt, by the minute, against the prior close</span></h4>${id}
       <p class="edp-note"><b>The ${esc(pk)}-year leads because it moved most today</b> &mdash; ${word(dy)} on the day${ref?`, against ${bpTxt(S.series[ref].chg_bp)} on the ${ref}-year (faint)`:''}.${split}
-      ${nf?`Vertical rules mark where today&rsquo;s ${nf===1?'round':'rounds'} struck &mdash; the moment your rate was set, against what the market was doing.`:'No round has struck in this window.'}</p>
+      ${nf?`Vertical rules mark where today&rsquo;s ${nf===1?'round':'rounds'} struck, set against the yield path around that time.`:'No round has struck in this window.'}</p>
       <div class="idlegend">${others.slice(0,5).map(([k,v])=>
         `<span class="idlg"><b>${esc(k)}y</b> <span class="${bpCls(v.chg_bp)}">${bpTxt(v.chg_bp)}</span></span>`).join('')}</div>
-      <p class="edp-note idfoot">${T_.length} prints, one a minute, ${esc(T_[0])}&ndash;${esc(T_[T_.length-1])}, measured against the ${esc((S.prev_close_at||'prior').slice(0,10))} close &mdash; the same reference as the gilt panel below.</p></section>`);
+      <p class="edp-note idfoot">${T_.length} prints, one a minute, ${esc(T_[0])}&ndash;${esc(T_[T_.length-1])}, measured against the ${esc((S.prev_close_at||'prior').slice(0,10))} close &mdash; the same reference as the gilt panel below. Times are when each price reached us, not necessarily when it traded: like any non-trading feed ours carries a lag, so read the alignment with the fixing markers as approximate.</p></section>`);
   }
   /* next-fix table */
   if((d.pred||[]).length){
