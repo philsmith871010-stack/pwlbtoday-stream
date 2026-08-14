@@ -210,8 +210,20 @@ while IFS=$'\t' read -r fname url council title priority; do
   [ "$n" -lt "$pending" ] && sleep "$DELAY"
 done < "$TMP"
 
+# The record of what is on disk, written fresh every run.
+#
+# The daily logs above cannot serve as that record: only the last couple
+# survive on Drive, so anything downloaded before them is invisible and the
+# queue reports papers as missing that are sitting here. That has twice sent
+# someone hunting a broken fetcher that was working correctly. One overwritten
+# listing is always complete, and the far side reads it instead of asking a
+# human to run `find`.
+ls -1 "$DEST"/*.pdf 2>/dev/null | while read -r f; do basename "$f"; done \
+  > "$DEST/_papers-on-disk.txt"
+
 echo
 echo "${cyn}Done. $ok fetched, $refused refused, $failed failed.${off}"
+echo "${dim}$(wc -l < "$DEST/_papers-on-disk.txt" | tr -d ' ') papers on disk (recorded in _papers-on-disk.txt).${off}"
 if [ "$refused" -gt 0 ]; then
   echo "${ylw}Refused means the council's server declined — often temporary.${off}"
   echo "${ylw}Run again later; anything already here is skipped.${off}"
