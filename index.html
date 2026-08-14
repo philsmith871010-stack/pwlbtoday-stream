@@ -1798,13 +1798,18 @@ function svgIntraday(e){
   const y0=yb(0);   /* zero change = yesterday's close, for every tenor */
   /* overnight leg: baseline level, then the step up (or down) to the open */
   const on=(cL!==null)?`<line x1="${L}" x2="${W-R}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}" class="idbase"/>`
-      +`<text x="${L}" y="${(y0-5).toFixed(1)}" class="idbaset">yesterday&#8217;s close</text>`
+      +`<text x="${L}" y="${(y0+12).toFixed(1)}" class="idbaset">yesterday&#8217;s close</text>`
       +`<path d="M${L.toFixed(1)},${y0.toFixed(1)}L${xs(T_[0]).toFixed(1)},${yb(bp(pick,0)).toFixed(1)}" class="idon ${dir}"/>`
       :'';
-  /* Fill between the line and the zero line, not down to the axis — the shaded
-     band is then literally "how much dearer than yesterday", and flips side if
-     yields fall. */
-  const area=`${lp}L${xs(T_[N-1]).toFixed(1)},${y0.toFixed(1)}L${xs(T_[0]).toFixed(1)},${y0.toFixed(1)}Z`;
+  /* Fill between the line and the zero line, not down to the axis — the band is
+     then literally "how much dearer than yesterday", and flips side if yields
+     fall. It starts at the LEFT EDGE and climbs the overnight leg, so the shaded
+     area covers the whole period: starting it at the first print instead left an
+     unfilled notch under the overnight step, which is the part of the day the
+     anchor exists to show. */
+  const area=`M${L.toFixed(1)},${y0.toFixed(1)}`
+    + lp.replace(/^M/,'L')
+    + `L${xs(T_[N-1]).toFixed(1)},${y0.toFixed(1)}Z`;
   const ref=(pick!=='10'&&S.series['10'])?'10':((pick!=='30'&&S.series['30'])?'30':null);
   const fx=(S.fixes||[]).filter(f=>mins(f.t)>=t0&&mins(f.t)<=t1).map(f=>{
     const x=xs(f.t).toFixed(1);
