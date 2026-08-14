@@ -765,10 +765,14 @@ footer .wrap{display:flex;flex-direction:column;gap:4px}
 .pri{font-weight:750;color:var(--ink);text-align:right}
 .prm{text-align:right;font-weight:700;font-size:11.5px}
 .prb{text-align:right}
-.sig{display:inline-block;font-style:normal;font-size:10px;font-weight:700;white-space:nowrap;
-  padding:3px 8px;border-radius:99px;background:var(--sunken);color:var(--ink2)}
-.sig.up{background:var(--alert);color:#fff} .sig.down{background:var(--good);color:#fff}
-.sig.none{color:var(--muted)}
+/* border:0 and box-shadow:none stated explicitly: this pill previously carried
+   the class `.sig`, inherited the signals-board card's left accent border and
+   shadow, and rendered a grey crescent at its rounded left cap. */
+.mvpill{display:inline-block;font-style:normal;font-size:10px;font-weight:700;white-space:nowrap;
+  padding:3px 9px;border:0;border-radius:99px;box-shadow:none;
+  background:var(--sunken);color:var(--ink2)}
+.mvpill.up{background:var(--alert);color:#fff} .mvpill.down{background:var(--good);color:#fff}
+.mvpill.none{color:var(--muted)}
 .edfoot{margin:16px 0 0;padding-top:11px;border-top:1px solid var(--line);
   font-size:10.5px;line-height:1.55;color:var(--muted);max-width:none}
 .edfoot b{color:var(--ink2)}
@@ -1775,23 +1779,33 @@ function svgIntraday(e){
   const idxs=[]; for(let i=0;i<N;i+=step) idxs.push(i);
   if(idxs[idxs.length-1]!==N-1) idxs.push(N-1);
   const pc=k=>{const v=S.series[k]; return (v&&v.prev_close!==null&&v.prev_close!==undefined)?v.prev_close:null;};
-  const sc=k=>{const v=idxs.map(i=>val(k,i)).filter(x=>x!==null); const c=pc(k);
-    if(c!==null) v.push(c);
-    let lo=Math.min(...v),hi=Math.max(...v); const pad=(hi-lo)*0.24||0.005;
-    lo-=pad; hi+=pad; return y=>T+(hi-y)*(H-T-B)/(hi-lo);};
-  const yL=sc(pick), cL=pc(pick);
-  const path=(k,f)=>idxs.map((i,j)=>`${j?'L':'M'}${xs(T_[i]).toFixed(1)},${f(val(k,i)).toFixed(1)}`).join('');
-  const lp=path(pick,yL);
+  /* ONE shared axis, in basis points of change from each tenor's own prior
+     close. Plotting raw yields put the two lines on separate scales, so their
+     vertical positions were not comparable and the faint line's height meant
+     nothing — it merely looked like it did. In change-space zero is the prior
+     close for both, and crossing or diverging lines are real. */
+  const bp=(k,i)=>{const c=pc(k); return c===null?null:(val(k,i)-c)*100;};
+  const allv=[0];
+  [pick,(pick!=='10'&&S.series['10'])?'10':((pick!=='30'&&S.series['30'])?'30':null)]
+    .filter(Boolean).forEach(k=>idxs.forEach(i=>{const b=bp(k,i); if(b!==null) allv.push(b);}));
+  let LO=Math.min(...allv), HI=Math.max(...allv);
+  const PAD=(HI-LO)*0.18||0.5; LO-=PAD; HI+=PAD;
+  const yb=v=>T+(HI-v)*(H-T-B)/(HI-LO);
+  const yL=v=>yb((v-pc(pick))*100), cL=pc(pick);
+  const path=k=>idxs.map((i,j)=>`${j?'L':'M'}${xs(T_[i]).toFixed(1)},${yb(bp(k,i)).toFixed(1)}`).join('');
+  const lp=path(pick);
   const mv=lead.chg_bp, dir=mv>0.05?'up':(mv<-0.05?'down':'flat');
-  const y0=(cL!==null?yL(cL):yL(val(pick,0)));
+  const y0=yb(0);   /* zero change = yesterday's close, for every tenor */
   /* overnight leg: baseline level, then the step up (or down) to the open */
   const on=(cL!==null)?`<line x1="${L}" x2="${W-R}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}" class="idbase"/>`
-      +`<text x="${L}" y="${(y0-5).toFixed(1)}" class="idbaset">prev close ${cL.toFixed(3)}</text>`
-      +`<path d="M${L.toFixed(1)},${y0.toFixed(1)}L${xs(T_[0]).toFixed(1)},${yL(val(pick,0)).toFixed(1)}" class="idon ${dir}"/>`
+      +`<text x="${L}" y="${(y0-5).toFixed(1)}" class="idbaset">yesterday&#8217;s close</text>`
+      +`<path d="M${L.toFixed(1)},${y0.toFixed(1)}L${xs(T_[0]).toFixed(1)},${yb(bp(pick,0)).toFixed(1)}" class="idon ${dir}"/>`
       :'';
-  const area=`${lp}L${xs(T_[N-1]).toFixed(1)},${H-B}L${xs(T_[0]).toFixed(1)},${H-B}Z`;
+  /* Fill between the line and the zero line, not down to the axis — the shaded
+     band is then literally "how much dearer than yesterday", and flips side if
+     yields fall. */
+  const area=`${lp}L${xs(T_[N-1]).toFixed(1)},${y0.toFixed(1)}L${xs(T_[0]).toFixed(1)},${y0.toFixed(1)}Z`;
   const ref=(pick!=='10'&&S.series['10'])?'10':((pick!=='30'&&S.series['30'])?'30':null);
-  const yR=ref?sc(ref):null;
   const fx=(S.fixes||[]).filter(f=>mins(f.t)>=t0&&mins(f.t)<=t1).map(f=>{
     const x=xs(f.t).toFixed(1);
     return `<line x1="${x}" x2="${x}" y1="${T}" y2="${H-B}" class="idfx"/>`
@@ -1799,17 +1813,18 @@ function svgIntraday(e){
   }).join('');
   const tk=[0,Math.floor((N-1)/3),Math.floor(2*(N-1)/3),N-1].map(i=>
     `<text x="${xs(T_[i]).toFixed(1)}" y="${H-9}" class="cax" text-anchor="middle">${esc(T_[i])}</text>`).join('');
-  const yA=yL(val(pick,N-1)), yB=ref?yR(val(ref,N-1)):null;
+  const yA=yb(bp(pick,N-1)), yB=ref?yb(bp(ref,N-1)):null;
   const off=(yB!==null&&Math.abs(yB-yA)<12)?(yB>=yA?11:-11):0;
+  const sgn=v=>(v>0?'+':'')+v.toFixed(1);
   const tag=(y,txt,cls)=>`<text x="${W-R+6}" y="${(y+3.5).toFixed(1)}" class="idlab ${cls}">${txt}</text>`;
   return `<svg viewBox="0 0 ${W} ${H}" class="cvs" preserveAspectRatio="xMidYMid meet" role="img"
     aria-label="${esc(pick)}-year gilt yield by the minute against the previous close, with PWLB fixing times marked">
     ${on}${fx}<path d="${area}" class="carea ${dir}"/>
-    ${ref?`<path d="${path(ref,yR)}" class="idl30"/>`:''}
+    ${ref?`<path d="${path(ref)}" class="idl30"/>`:''}
     <path d="${lp}" class="cline ${dir}"/>
     <circle cx="${xs(T_[N-1]).toFixed(1)}" cy="${yA.toFixed(1)}" r="3.6" class="cdot"/>
-    ${tag(yA,val(pick,N-1).toFixed(3),'a')}
-    ${ref?tag(yB+off,val(ref,N-1).toFixed(3),'b'):''}${tk}</svg>`;
+    ${tag(yA,esc(pick)+'y '+sgn(bp(pick,N-1))+'bp','a')}
+    ${ref?tag(yB+off,esc(ref)+'y '+sgn(bp(ref,N-1))+'bp','b'):''}${tk}</svg>`;
 }
 
 /* Gilt moves: diverging bars off a zero line, so direction reads before size. */
@@ -1946,11 +1961,14 @@ function edAppendix(d){
 
 /* Same thresholds as the brief's borrower badge (ACTION_BP = 2bp), same words —
    this is the line a treasurer actually acts on. */
+/* NB: class is mvpill, NOT sig — `.sig` is the signals-board card (left accent
+   border + shadow), and reusing the name gave every badge a 3px border-left
+   that border-radius:99px bent into a grey crescent down its edge. */
 function sigBadge(mv){
-  if(mv===null) return '<i class="sig none">— no live read</i>';
-  if(mv>=2) return '<i class="sig up">▲ RISING · draw sooner</i>';
-  if(mv<=-2) return '<i class="sig down">▼ FALLING · waiting may pay</i>';
-  return '<i class="sig flatb">▬ FLAT · no pressure</i>';
+  if(mv===null) return '<i class="mvpill none">— no live read</i>';
+  if(mv>=2) return '<i class="mvpill up">▲ RISING · draw sooner</i>';
+  if(mv<=-2) return '<i class="mvpill down">▼ FALLING · waiting may pay</i>';
+  return '<i class="mvpill flatb">▬ FLAT · no pressure</i>';
 }
 function edPanels(d, e){
   const P=[];
