@@ -1028,6 +1028,16 @@ border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 text-transform:uppercase;letter-spacing:.05em}
 .clstats b{font-size:21px;font-weight:670;color:var(--ink);letter-spacing:-.02em;
 font-variant-numeric:tabular-nums;text-transform:none;letter-spacing:-.02em}
+/* Approach tab. Wider measure than the data views because it is prose someone
+   reads once, not a table they scan. */
+.apwrap{max-width:760px}
+.apfour,.apstd{list-style:none;padding:0;margin:0}
+.apfour li,.apstd li{padding:9px 0 9px 16px;border-left:2px solid var(--line);margin-bottom:2px;
+  font-size:14px;line-height:1.55;color:var(--ink2)}
+.apfour li b,.apstd li b{color:var(--ink)}
+.apsteps{margin:0;padding-left:20px;font-size:14px;line-height:1.6;color:var(--ink2)}
+.apsteps li{margin-bottom:9px}
+.apsteps li b{color:var(--ink)}
 /* Council page tabs. Sticky because the panels are long and the reader who has
    scrolled to the bottom of the calendar should be able to move to Outreach
    without scrolling back up to find the bar. */
@@ -1208,6 +1218,7 @@ border-bottom:1px solid var(--line);margin-bottom:10px}
     <button role="tab" aria-selected="true" data-v="pulse">Market pulse</button>
     <button role="tab" aria-selected="false" data-v="councils">Councils</button>
     <button role="tab" aria-selected="false" data-v="coverage">Coverage</button>
+    <button role="tab" aria-selected="false" data-v="approach">Approach</button>
   </nav>
 </div></header>
 
@@ -1261,6 +1272,92 @@ border-bottom:1px solid var(--line);margin-bottom:10px}
     <thead><tr id="covhead"></tr></thead><tbody id="covbody"></tbody>
   </table></div>
   <p class="hint" id="covcount"></p>
+</section>
+
+<section id="view-approach" hidden>
+  <p class="sub">What this platform is for and how it is built — the standing answer for
+    anyone joining, or asking why we do it this way.</p>
+
+  <div class="kpis" id="apkpi"></div>
+
+  <div class="apwrap">
+    <section class="clbox">
+      <h3>The aim</h3>
+      <div class="clprose">
+        <p>To hold <b>the best-documented understanding of local-authority treasury positions
+          that exists anywhere</b> — and to get better at it every week.</p>
+        <p>Not a snapshot. A record that compounds: every paper read adds to what we knew about
+          that council, and to what we can say about the sector. The test is that nobody can say
+          more about where a council's borrowing stands, or where the sector is moving, than we
+          can — with the source one click away.</p>
+      </div>
+    </section>
+
+    <section class="clbox">
+      <h3>Four outputs, one reading</h3>
+      <p class="clsrc">Each paper we read feeds all four. They are views of one asset, not
+        separate workstreams.</p>
+      <ul class="apfour">
+        <li><b>The record.</b> Per council: figures dated and page-referenced, the loan book,
+          the balance-sheet identity, what changed since last time.</li>
+        <li><b>The stories.</b> Council-specific finds — a LOBO called the day after Cabinet
+          met, a table out by a factor of a thousand — and sector-wide trends only visible with
+          the whole cohort read to one standard. Published in the week they emerge.</li>
+        <li><b>The outreach.</b> First contact with S151 officers, opening on something we have
+          actually read in their own paper.</li>
+        <li><b>The client emails.</b> Keeping councils using the platform: what has changed for
+          them, what the sector data now shows, which course their latest paper argues for.</li>
+      </ul>
+    </section>
+
+    <section class="clbox">
+      <h3>How it works</h3>
+      <ol class="apsteps">
+        <li><b>Watch.</b> Every ModernGov council's committee calendar, swept daily, ranking the
+          papers where borrowing is actually decided.</li>
+        <li><b>Collect.</b> Papers are downloaded and their text extracted mechanically. Council
+          document servers refuse data centres, so this step runs from a normal machine.</li>
+        <li><b>Read.</b> One council per session, against its own paper: the tables, the CFR,
+          the maturity profile, the prudential indicators — each figure tied to a page.</li>
+        <li><b>Check.</b> The balance-sheet identity must close: CFR − external borrowing −
+          other long-term liabilities = internal borrowing. Where our own PWLB loan file agrees
+          with the council's printed table, that is said and it strengthens the piece.</li>
+        <li><b>Publish and write.</b> The council page, any story the paper earns, and the
+          drafted email.</li>
+      </ol>
+    </section>
+
+    <section class="clbox">
+      <h3>The standards</h3>
+      <p class="clsrc">None of these are negotiable, and they are why the work is slow.</p>
+      <ul class="apstd">
+        <li><b>The council's own document is the primary source.</b> Everything else is
+          supporting evidence. Where they disagree, the document wins and the discrepancy is
+          recorded rather than hidden.</li>
+        <li><b>Accuracy above everything.</b> Every figure is checked against the source text
+          before it ships. A figure that cannot be sourced to a page does not go in. A missing
+          figure is recorded as missing, never inferred.</li>
+        <li><b>We never tell a council what to do.</b> We raise things worth noticing and show
+          how the platform helps. No advice, no recommendations.</li>
+        <li><b>No national rankings.</b> Any comparison is "of the councils we have read".</li>
+        <li><b>We disclose our own gaps and never invite a correction.</b></li>
+        <li><b>Indicative means indicative.</b> Only the DMO can quote a break cost, and
+          anything mentioning one says so.</li>
+      </ul>
+    </section>
+
+    <section class="clbox quiet">
+      <h3>What we are working on</h3>
+      <div class="clprose">
+        <p>Closing the councils our document discovery has not reached; covering every council
+          whose finance committee meets in the next month; finishing the cohort; and making the
+          record consistent enough that "everything ready to send" is a question with a reliable
+          answer.</p>
+        <p>Then publishing weekly — the council-specific find, and the sector trend drawn from
+          the whole cohort. That is the step the other four exist to enable.</p>
+      </div>
+    </section>
+  </div>
 </section>
 
 <section id="view-news" hidden>
@@ -1620,7 +1717,32 @@ tabs.forEach(b => b.addEventListener('click', () => {
   if (b.dataset.v === 'coverage' && typeof clInit === 'function'){
     clInit(); if (typeof covDraw === 'function') covDraw();
   }
+  // The Approach tab quotes live counts rather than numbers typed into prose,
+  // so a colleague reading it in November is not told where things stood in
+  // August. It needs the same index the coverage table reads.
+  if (b.dataset.v === 'approach'){
+    if (typeof clInit === 'function') clInit();
+    if (typeof apDraw === 'function') apDraw();
+  }
 }));
+
+function apDraw(){
+  const box = document.getElementById('apkpi');
+  if (!box) return;
+  // CL_INDEX is the councils array itself, not the file it came from -- the
+  // totals live on CL_META beside it.
+  if (!CL_INDEX || !CL_INDEX.length){ box.innerHTML = ''; setTimeout(apDraw, 400); return; }
+  const all = CL_INDEX;
+  const k = [
+    ['Councils watched', all.length, ''],
+    ['Written up', all.filter(r => r.written).length, 'from their own papers'],
+    ['With a drafted email', all.filter(r => r.email).length, ''],
+    ['Finance papers held', ((CL_META && CL_META.papers) || 0).toLocaleString(), ''],
+  ];
+  box.innerHTML = k.map(([l, v, s]) =>
+    `<div class="kpi"><div class="kpi-v">${v}</div><div class="kpi-l">${esc(l)}</div>` +
+    (s ? `<div class="kpi-s">${esc(s)}</div>` : '') + `</div>`).join('');
+}
 
 /* persona front-door CTAs: switch tab, optionally pre-sort the screener or scroll to a panel */
 document.querySelectorAll('.dcta[data-goto],.navcard[data-goto],.lp-open[data-goto]').forEach(b => b.addEventListener('click', () => {
@@ -2438,7 +2560,7 @@ const csearch = document.getElementById('csearch');
 const cresults = document.getElementById('cresults');
 const clHome = document.getElementById('cl-home');
 const clPage = document.getElementById('cl-council');
-let CL_INDEX = null, CL_UP = null, CL_CACHE = {}, clLoaded = false;
+let CL_INDEX = null, CL_META = null, CL_UP = null, CL_CACHE = {}, clLoaded = false;
 
 function hideResults(){ cresults.hidden = true; cresults.innerHTML = ''; }
 
@@ -2520,6 +2642,7 @@ function clInit(){
     fetch('councils/upcoming.json',{cache:'no-cache'}).then(r=>r.json()),
   ]).then(([idx, up]) => {
     CL_INDEX = idx.councils_list || [];
+    CL_META = idx;
     CL_UP = up.meetings_list || [];
     csearch.placeholder = `Search ${CL_INDEX.length} councils — try Croydon, Medway, Somerset…`;
     renderUpcoming();
