@@ -1039,6 +1039,10 @@ font-variant-numeric:tabular-nums;text-transform:none;letter-spacing:-.02em}
 .cltab:hover{color:var(--ink)}
 .cltab.on{color:var(--accent-ink);border-bottom-color:var(--accent)}
 .cltab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Panels vary from a paragraph (Summary) to a full dashboard, and a short one
+   collapsing the document is what lets the browser clamp the scroll and slide
+   the page. A floor on the height means most switches change nothing at all. */
+.clpanel{min-height:calc(100vh - 56px)}
 .clpanel.off{display:none}
 @media(max-width:660px){.cltabs{gap:0;overflow-x:auto;flex-wrap:nowrap}
   .cltab{padding:7px 10px;font-size:12.5px}}
@@ -3172,6 +3176,16 @@ function drawCouncil(c){
   clPage.innerHTML = head + tabBar + panels;
 
   clPage.querySelectorAll('.cltab').forEach(b => b.onclick = () => {
+    // KEEP THE PAGE STILL.
+    //
+    // The first version called scrollIntoView on every switch, which yanked the
+    // page even when the reader was already at the top and nothing needed to
+    // move. The fix is to hold ONE thing fixed: where the tab bar sits on
+    // screen. The reader's eye is on the bar they just clicked, so if that does
+    // not move, nothing appears to move -- however different the two panels are.
+    const bar = clPage.querySelector('.cltabs');
+    const before = bar.getBoundingClientRect().top;
+
     clPage.querySelectorAll('.cltab').forEach(x => {
       const on = x === b;
       x.classList.toggle('on', on);
@@ -3179,9 +3193,15 @@ function drawCouncil(c){
     });
     clPage.querySelectorAll('.clpanel').forEach(p =>
       p.classList.toggle('off', p.dataset.p !== b.dataset.p));
-    // Switching tab replaces a screenful; without this the reader lands
-    // half-way down the new panel wherever the old one had been scrolled to.
-    clPage.scrollIntoView({block: 'start'});
+
+    // Swapping a tall panel for a short one shortens the document, and the
+    // browser then clamps the scroll position -- which slides the whole page up
+    // under the reader. Putting the bar back where it was undoes exactly that.
+    // Instant, never smooth: an animated correction is the jerk it is there to
+    // prevent.
+    const after = bar.getBoundingClientRect().top;
+    if (Math.abs(after - before) > 0.5)
+      window.scrollBy({top: after - before, behavior: 'instant'});
   });
 
   // Paging is stateful per council, so it is wired here rather than delegated —
