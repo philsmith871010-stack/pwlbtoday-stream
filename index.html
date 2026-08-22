@@ -1125,6 +1125,15 @@ grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
 color:var(--muted);font-weight:600}
 .clfig li span{display:block;margin-top:2px;color:var(--ink);line-height:1.45}
 .clfig li i{display:block;margin-top:2px;font-style:normal;font-size:11px;color:var(--muted)}
+/* The raw figures behind the ratios. A plain two-column table on purpose:
+   these are statutory numbers and the reader is checking them, not skimming. */
+.clstand{width:100%;border-collapse:collapse;margin:14px 0 0;font-size:13px}
+.clstand th{text-align:left;font-weight:500;color:var(--muted);padding:5px 10px 5px 0;
+border-bottom:1px solid var(--line);white-space:nowrap}
+.clstand td{text-align:right;padding:5px 0;border-bottom:1px solid var(--line);
+color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.clstand tr:last-child th,.clstand tr:last-child td{border-bottom:0}
+.clfig li span{font-variant-numeric:tabular-nums}
 .clbox.mem{border-left:3px solid var(--accent)}
 .clbox.cur{border-left:3px solid var(--good)}
 .curlist{list-style:none;margin:10px 0 0;padding:0;display:grid;
@@ -3300,6 +3309,97 @@ function drawCouncil(c){
       <div class="cldeepbody">${councilHTML(D.councils[gi])}</div></section>`;
   }
 
+
+  // WHERE IT STANDS.
+  //
+  // The council files carried a document trail and no numbers, so this page
+  // could tell you a council had published a treasury strategy and not that it
+  // owed three times its revenue. The figures come from the statutory returns —
+  // MHCLG for England, StatsWales for Wales, the Local Financial Returns for
+  // Scotland — joined to the council by its GSS code, plus one UK-wide
+  // borrowing table.
+  //
+  // Nothing is computed here and nothing is filled in. Three separate
+  // collections do not publish the same fields, so a figure a nation does not
+  // collect is simply absent — Welsh councils show no reserves because Wales
+  // publishes the movements in and out, which is a different number. Showing a
+  // blank is honest; showing a plausible substitute is how a page starts lying.
+  let stands = '';
+  const M = c.metrics;
+  if (M && ((M.raw && Object.keys(M.raw).length) || M.borrowing)) {
+    const raw = M.raw || {}, rat = M.ratios || {}, brw = M.borrowing || {};
+    // Figures arrive in GBP thousands.
+    const money = k => {
+      if (k == null || isNaN(k)) return null;
+      const p = Math.abs(k);
+      if (p >= 1e6) return '£' + (k/1e6).toFixed(2) + 'bn';
+      if (p >= 1e3) return '£' + (k/1e3).toFixed(0) + 'm';
+      return '£' + Math.round(k).toLocaleString() + 'k';
+    };
+    const times = v => v == null ? null : v.toFixed(2) + '×';
+    const pct   = v => v == null ? null : (v*100).toFixed(1) + '%';
+
+    // A RATIO NEEDS A DENOMINATOR THAT MEANS SOMETHING. Eight English
+    // councils report a NEGATIVE net revenue expenditure — a large one-off
+    // netted off in the year — and Woking, the most-watched council in the
+    // country, is one of them. Dividing by it produced "-151.18×", which is
+    // not a fact about Woking, it is a fact about the arithmetic. The
+    // borrowing itself is real and still shown; only the multiples that lean
+    // on that denominator are withheld, and the page says why rather than
+    // going quiet.
+    const nre = raw.nre;
+    const nreOK = typeof nre === 'number' && nre > 0;
+    const HEAD = [
+      ['brw_nre',  'Borrowing vs revenue',  times(rat.brw_nre),
+       'total borrowing as a multiple of a year’s net revenue expenditure'],
+      ['res_nre',  'Reserves vs revenue',   times(rat.res_nre),
+       'usable reserves as a multiple of a year’s net revenue expenditure'],
+      ['int_nre',  'Interest vs revenue',   pct(rat.int_nre),
+       'external interest as a share of net revenue expenditure'],
+      ['brw_cfr',  'Borrowing vs CFR',      times(rat.brw_cfr),
+       'how much of what it is allowed to have borrowed, it has'],
+      ['st_ratio', 'Short-term share',      pct(rat.st_ratio),
+       'borrowed short by original term — not what matures soon'],
+    ].filter(x => x[2] != null)
+     .filter(x => nreOK || !['brw_nre','res_nre','int_nre'].includes(x[0]));
+
+    const ROWS = [
+      ['Total borrowing',            money(brw.total != null ? brw.total : raw.gross_borrowing)],
+      ['of which PWLB',              money(brw.pwlb)],
+      ['Net revenue expenditure',    money(raw.nre)],
+      ['Usable reserves',            money(raw.reserves)],
+      ['Capital financing requirement', money(raw.cfr)],
+      ['Investments held',           money(raw.investments)],
+      ['External interest paid',     money(raw.interest)],
+      ['Debt repaid this year',      money(raw.mrp)],
+      ['Government grants',          money(raw.grants)],
+    ].filter(r => r[1] != null);
+
+    const figs = HEAD.map(([, lbl, val, meta]) =>
+      `<li><b>${esc(lbl)}</b><span>${esc(val)}</span><i>${esc(meta)}</i></li>`).join('');
+    const rows = ROWS.map(([lbl, val]) =>
+      `<tr><th>${esc(lbl)}</th><td>${esc(val)}</td></tr>`).join('');
+
+    const src = [];
+    if (M.source && M.year) src.push(M.source + '’s returns for ' + esc(String(M.year)));
+    else if (M.source) src.push(esc(M.source) + '’s returns');
+    if (brw.quarter) src.push('borrowing from MHCLG ' +
+      esc(String(brw.quarter).replace(/^LA_Borrowing_/, '').replace(/_/g, ' ')));
+
+    stands = `<section class="clbox"><h3>Where it stands</h3>
+      ${figs ? `<ul class="clfig">${figs}</ul>` : ''}
+      ${rows ? `<table class="clstand">${rows}</table>` : ''}
+      ${nreOK ? '' : `<p class="clnone" style="font-style:normal">This council’s
+        return shows net revenue expenditure of ${esc(money(nre) || 'nothing')},
+        so the ratios measured against a year’s spending are left out — dividing
+        by it would describe the arithmetic, not the council. The borrowing
+        below is unaffected.</p>`}
+      <p class="clsrc">From ${src.join(', ') || 'the statutory returns'}. Figures
+        are the council’s own statutory returns, not our reading of its papers —
+        anything a nation does not collect is left blank rather than estimated.</p>
+    </section>`;
+  }
+
   // TABS.
   //
   // This page had grown to eleven stacked sections -- summary, questions,
@@ -3317,6 +3417,7 @@ function drawCouncil(c){
   // with no write-up opens on its calendar instead of on a blank Summary.
   const TABS = [
     ['sum',    'Summary',       know],
+    ['stands', 'Where it stands', stands],
     ['known',  'What we know',  ledger + curBox],
     ['meet',   'Next meetings', next + calBox],
     ['papers', 'Papers',        papBox],
