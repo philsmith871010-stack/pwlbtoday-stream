@@ -1134,6 +1134,8 @@ border-bottom:1px solid var(--line);white-space:nowrap}
 color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 .clstand tr:last-child th,.clstand tr:last-child td{border-bottom:0}
 .clfig li span{font-variant-numeric:tabular-nums}
+.scrtab tbody tr.hot td:first-child{box-shadow:inset 3px 0 0 var(--bad,#b3261e)}
+.scrtab tbody tr.hot td.scr-r{font-weight:600}
 .clrank{display:block;margin-top:3px;font-style:normal;font-size:11px;
 color:var(--muted);line-height:1.35}
 .clrank.hot{color:var(--bad,#b3261e);font-weight:600}
@@ -1252,6 +1254,7 @@ border-bottom:1px solid var(--line);margin-bottom:10px}
   <nav class="tabs" role="tablist">
     <button role="tab" aria-selected="true" data-v="pulse">Market pulse</button>
     <button role="tab" aria-selected="false" data-v="councils">Councils</button>
+    <button role="tab" aria-selected="false" data-v="exposure">Exposure</button>
     <button role="tab" aria-selected="false" data-v="coverage">Coverage</button>
     <button role="tab" aria-selected="false" data-v="approach">Approach</button>
     <button role="tab" aria-selected="false" data-v="health">Health</button>
@@ -1284,6 +1287,30 @@ border-bottom:1px solid var(--line);margin-bottom:10px}
   </div>
 
   <div id="cl-council" hidden></div>
+</section>
+
+<section id="view-exposure" hidden>
+  <p class="sub">Every council with figures, ranked by how much it owes against what it
+    spends. The statutory returns, not our reading of the papers — MHCLG for England,
+    StatsWales for Wales, the Local Financial Returns for Scotland. Click any row to open
+    that council.</p>
+  <div class="controls">
+    <input id="expq" type="search" placeholder="Search council…" autocomplete="off" aria-label="Search council">
+  </div>
+  <div class="spills" id="expfilt">
+    <button class="spill" data-f="all" aria-pressed="true">All</button>
+    <button class="spill" data-f="district councils" aria-pressed="false">Districts</button>
+    <button class="spill" data-f="unitary authorities" aria-pressed="false">Unitaries</button>
+    <button class="spill" data-f="London boroughs" aria-pressed="false">London</button>
+    <button class="spill" data-f="metropolitan boroughs" aria-pressed="false">Metropolitan</button>
+    <button class="spill" data-f="county councils" aria-pressed="false">Counties</button>
+    <button class="spill" data-f="Welsh councils" aria-pressed="false">Wales</button>
+    <button class="spill" data-f="Scottish councils" aria-pressed="false">Scotland</button>
+  </div>
+  <div class="tablewrap"><table id="exptab" class="scrtab">
+    <thead><tr id="exphead"></tr></thead><tbody id="expbody"></tbody>
+  </table></div>
+  <p class="hint" id="expcount"></p>
 </section>
 
 <section id="view-coverage" hidden>
@@ -2696,6 +2723,7 @@ function clInit(){
     // before this resolved — in which case it printed "Loading…" and had
     // nothing to tell it the data had since arrived.
     if (typeof covDraw === 'function') covDraw();
+    if (typeof expDraw === 'function') expDraw();
   }).catch(() => {
     // A council list that fails to load must say so. Silently showing the old
     // in-page list would look identical to working and quietly be a year stale.
@@ -2739,6 +2767,106 @@ document.getElementById('upboard').addEventListener('click', e => {
 
    Deliberately shows absence as loudly as presence. A dash in the TMSS column
    for 45 councils is the most useful thing on this page. */
+/* ---------- Exposure: who owes what, against what they spend ----------
+   The coverage table answers "what have we got". This answers the question a
+   lender actually opens with: which councils are carrying debt out of
+   proportion to their income, and is that unusual for their kind?
+
+   Everything here is the councils' own statutory returns. Nothing is our
+   reading of their papers, and nothing is modelled — a council whose return
+   does not publish a figure shows a dash, because a blank is honest and a
+   filled-in guess is not.
+
+   Sorted by borrowing against revenue by default, because that is the column
+   that finds Spelthorne. */
+let EXP_F = 'all', EXP_SORT = 'brw_nre', EXP_DIR = -1;
+
+const _m  = v => v == null ? '—' :
+  Math.abs(v) >= 1e6 ? '£' + (v/1e6).toFixed(2) + 'bn' :
+  Math.abs(v) >= 1e3 ? '£' + (v/1e3).toFixed(0) + 'm' :
+                       '£' + Math.round(v).toLocaleString() + 'k';
+const _x  = v => v == null ? '—' : v.toFixed(2) + '×';
+const _pc = v => v == null ? '—' : (v*100).toFixed(1) + '%';
+
+const EXP_COLS = [
+  ['name',     'Council',        r => esc(r.name), 'l'],
+  ['peer_kind','Kind',           r => esc(r.peer_kind || r.type || ''), 'l'],
+  ['borrowing','Borrowing',      r => _m(r.borrowing)],
+  ['pwlb',     'of which PWLB',  r => _m(r.pwlb)],
+  ['nre',      'Revenue spend',  r => _m(r.nre)],
+  ['brw_nre',  'Debt / revenue', r => _x(r.brw_nre)],
+  ['peer_rank','Rank in kind',   r => r.peer_rank ? r.peer_rank + ' of ' + r.peer_of : '—'],
+  ['res_nre',  'Reserves / revenue', r => _x(r.res_nre)],
+  ['int_nre',  'Interest / revenue', r => _pc(r.int_nre)],
+  ['papers',   'Papers held',    r => (r.papers || 0).toLocaleString()],
+];
+
+function expRows(){
+  let rows = (CL_INDEX || []).filter(r => r.brw_nre != null || r.borrowing != null);
+  // Filter on peer_kind, not on `type`. `type` is the site's own prose label
+  // ("district council") and is missing for 73 councils; peer_kind comes from
+  // the ranking, is complete wherever a council is ranked, and is the same
+  // words the Kind column shows — so the button and the column agree.
+  if (EXP_F !== 'all') rows = rows.filter(r => r.peer_kind === EXP_F);
+  const q = (document.getElementById('expq').value || '').trim().toLowerCase();
+  if (q) rows = rows.filter(r => (r.name || '').toLowerCase().includes(q));
+  const k = EXP_SORT;
+  return rows.sort((a, b) => {
+    const x = a[k], y = b[k];
+    // A council with no figure sorts last whichever way the column is turned,
+    // rather than to the top of a "highest first" list as a blank.
+    if (x == null && y == null) return (a.name||'').localeCompare(b.name||'');
+    if (x == null) return 1;
+    if (y == null) return -1;
+    if (typeof x === 'string') return EXP_DIR * x.localeCompare(y);
+    return EXP_DIR * (x - y);
+  });
+}
+
+function expDraw(){
+  const body = document.getElementById('expbody');
+  if (!CL_INDEX){ body.innerHTML = '<tr><td colspan="10" class="empty">Loading…</td></tr>'; return; }
+  const rows = expRows();
+  document.getElementById('exphead').innerHTML = EXP_COLS.map(([k, lbl, , al]) =>
+    `<th class="${al === 'l' ? 'scr-l' : 'scr-r'}${EXP_SORT === k ? ' sorted' : ''}" data-k="${k}">${esc(lbl)}${
+      EXP_SORT === k ? (EXP_DIR < 0 ? ' ▾' : ' ▴') : ''}</th>`).join('');
+  body.innerHTML = rows.length ? rows.map(r => {
+    // Flag the top tenth of a council's own kind, not of the whole table —
+    // every district would light up otherwise, and the point is comparison
+    // with like.
+    const hot = r.peer_rank && r.peer_of >= 10
+                && r.peer_rank <= Math.ceil(r.peer_of / 10);
+    return `<tr data-slug="${esc(r.slug)}"${hot ? ' class="hot"' : ''}>${
+      EXP_COLS.map(([, , fn, al]) =>
+        `<td class="${al === 'l' ? 'scr-l' : 'scr-r'}">${fn(r)}</td>`).join('')}</tr>`;
+  }).join('') : '<tr><td colspan="10" class="empty">No councils match that.</td></tr>';
+  const src = rows.length ? [...new Set(rows.map(r => r.fig_source).filter(Boolean))] : [];
+  document.getElementById('expcount').textContent =
+    `${rows.length} council${rows.length === 1 ? '' : 's'} with published figures`
+    + (src.length ? ` · ${src.join(', ')} statutory returns` : '')
+    + ' · a dash means that nation does not publish the figure';
+}
+document.getElementById('exphead').addEventListener('click', e => {
+  const th = e.target.closest('th'); if (!th) return;
+  const k = th.dataset.k;
+  if (EXP_SORT === k) EXP_DIR = -EXP_DIR;
+  else { EXP_SORT = k; EXP_DIR = (k === 'name' || k === 'peer_kind') ? 1 : -1; }
+  expDraw();
+});
+document.getElementById('expbody').addEventListener('click', e => {
+  const tr = e.target.closest('tr[data-slug]');
+  if (tr){ document.querySelector('nav.tabs button[data-v="councils"]').click();
+           openCouncilPage(tr.dataset.slug); }
+});
+document.getElementById('expq').addEventListener('input', expDraw);
+document.getElementById('expfilt').addEventListener('click', e => {
+  const b = e.target.closest('.spill'); if (!b) return;
+  EXP_F = b.dataset.f;
+  document.querySelectorAll('#expfilt .spill').forEach(x =>
+    x.setAttribute('aria-pressed', String(x === b)));
+  expDraw();
+});
+
 let COV_F = 'all', COV_SORT = 'name', COV_DIR = 1;
 const COV_COLS = [
   {k:'name',   lbl:'Council',   t:'str', a:'l'},
