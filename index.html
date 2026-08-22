@@ -2,6 +2,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>PWLBpulse · CouncilIntel — markets & council-finance intelligence</title>
+<!-- Inline so there is no second file to deploy and no 404 on every visit —
+     the browser asks for /favicon.ico whether or not one is declared. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a2540'/%3E%3Cpath d='M9 24V8h7.2c3.4 0 5.6 2 5.6 5.1 0 3.2-2.2 5.2-5.7 5.2H12.6V24H9zm3.6-8.6h3c1.6 0 2.6-.9 2.6-2.3 0-1.4-1-2.2-2.6-2.2h-3v4.5z' fill='%23e8720c'/%3E%3C/svg%3E">
 <script>(function(){try{var t=localStorage.getItem('pwlbtheme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
 <style>
 :root{
@@ -71,7 +74,6 @@ header.mast::before{content:"";position:absolute;top:0;left:0;right:0;height:3px
   letter-spacing:-.02em;line-height:1.05}
 .tile span{display:block;font-size:11.5px;color:var(--muted);margin-top:3px}
 /* ---------- tabs (segmented) ---------- */
-@media(max-width:520px){nav.tabs{display:flex;width:100%}nav.tabs button{flex:1}}
 nav.tabs{display:inline-flex;gap:3px;background:var(--sunken);border:1px solid var(--line);
   border-radius:12px;padding:4px;margin-bottom:16px}
 nav.tabs button{appearance:none;border:none;background:transparent;color:var(--muted);
@@ -79,6 +81,18 @@ nav.tabs button{appearance:none;border:none;background:transparent;color:var(--m
 nav.tabs button:hover{color:var(--ink)}
 nav.tabs button[aria-selected="true"]{background:var(--card);color:var(--accent-ink);
   box-shadow:var(--sh-sm)}
+/* On a phone the six tabs measure 616px against a 390px screen, so the bar
+   scrolls inside itself rather than dragging the whole page sideways with it.
+   There was already a rule for this; it sat ABOVE the base rule and lost on
+   source order, so Coverage, Approach and Health were unreachable without
+   scrolling the page horizontally. Squeezing six labels into the width
+   instead (flex:1) only wraps them — scrolling keeps them readable. */
+@media(max-width:640px){
+  nav.tabs{display:flex;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none}
+  nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs button{flex:0 0 auto;padding:8px 14px;white-space:nowrap}
+}
 nav.tabs button:focus-visible,.chipbtn:focus-visible,select:focus-visible,
 input:focus-visible,th button:focus-visible,.spill:focus-visible,a:focus-visible,
 summary:focus-visible,.cbx:focus-visible,.morebtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
@@ -1133,6 +1147,10 @@ border-bottom:1px solid var(--line);white-space:nowrap}
 .clstand td{text-align:right;padding:5px 0;border-bottom:1px solid var(--line);
 color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 .clstand tr:last-child th,.clstand tr:last-child td{border-bottom:0}
+/* The global stripe is `tbody tr:nth-child(even) td`, and this table puts its
+   label in a th — so only the number was tinted and every other row came out
+   banded down its right-hand third. Stripe the th to match. */
+.clstand tbody tr:nth-child(even) th{background:var(--tint)}
 .clfig li span{font-variant-numeric:tabular-nums}
 .scrtab tbody tr.hot td:first-child{box-shadow:inset 3px 0 0 var(--bad,#b3261e)}
 .scrtab tbody tr.hot td.scr-r{font-weight:600}
@@ -1170,9 +1188,13 @@ border:1px solid var(--line);display:flex;justify-content:center;gap:8px;align-i
 .clpage span{font-size:11px;color:var(--muted)}
 
 /* ---- Coverage: the operations table ---- */
+/* The separators are drawn by the tiles, not by a coloured gap showing through
+   the grid. Thirteen tiles never divide evenly into an auto-fit row count, so
+   the old gap-and-background trick left a grey orphan cell at the end of the
+   last row that read as a tile whose contents had failed to load. */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-gap:1px;background:var(--line);border:1px solid var(--line);margin:0 0 18px}
-.kpi{background:var(--card);padding:13px 15px}
+gap:0;background:var(--card);border:1px solid var(--line);margin:0 0 18px}
+.kpi{background:var(--card);padding:13px 15px;box-shadow:0 0 0 .5px var(--line)}
 .kpi-v{font-size:24px;font-weight:680;letter-spacing:-.02em;color:var(--ink);
 font-variant-numeric:tabular-nums;line-height:1.1}
 .kpi-l{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:4px}
@@ -1837,6 +1859,9 @@ document.querySelectorAll('.dcta[data-goto],.navcard[data-goto],.lp-open[data-go
       document.querySelectorAll('main > section').forEach(s => s.hidden = true);
       view.hidden = false;
       document.querySelectorAll('nav.tabs button').forEach(x => x.setAttribute('aria-selected', 'false'));
+      // These are the only sections that render credit tiles, so this is the
+      // only moment the live-metrics sheet is worth fetching.
+      if (typeof loadLiveMetrics === 'function') loadLiveMetrics();
     }
   }
   if (b.dataset.sort && typeof window.screenerSort === 'function')
@@ -3584,6 +3609,20 @@ function drawCouncil(c){
       }
     }
 
+    // The peer groups are not all the same size, and side by side that reads
+    // as an error. A council is only ranked on a figure it actually has, so
+    // the ratios measured against a year's spending drop the handful whose
+    // net revenue expenditure is not usable, while borrowing-against-CFR and
+    // short-term share keep them. Say so once rather than leave "of 62" next
+    // to "of 63" looking like a slip.
+    const sizes = [...new Set(HEAD.map(([k]) => (peers[k] || {}).peer_of)
+                                  .filter(n => n != null))];
+    const peerNote = sizes.length > 1
+      ? ` Peer groups differ in size because a council is only ranked on a
+          figure it reports — the ratios measured against a year’s spending
+          leave out those whose net revenue expenditure cannot carry them.`
+      : '';
+
     const src = [];
     if (M.source && M.year) src.push(M.source + '’s returns for ' + esc(String(M.year)));
     else if (M.source) src.push(esc(M.source) + '’s returns');
@@ -3601,7 +3640,7 @@ function drawCouncil(c){
         below is unaffected.</p>`}
       <p class="clsrc">From ${src.join(', ') || 'the statutory returns'}. Figures
         are the council’s own statutory returns, not our reading of its papers —
-        anything a nation does not collect is left blank rather than estimated.</p>
+        anything a nation does not collect is left blank rather than estimated.${peerNote}</p>
     </section>`;
   }
 
@@ -3927,8 +3966,28 @@ document.getElementById('dist').innerHTML = D.dist.map(d => `
     <span class="lb">${esc(d.label)}</span>
   </div>`).join('');
 
-/* ---------- Live LA Metrics (Google Sheet via gviz) → powers the Councils credit tiles ---------- */
-(function(){
+/* ---------- Live LA Metrics (Google Sheet via gviz) ----------
+   Feeds creditMetrics(), which renders only inside the counterparty, screener,
+   signals, news and model-TMS sections. Every one of those is unreachable: the
+   nav cards that opened them were removed, so no element in the page carries
+   data-goto any more and only their CSS and click handler survive.
+
+   It used to run on page load regardless, which meant the site made a
+   third-party request to Google on every visit for figures nothing displayed,
+   and — when that request failed — printed "Credit metrics unavailable" under
+   the search box on the client-facing Councils tab. A visitor read that as the
+   site's numbers being broken, while the numbers they could actually see
+   (Where it stands, Exposure) came from our own published files and were fine.
+
+   So it is lazy now: nothing is fetched until a section that needs it is
+   opened. Restore the nav cards and the feature comes back untouched.
+
+   Worth knowing before relying on it again: this sheet is the hand-kept source
+   England was moved off. Its capital financing requirement matched MHCLG's own
+   files exactly, 395 of 395; its revenue figures matched nothing published in
+   any of eight years. The per-council files carry the traceable replacement. */
+function loadLiveMetrics(){
+  if (window.__lmStarted) return; window.__lmStarted = true;
   var SHEET='1CWmC60ewkvh27mEBuumyC1sJMisQvg5YN_fu8z9Yve0';
   var TQ=encodeURIComponent('select A,B,E,F,H,J,K,M,N,R,U,V');
   var URL='https://docs.google.com/spreadsheets/d/'+SHEET+'/gviz/tq?tqx=out:json&sheet=Data&headers=1&tq='+TQ;
@@ -3973,7 +4032,7 @@ document.getElementById('dist').innerHTML = D.dist.map(d => `
    })
    .catch(function(){ if(stat){ stat.className='lmstat err';
      stat.textContent='Credit metrics unavailable just now — showing the last saved figures.'; }});
-})();
+}
 </script>
 
 </body></html>
