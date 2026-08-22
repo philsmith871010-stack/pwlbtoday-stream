@@ -1817,6 +1817,12 @@ tabs.forEach(b => b.addEventListener('click', () => {
   if (b.dataset.v === 'coverage' && typeof clInit === 'function'){
     clInit(); if (typeof covDraw === 'function') covDraw();
   }
+  // Exposure reads the same index. Without this it drew an empty table for
+  // anyone whose first click of the visit was Exposure rather than Councils —
+  // which, for a lender, is the likely first click.
+  if (b.dataset.v === 'exposure' && typeof clInit === 'function'){
+    clInit(); if (typeof expDraw === 'function') expDraw();
+  }
   // The Approach tab quotes live counts rather than numbers typed into prose,
   // so a colleague reading it in November is not told where things stood in
   // August. It needs the same index the coverage table reads.
