@@ -1136,6 +1136,10 @@ color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 .clfig li span{font-variant-numeric:tabular-nums}
 .scrtab tbody tr.hot td:first-child{box-shadow:inset 3px 0 0 var(--bad,#b3261e)}
 .scrtab tbody tr.hot td.scr-r{font-weight:600}
+.cltrend{margin:12px 0 0;padding:9px 12px;border-left:2px solid var(--line2);
+background:var(--sunken);font-size:13px;line-height:1.5;border-radius:2px}
+.cltrend.up{border-left-color:var(--bad,#b3261e)}
+.cltrend b{font-weight:600}
 .clrank{display:block;margin-top:3px;font-style:normal;font-size:11px;
 color:var(--muted);line-height:1.35}
 .clrank.hot{color:var(--bad,#b3261e);font-weight:600}
@@ -1306,6 +1310,7 @@ border-bottom:1px solid var(--line);margin-bottom:10px}
     <button class="spill" data-f="county councils" aria-pressed="false">Counties</button>
     <button class="spill" data-f="Welsh councils" aria-pressed="false">Wales</button>
     <button class="spill" data-f="Scottish councils" aria-pressed="false">Scotland</button>
+    <button class="spill" data-f="rising" aria-pressed="false">Debt up by half in five years</button>
   </div>
   <div class="tablewrap"><table id="exptab" class="scrtab">
     <thead><tr id="exphead"></tr></thead><tbody id="expbody"></tbody>
@@ -2796,6 +2801,8 @@ const EXP_COLS = [
   ['nre',      'Revenue spend',  r => _m(r.nre)],
   ['brw_nre',  'Debt / revenue', r => _x(r.brw_nre)],
   ['peer_rank','Rank in kind',   r => r.peer_rank ? r.peer_rank + ' of ' + r.peer_of : '—'],
+  ['debt_5y',  'Debt, 5 years',  r => r.debt_5y == null ? '—'
+     : (r.debt_5y >= 0 ? '+' : '') + r.debt_5y.toFixed(0) + '%'],
   ['res_nre',  'Reserves / revenue', r => _x(r.res_nre)],
   ['int_nre',  'Interest / revenue', r => _pc(r.int_nre)],
   ['papers',   'Papers held',    r => (r.papers || 0).toLocaleString()],
@@ -2807,7 +2814,8 @@ function expRows(){
   // ("district council") and is missing for 73 councils; peer_kind comes from
   // the ranking, is complete wherever a council is ranked, and is the same
   // words the Kind column shows — so the button and the column agree.
-  if (EXP_F !== 'all') rows = rows.filter(r => r.peer_kind === EXP_F);
+  if (EXP_F === 'rising') rows = rows.filter(r => (r.debt_5y || 0) >= 50);
+  else if (EXP_F !== 'all') rows = rows.filter(r => r.peer_kind === EXP_F);
   const q = (document.getElementById('expq').value || '').trim().toLowerCase();
   if (q) rows = rows.filter(r => (r.name || '').toLowerCase().includes(q));
   const k = EXP_SORT;
@@ -2825,7 +2833,7 @@ function expRows(){
 
 function expDraw(){
   const body = document.getElementById('expbody');
-  if (!CL_INDEX){ body.innerHTML = '<tr><td colspan="10" class="empty">Loading…</td></tr>'; return; }
+  if (!CL_INDEX){ body.innerHTML = '<tr><td colspan="11" class="empty">Loading…</td></tr>'; return; }
   const rows = expRows();
   document.getElementById('exphead').innerHTML = EXP_COLS.map(([k, lbl, , al]) =>
     `<th class="${al === 'l' ? 'scr-l' : 'scr-r'}${EXP_SORT === k ? ' sorted' : ''}" data-k="${k}">${esc(lbl)}${
@@ -2839,7 +2847,7 @@ function expDraw(){
     return `<tr data-slug="${esc(r.slug)}"${hot ? ' class="hot"' : ''}>${
       EXP_COLS.map(([, , fn, al]) =>
         `<td class="${al === 'l' ? 'scr-l' : 'scr-r'}">${fn(r)}</td>`).join('')}</tr>`;
-  }).join('') : '<tr><td colspan="10" class="empty">No councils match that.</td></tr>';
+  }).join('') : '<tr><td colspan="11" class="empty">No councils match that.</td></tr>';
   const src = rows.length ? [...new Set(rows.map(r => r.fig_source).filter(Boolean))] : [];
   document.getElementById('expcount').textContent =
     `${rows.length} council${rows.length === 1 ? '' : 's'} with published figures`
@@ -3543,6 +3551,39 @@ function drawCouncil(c){
     const rows = ROWS.map(([lbl, val]) =>
       `<tr><th>${esc(lbl)}</th><td>${esc(val)}</td></tr>`).join('');
 
+    // WHICH WAY IT IS MOVING. A snapshot cannot tell a council that has owed
+    // three times its revenue for a decade from one that got there last year,
+    // and those are not the same credit. The percentage comes from the median
+    // of the three years around the anchor, so a one-year dip cannot drive it,
+    // and is absent where the base is unrepresentative — a reporting break
+    // leaves the cash change and no percentage, which is the honest pair.
+    let moving = '';
+    const T = M.trend;
+    if (T && T.changes) {
+      const say = (k, words) => {
+        const c = T.changes[k];
+        if (!c) return null;
+        const cash = money(Math.abs(c.change));
+        const dir = c.change >= 0 ? 'more' : 'less';
+        return c.pct == null
+          ? `${esc(cash)} ${dir} than ${words}`
+          : `${c.pct >= 0 ? '+' : ''}${c.pct.toFixed(0)}% ${words} (${esc(cash)} ${dir})`;
+      };
+      const bits = [say('1y', 'in a year'), say('5y', 'in five years'),
+                    say('10y', 'in ten')].filter(Boolean);
+      const peak = T.peak && T.peak_year
+        ? (T.at_peak
+            ? `At its highest ever.`
+            : `Peaked at ${esc(money(T.peak))} in ${T.peak_year}.`)
+        : '';
+      if (bits.length || peak) {
+        const worse = (T.changes['5y'] || {}).pct;
+        moving = `<p class="cltrend${worse != null && worse >= 25 ? ' up' : ''}">
+          <b>Debt is ${worse == null ? 'moving' : worse > 2 ? 'rising' : worse < -2 ? 'falling' : 'flat'}</b>
+          ${bits.length ? '— ' + esc(bits.join(', ')) + '.' : ''} ${peak}</p>`;
+      }
+    }
+
     const src = [];
     if (M.source && M.year) src.push(M.source + '’s returns for ' + esc(String(M.year)));
     else if (M.source) src.push(esc(M.source) + '’s returns');
@@ -3551,6 +3592,7 @@ function drawCouncil(c){
 
     stands = `<section class="clbox"><h3>Where it stands</h3>
       ${figs ? `<ul class="clfig">${figs}</ul>` : ''}
+      ${moving}
       ${rows ? `<table class="clstand">${rows}</table>` : ''}
       ${nreOK ? '' : `<p class="clnone" style="font-style:normal">This council’s
         return shows net revenue expenditure of ${esc(money(nre) || 'nothing')},
