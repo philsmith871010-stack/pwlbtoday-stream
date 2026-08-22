@@ -1134,6 +1134,9 @@ border-bottom:1px solid var(--line);white-space:nowrap}
 color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 .clstand tr:last-child th,.clstand tr:last-child td{border-bottom:0}
 .clfig li span{font-variant-numeric:tabular-nums}
+.clrank{display:block;margin-top:3px;font-style:normal;font-size:11px;
+color:var(--muted);line-height:1.35}
+.clrank.hot{color:var(--bad,#b3261e);font-weight:600}
 .clbox.mem{border-left:3px solid var(--accent)}
 .clbox.cur{border-left:3px solid var(--good)}
 .curlist{list-style:none;margin:10px 0 0;padding:0;display:grid;
@@ -3375,8 +3378,40 @@ function drawCouncil(c){
       ['Government grants',          money(raw.grants)],
     ].filter(r => r[1] != null);
 
-    const figs = HEAD.map(([, lbl, val, meta]) =>
-      `<li><b>${esc(lbl)}</b><span>${esc(val)}</span><i>${esc(meta)}</i></li>`).join('');
+    // A NUMBER ARRIVES WITH ITS NEIGHBOURS OR IT MEANS NOTHING. 1.9 times
+    // revenue is unremarkable for a county and near the top for a district,
+    // so each figure carries where it sits among its own kind and what the
+    // middle of that group looks like. Councils whose denominator is not
+    // positive are not ranked at all, so no rank line appears for them.
+    const peers = M.peers || {};
+    const ordinal = n => {
+      const t = n % 100;
+      if (t >= 11 && t <= 13) return n + 'th';
+      return n + ({1:'st', 2:'nd', 3:'rd'}[n % 10] || 'th');
+    };
+    const rankLine = (key, fmt) => {
+      const p = peers[key];
+      if (!p || p.peer_rank == null) return '';
+      const mid = fmt(p.peer_median);
+      // Half the country borrows nothing short-term, so an unqualified "52nd
+      // highest of 133" describes a council sitting in a pile of eighty-two
+      // identical zeros as though it held a position. Say when it is a tie.
+      const tied = p.peer_tied || 1;
+      const where = tied > 1
+        ? `joint ${ordinal(p.peer_rank)} of ${p.peer_of} ${esc(p.peer_plural)},
+           level with ${tied - 1} other${tied - 1 === 1 ? '' : 's'}`
+        : `${ordinal(p.peer_rank)} highest of ${p.peer_of} ${esc(p.peer_plural)}`;
+      // Only flag a top-tenth position that is genuinely its own.
+      const hot = tied === 1 && p.peer_of >= 10
+                  && p.peer_rank <= Math.ceil(p.peer_of / 10);
+      return `<em class="clrank${hot ? ' hot' : ''}">${where}${
+        mid ? ' · middle of that group ' + esc(mid) : ''}</em>`;
+    };
+
+    const figs = HEAD.map(([key, lbl, val, meta]) =>
+      `<li><b>${esc(lbl)}</b><span>${esc(val)}</span>${
+        rankLine(key, key === 'int_nre' || key === 'st_ratio' ? pct : times)
+      }<i>${esc(meta)}</i></li>`).join('');
     const rows = ROWS.map(([lbl, val]) =>
       `<tr><th>${esc(lbl)}</th><td>${esc(val)}</td></tr>`).join('');
 
