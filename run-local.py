@@ -56,6 +56,7 @@ import functools
 import http.server
 import json
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -180,10 +181,33 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Expires", "0")
 
     def log_message(self, fmt, *args):
-        # The watch poll is once a second and would bury everything else.
-        if "__watch" in (args[0] if args else ""):
+        # str() because this is called from log_error too, where the first
+        # argument is an HTTPStatus rather than the request line. Without it
+        # every 404 — and Safari asks for favicon.ico and two apple-touch
+        # icons on each load — raised inside the logger and printed a full
+        # traceback, which reads as the server falling over.
+        first = str(args[0]) if args else ""
+        if "__watch" in first:          # once a second; would bury the rest
             return
-        sys.stderr.write("  %s\n" % (fmt % args))
+        try:
+            sys.stderr.write("  %s\n" % (fmt % args))
+        except Exception:                                      # noqa: BLE001
+            sys.stderr.write(f"  {fmt} {args}\n")
+
+    def send_error(self, code, message=None, explain=None):
+        # Browsers ask for icons that a single-page site does not have. One
+        # quiet line each, not a stack trace.
+        if int(code) == 404:
+            self.log_message("404 %s", self.path)
+            try:
+                self.send_response(404)
+                self.send_header("Content-Length", "0")
+                self._nocache()
+                self.end_headers()
+            except Exception:                                  # noqa: BLE001
+                pass
+            return
+        return super().send_error(code, message, explain)
 
 
 def build():
@@ -202,26 +226,70 @@ def build():
     return True
 
 
+def _pulse_cards(path):
+    try:
+        return open(path, encoding="utf-8", errors="replace").read().count('"rung"')
+    except OSError:
+        return 0
+
+
 def build_page(quiet=False):
-    """Regenerate index.html from the generator that owns it."""
+    """Regenerate index.html from the generator that owns it.
+
+    A rebuild that loses the pulse feed is put back. The generator warns when
+    it cannot find the archive, but it still writes a perfectly valid page
+    with an empty Market pulse tab — and a warning in a scrolling terminal is
+    not a guard. Losing a good page to a missing dependency has to be refused,
+    not merely mentioned.
+    """
     site = os.path.join(INTEL, "monitor", "site")
     gen = os.path.join(site, "build_platform.py")
     if not os.path.isfile(gen):
         if not quiet:
             print(f"\n  No build_platform.py at {gen} — skipping.\n")
         return False
+    had = _pulse_cards(INDEX)
+    keep = INDEX + ".before-rebuild"
+    try:
+        if os.path.isfile(INDEX):
+            shutil.copy2(INDEX, keep)
+    except OSError:
+        keep = None
     if not quiet:
         print("\n  Rebuilding index.html …\n")
     r = subprocess.run([sys.executable, gen, "--out", INDEX], cwd=site,
                        capture_output=quiet, text=True)
     if r.returncode != 0:
-        print("\n  The page rebuild FAILED — the page on disk is unchanged.")
+        print("\n  The page rebuild FAILED — putting the old page back.")
         if quiet and r.stderr:
             print("  " + r.stderr.strip().splitlines()[-1][:160])
+        if keep and os.path.isfile(keep):
+            shutil.copy2(keep, INDEX)
         print()
         return False
+
+    now = _pulse_cards(INDEX)
+    if had and not now:
+        if keep and os.path.isfile(keep):
+            shutil.copy2(keep, INDEX)
+            print(f"\n  REFUSED: the rebuild produced a page with no Market "
+                  f"pulse, where the one on disk had {had} cards.")
+            print(f"  The old page has been put back — nothing was lost.")
+        else:
+            print(f"\n  WARNING: the rebuilt page has no Market pulse and "
+                  f"there was no copy to restore.")
+        print(f"  The generator could not find the pulse archive. Point it at "
+              f"your\n  pwlbtoday-watch checkout and try again:\n")
+        print(f"      export PWLB_WATCH=/path/to/pwlbtoday-watch\n")
+        return False
+
     if quiet:
-        print("  index.html rebuilt — the page will reload itself")
+        print(f"  index.html rebuilt ({now} pulse cards) — reloading")
+    if keep and os.path.isfile(keep):
+        try:
+            os.remove(keep)
+        except OSError:
+            pass
     return True
 
 
