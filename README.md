@@ -18,9 +18,16 @@ Live page: https://philsmith871010-stack.github.io/pwlbtoday-stream/
 ## Preview it locally
 
 ```bash
-python3 run-local.py            # http://localhost:8030
+python3 run-local.py --watch    # what you want for front-end work
+python3 run-local.py            # just look at what is on disk
 python3 run-local.py --build    # rebuild the council files first
 ```
+
+**`--watch` is the one to use.** `index.html` is generated, so the file you
+actually edit is `build_platform.py` in CouncilIntel. Watch mode rebuilds the
+page whenever you save it and the browser reloads a few seconds later, back
+where you were. Without it you would edit the page directly, which works until
+the next rebuild and then vanishes.
 
 Standard library only. It reloads by itself when `index.html` or the council
 data changes on disk, and puts you back on the tab and scroll position you
