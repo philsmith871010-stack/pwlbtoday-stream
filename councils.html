@@ -594,6 +594,32 @@ svg.spark .sh:hover{fill:var(--chart);fill-opacity:.14}
 .finding .fcat{background:var(--chip);color:var(--ink2);padding:2px 7px;border-radius:99px;
   font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:600}
 .finding a{color:var(--accent-ink)}
+/* ---- National landing -------------------------------------------------------
+   Shown in the detail pane before any council is picked. Two lists across
+   the whole estate: distress signals (finding language that matches s114 /
+   EFS / capitalisation-direction / best-value-notice / commissioners) and
+   the newest committee-paper findings. Every card is clickable — picking
+   one is picking that council. */
+.nland{display:flex;flex-direction:column;gap:18px;margin-top:2px}
+.nland .nlead h2{font-family:var(--serif);font-size:22px;margin:0 0 6px;letter-spacing:-.01em}
+.nland .nlead p{margin:0;color:var(--ink2);font-size:13.5px;line-height:1.55}
+.nland .nlead p b{color:var(--ink);font-weight:600}
+.nland .nsec{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 16px}
+.nland .nsec h3{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted)}
+.nland .nsec.alert{border-left:4px solid var(--risk5-ink,#8a1c1c);background:var(--card)}
+.nland .nsec.alert h3{color:var(--risk5-ink,#8a1c1c)}
+.nland .nlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:9px}
+.nland .ncard{text-align:left;background:var(--sunken);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:10px 12px;cursor:pointer;font:inherit;color:inherit;
+  display:flex;flex-direction:column;gap:5px;transition:border-color .12s ease, background .12s ease}
+.nland .ncard:hover{border-color:var(--accent);background:var(--card)}
+.nland .ncard .ncc{font-size:11.5px;font-weight:600;color:var(--accent-ink);letter-spacing:.01em}
+.nland .ncard .nch{font-size:13px;font-weight:600;color:var(--ink);line-height:1.35}
+.nland .ncard .ncm{font-size:11px;color:var(--muted)}
+.nland .ncard .ncm a{color:var(--accent-ink)}
+.nland .nsec.alert .ncard{border-left:3px solid var(--risk5-ink,#8a1c1c)}
+
 /* ---- Overview (landing) tab -------------------------------------------------
    The default view when a council is picked. Everything a reader needs to know
    in the first ten seconds — is this a distressed council, what has moved in
@@ -791,12 +817,6 @@ footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);
   <div class="vint" id="vint"></div>
 </header>
 
-<nav class="viewtabs" role="tablist" aria-label="Views">
-  <button class="vtab" role="tab" data-view="cf" aria-selected="true">Councils</button>
-  <button class="vtab" role="tab" data-view="lgr" aria-selected="false">Reorganisation</button>
-  <a class="crossnav" href="index.html"><span class="ar">↩</span> PWLBpulse</a>
-</nav>
-
 <div id="view-cf">
 <section class="brief" id="brief"></section>
 
@@ -965,7 +985,10 @@ const classes = [...new Set(bodies.map(b => b.class))].sort();
 document.getElementById("cls").innerHTML =
   `<option value="">All classes</option>` + classes.map(c => `<option>${c}</option>`).join("");
 
-let selected = bodies[0].body;
+// No default council: the detail pane opens on the national landing (the
+// signals board across the estate) so a first-time reader is not thrown
+// into a random council. Clicking a row on the map or list picks one.
+let selected = null;
 // The tab is a view preference, not a property of the council. Someone
 // comparing debt books across ten authorities should not be thrown back to
 // Position on every click.
@@ -2245,6 +2268,10 @@ function reportBuild(){
 }
 
 function renderDetail(){
+  if (!selected){
+    document.getElementById("detail").innerHTML = renderNationalLanding();
+    return;
+  }
   const b = detail[selected];
   let debt = "";
   if (b.borrowing && b.borrowing.items.length){
@@ -2353,6 +2380,71 @@ function renderDetail(){
       return (traj + fc + track) || `<p class="note">No forecasts or budget published for this council.</p>`;
     })()}</div>
     <div class="pane" id="pane-file"${activeTab === "file" ? "" : " hidden"}>${renderCouncilFile(b)}</div>`;
+}
+
+// National landing: the detail pane before any council is picked. Aggregates
+// every distress-flagged finding across the estate and the newest finding
+// activity, so a first-time reader lands on "what's happening across UK
+// councils right now" rather than on a random council. Clicking a card
+// picks that council and slides the detail pane into its Overview.
+function renderNationalLanding(){
+  const dossier = DATA.dossier;
+  if (!dossier || !dossier.bodies)
+    return `<div class="nland"><div class="nlead"><h2>PWLBintel</h2>
+      <p>Pick a council on the map or search to open its file.</p></div></div>`;
+
+  const rxAlert = /s114|section\s*114|exceptional\s*financial\s*support|efs\b|capitalisation\s*direction|best\s*value\s*notice|commissioners/i;
+  const nameOf = gss => (detail[gss] && detail[gss].name) || gss;
+  const classOf = gss => (detail[gss] && detail[gss].class) || "";
+
+  const all = [];
+  for (const gss of Object.keys(dossier.bodies)){
+    const d = dossier.bodies[gss];
+    for (const f of (d.findings || [])){
+      const dtx = (f.headline || "") + " " + (f.detail || "") + " " + (f.category || "");
+      all.push({
+        gss, council: nameOf(gss), klass: classOf(gss),
+        headline: f.headline, iso: f.iso,
+        paper_title: f.paper_title, paper_url: f.paper_url,
+        distress: rxAlert.test(dtx),
+      });
+    }
+  }
+  // Newest first — findings are already sorted per council but not globally.
+  all.sort((a, b) => (b.iso || "").localeCompare(a.iso || ""));
+
+  const distress = all.filter(x => x.distress).slice(0, 12);
+  // A recent-activity card that appears again under distress is noise, so
+  // key on gss+iso+headline to strike them out of the recent list.
+  const seen = new Set(distress.map(x => x.gss + "|" + x.iso + "|" + x.headline));
+  const recent = all.filter(x => !seen.has(x.gss + "|" + x.iso + "|" + x.headline)).slice(0, 12);
+
+  const councilsWithFindings = new Set(all.map(x => x.gss)).size;
+  const councilsInDistress = new Set(distress.map(x => x.gss)).size;
+  const totalCouncils = Object.keys(dossier.bodies).length;
+
+  const card = f => `<button class="ncard" type="button" data-body="${esc(f.gss)}"
+      aria-label="Open ${esc(f.council)} file">
+    <div class="ncc">${esc(f.council)}${f.klass ? ` · <span style="color:var(--muted);font-weight:400">${esc(f.klass)}</span>` : ""}</div>
+    <div class="nch">${esc(f.headline || "")}</div>
+    <div class="ncm">${f.iso ? humanDate(f.iso) : ""}${
+      f.paper_url ? ` · <a href="${esc(f.paper_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">source paper</a>` : ""}</div>
+  </button>`;
+
+  return `<div class="nland">
+    <div class="nlead">
+      <h2>The national picture</h2>
+      <p>Distress signals and the newest committee-paper reads across UK councils.
+        ${councilsInDistress ? `<b>${councilsInDistress}</b> council${councilsInDistress===1?"":"s"} carrying an active distress signal · ` : ""}
+        <b>${all.length}</b> findings across <b>${councilsWithFindings}</b> of <b>${totalCouncils}</b> councils on file. Pick a council on the left, or click a card below.</p>
+    </div>
+    ${distress.length ? `<div class="nsec alert"><h3>Distress signals · worst end of the estate</h3>
+      <div class="nlist">${distress.map(card).join("")}</div></div>` : ""}
+    ${recent.length ? `<div class="nsec"><h3>Newest findings across all councils</h3>
+      <div class="nlist">${recent.map(card).join("")}</div></div>` : ""}
+    ${!distress.length && !recent.length ? `<div class="nsec"><h3>No findings on file yet</h3>
+      <p style="margin:0;color:var(--muted);font-size:13px">The reading programme has not produced findings yet. Pick a council on the map to see its national-figures dossier.</p></div>` : ""}
+  </div>`;
 }
 
 // Overview: the landing view when a council is picked. Answers the six
@@ -2811,6 +2903,16 @@ document.addEventListener("click", e => {
   + `${meta.vintages.length} publisher vintages.`;
 
 renderList(); renderDetail(); renderMap(); return; }
+  // National-landing card: picks that council and slides the detail pane
+  // into its Overview. Source-paper links inside the card stop propagation
+  // so an outbound click doesn't select the council instead of opening.
+  const ncard = e.target.closest(".ncard");
+  if (ncard && ncard.dataset.body && detail[ncard.dataset.body]){
+    selected = ncard.dataset.body;
+    renderList(); renderDetail(); renderMap();
+    document.getElementById("detail").scrollIntoView({behavior: "smooth", block: "start"});
+    return;
+  }
   const bseg = e.target.closest(".bseg");
   if (bseg && bseg.dataset.basis && bseg.dataset.basis !== BASIS){
     BASIS = bseg.dataset.basis; renderDetail(); return; }
