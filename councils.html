@@ -616,8 +616,11 @@ svg.spark .sh:hover{fill:var(--chart);fill-opacity:.14}
 .nland .ncard:hover{border-color:var(--accent);background:var(--card)}
 .nland .ncard .ncc{font-size:11.5px;font-weight:600;color:var(--accent-ink);letter-spacing:.01em}
 .nland .ncard .nch{font-size:13px;font-weight:600;color:var(--ink);line-height:1.35}
-.nland .ncard .ncm{font-size:11px;color:var(--muted)}
+.nland .ncard .ncm{font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;
+  align-items:center;gap:6px}
 .nland .ncard .ncm a{color:var(--accent-ink)}
+.nland .ncard .more{background:var(--chip);color:var(--ink2);padding:1px 7px;border-radius:99px;
+  font-size:10px;font-weight:600;letter-spacing:.02em}
 .nland .nsec.alert .ncard{border-left:3px solid var(--risk5-ink,#8a1c1c)}
 
 /* ---- Overview (landing) tab -------------------------------------------------
@@ -2397,51 +2400,69 @@ function renderNationalLanding(){
   const nameOf = gss => (detail[gss] && detail[gss].name) || gss;
   const classOf = gss => (detail[gss] && detail[gss].class) || "";
 
-  const all = [];
+  // Collapse the estate to one row per council. A distress dashboard is
+  // about which councils are in distress, not how many findings each has;
+  // the per-council Overview holds the full list. Distress and recent are
+  // both keyed on the council, with the newest finding of the right kind
+  // acting as the headline and a "+N more" chip counting the rest.
+  const byBody = {};
   for (const gss of Object.keys(dossier.bodies)){
     const d = dossier.bodies[gss];
-    for (const f of (d.findings || [])){
-      const dtx = (f.headline || "") + " " + (f.detail || "") + " " + (f.category || "");
-      all.push({
-        gss, council: nameOf(gss), klass: classOf(gss),
-        headline: f.headline, iso: f.iso,
-        paper_title: f.paper_title, paper_url: f.paper_url,
-        distress: rxAlert.test(dtx),
-      });
-    }
+    const findings = (d.findings || []).slice().sort(
+      (a, b) => (b.iso || "").localeCompare(a.iso || ""));
+    if (!findings.length) continue;
+    const flagged = findings.filter(f =>
+      rxAlert.test((f.headline || "") + " " + (f.detail || "") + " " + (f.category || "")));
+    byBody[gss] = {
+      gss, council: nameOf(gss), klass: classOf(gss),
+      total: findings.length,
+      distress: flagged.length,
+      headline_distress: flagged[0] || null,   // newest distress finding
+      headline_any: findings[0],                // newest finding of any kind
+    };
   }
-  // Newest first — findings are already sorted per council but not globally.
-  all.sort((a, b) => (b.iso || "").localeCompare(a.iso || ""));
 
-  const distress = all.filter(x => x.distress).slice(0, 12);
-  // A recent-activity card that appears again under distress is noise, so
-  // key on gss+iso+headline to strike them out of the recent list.
-  const seen = new Set(distress.map(x => x.gss + "|" + x.iso + "|" + x.headline));
-  const recent = all.filter(x => !seen.has(x.gss + "|" + x.iso + "|" + x.headline)).slice(0, 12);
+  const rows = Object.values(byBody);
+  const distress = rows.filter(r => r.headline_distress)
+    .sort((a, b) => (b.headline_distress.iso || "").localeCompare(a.headline_distress.iso || ""))
+    .slice(0, 16);
+  const distressGss = new Set(distress.map(r => r.gss));
+  const recent = rows.filter(r => !distressGss.has(r.gss))
+    .sort((a, b) => (b.headline_any.iso || "").localeCompare(a.headline_any.iso || ""))
+    .slice(0, 16);
 
-  const councilsWithFindings = new Set(all.map(x => x.gss)).size;
-  const councilsInDistress = new Set(distress.map(x => x.gss)).size;
+  const councilsWithFindings = rows.length;
+  const councilsInDistress = distress.length;
   const totalCouncils = Object.keys(dossier.bodies).length;
+  const allFindings = rows.reduce((n, r) => n + r.total, 0);
 
-  const card = f => `<button class="ncard" type="button" data-body="${esc(f.gss)}"
-      aria-label="Open ${esc(f.council)} file">
-    <div class="ncc">${esc(f.council)}${f.klass ? ` · <span style="color:var(--muted);font-weight:400">${esc(f.klass)}</span>` : ""}</div>
-    <div class="nch">${esc(f.headline || "")}</div>
-    <div class="ncm">${f.iso ? humanDate(f.iso) : ""}${
-      f.paper_url ? ` · <a href="${esc(f.paper_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">source paper</a>` : ""}</div>
-  </button>`;
+  const card = (r, mode) => {
+    const f = mode === "distress" ? r.headline_distress : r.headline_any;
+    const extra = mode === "distress"
+      ? (r.distress > 1 ? `<span class="more">+${r.distress - 1} more distress finding${r.distress - 1 === 1 ? "" : "s"}</span>` : "")
+      : (r.total > 1 ? `<span class="more">+${r.total - 1} more finding${r.total - 1 === 1 ? "" : "s"}</span>` : "");
+    return `<button class="ncard" type="button" data-body="${esc(r.gss)}"
+        aria-label="Open ${esc(r.council)} file">
+      <div class="ncc">${esc(r.council)}${r.klass ? ` · <span style="color:var(--muted);font-weight:400">${esc(r.klass)}</span>` : ""}</div>
+      <div class="nch">${esc(f.headline || "")}</div>
+      <div class="ncm">${f.iso ? humanDate(f.iso) : ""}${
+        f.paper_url ? ` · <a href="${esc(f.paper_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">source paper</a>` : ""}${
+        extra ? ` · ${extra}` : ""}</div>
+    </button>`;
+  };
 
   return `<div class="nland">
     <div class="nlead">
       <h2>The national picture</h2>
-      <p>Distress signals and the newest committee-paper reads across UK councils.
+      <p>One card per council. The headline is the newest finding of the right kind;
+        the council's own file has the rest.
         ${councilsInDistress ? `<b>${councilsInDistress}</b> council${councilsInDistress===1?"":"s"} carrying an active distress signal · ` : ""}
-        <b>${all.length}</b> findings across <b>${councilsWithFindings}</b> of <b>${totalCouncils}</b> councils on file. Pick a council on the left, or click a card below.</p>
+        <b>${allFindings}</b> findings across <b>${councilsWithFindings}</b> of <b>${totalCouncils}</b> councils on file. Pick a council on the left, or click a card below.</p>
     </div>
     ${distress.length ? `<div class="nsec alert"><h3>Distress signals · worst end of the estate</h3>
-      <div class="nlist">${distress.map(card).join("")}</div></div>` : ""}
-    ${recent.length ? `<div class="nsec"><h3>Newest findings across all councils</h3>
-      <div class="nlist">${recent.map(card).join("")}</div></div>` : ""}
+      <div class="nlist">${distress.map(r => card(r, "distress")).join("")}</div></div>` : ""}
+    ${recent.length ? `<div class="nsec"><h3>Newest activity from other councils</h3>
+      <div class="nlist">${recent.map(r => card(r, "recent")).join("")}</div></div>` : ""}
     ${!distress.length && !recent.length ? `<div class="nsec"><h3>No findings on file yet</h3>
       <p style="margin:0;color:var(--muted);font-size:13px">The reading programme has not produced findings yet. Pick a council on the map to see its national-figures dossier.</p></div>` : ""}
   </div>`;
