@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Treasury Reporting Tool</title>
+<meta name="description" content="Treasury strategies, outturns and monitoring reports built to the liability benchmark framework in CIPFA's 2026 Code revision. Free, independent, and produced entirely in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* ===========================================================================
+ * Treasury Reporting Tool — the page that explains it.
+ *
+ * The palette is the tool's own: the same line colours that draw LB1 to LB5,
+ * so the two read as one product. It commits to a single dark treatment
+ * rather than following the viewer's theme — this is an instrument panel, and
+ * the handoff into the tool's light workspace is deliberate.
+ *
+ * Animation is written against the Web Animations API and IntersectionObserver
+ * rather than a library. A CDN script is a dependency a council's IT can
+ * block, and everything wanted here — draw-on, stagger, scroll reveal,
+ * counters — is a few lines natively. Every one of them is skipped under
+ * prefers-reduced-motion, and nothing is required to read the page.
+ * ======================================================================== */
+:root{
+  --ground:#080f18; --ground2:#0c1626; --panel:#101d2e; --panel2:#16273b;
+  --ink:#eaf1f8; --ink2:#a9bccd; --muted:#7089a0; --faint:#4a6076;
+  --line:#1b2c40; --line2:#263c55;
+  /* The tool's series colours, lifted unchanged. */
+  --cfr:#5695d1; --obs:#7a8794; --ntp:#9dc4ea; --lb:#e0776a;
+  --al:#b795e0; --inv:#4cb583; --debt:#c8d8e8; --exc:#e8974a;
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+  --wrap:1120px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--sans); font-size:17px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+.wrap{max-width:var(--wrap); margin:0 auto; padding:0 28px}
+a{color:inherit}
+h1,h2,h3{text-wrap:balance; margin:0}
+
+/* ---- shared rhythm ------------------------------------------------------- */
+section{padding:104px 0; position:relative}
+.eyebrow{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--muted); margin:0 0 20px;
+  display:flex; align-items:center; gap:12px;
+}
+.eyebrow::before{content:""; width:26px; height:1px; background:var(--line2)}
+h2{font-size:clamp(28px,3.6vw,42px); line-height:1.14; letter-spacing:-.022em; font-weight:600}
+.lede{
+  font-family:var(--serif); font-size:clamp(18px,2vw,21px); line-height:1.62;
+  color:var(--ink2); max-width:62ch; margin:22px 0 0;
+}
+.rule{height:1px; background:linear-gradient(90deg,var(--line2),transparent)}
+
+/* ---- hero ---------------------------------------------------------------- */
+.hero{padding:0; min-height:100svh; display:flex; flex-direction:column; justify-content:center;
+  position:relative; overflow:hidden}
+/* A faint grid, like the background of every chart in the tool. */
+.hero::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),
+                   linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(ellipse 90% 70% at 60% 45%,#000 20%,transparent 78%);
+  opacity:.5;
+}
+.masthead{
+  position:absolute; top:0; left:0; right:0; padding:26px 0; z-index:3;
+  border-bottom:1px solid transparent;
+}
+.masthead .wrap{display:flex; align-items:center; gap:18px}
+.brand{font-family:var(--mono); font-size:13px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--ink2); font-weight:500}
+.brand b{color:var(--ink); font-weight:600}
+.masthead .sp{flex:1}
+.masthead a.mini{font-family:var(--sans); font-size:13.5px; color:var(--ink2);
+  text-decoration:none; font-weight:500}
+.masthead a.mini:hover{color:var(--ink)}
+
+.herogrid{
+  display:grid; grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);
+  gap:56px; align-items:center; position:relative; z-index:2; padding:110px 0 60px;
+}
+h1{
+  font-size:clamp(38px,5.6vw,68px); line-height:1.03; letter-spacing:-.035em;
+  font-weight:600;
+}
+h1 .em{
+  font-family:var(--serif); font-style:italic; font-weight:400;
+  color:var(--lb);
+}
+.sub{
+  font-family:var(--serif); font-size:clamp(17px,1.7vw,20px); line-height:1.6;
+  color:var(--ink2); margin:26px 0 0; max-width:52ch;
+}
+.cta{display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin:38px 0 0}
+.btn{
+  display:inline-flex; align-items:center; gap:10px;
+  font-family:var(--sans); font-size:15px; font-weight:600;
+  padding:14px 24px; border-radius:6px; text-decoration:none;
+  border:1px solid var(--ink); background:var(--ink); color:var(--ground);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.btn:hover{transform:translateY(-1px); box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.btn.ghost{background:transparent; color:var(--ink); border-color:var(--line2)}
+.btn.ghost:hover{border-color:var(--ink2)}
+.btn .arw{transition:transform .18s ease}
+.btn:hover .arw{transform:translateX(3px)}
+.freeline{font-family:var(--mono); font-size:12.5px; color:var(--muted); margin:18px 0 0}
+
+/* the hero chart */
+.chartcard{
+  background:linear-gradient(180deg,var(--panel),var(--ground2));
+  border:1px solid var(--line2); border-radius:12px; padding:22px 22px 16px;
+  box-shadow:0 24px 70px rgba(0,0,0,.5);
+}
+.chartcard h4{
+  margin:0 0 2px; font-family:var(--mono); font-size:11px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muted); font-weight:600;
+}
+.chartcard .cap{font-size:13px; color:var(--ink2); margin:0 0 14px}
+.chartcard svg{display:block; width:100%; height:auto}
+.legend{display:flex; flex-wrap:wrap; gap:6px 18px; margin:12px 2px 0}
+.legend span{display:inline-flex; align-items:center; gap:7px;
+  font-family:var(--sans); font-size:12px; color:var(--ink2)}
+.legend i{width:14px; height:2.5px; border-radius:2px; display:block}
+
+/* ---- figures ------------------------------------------------------------- */
+.figs{display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:1px;
+  background:var(--line); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.fig{background:var(--ground2); padding:26px 22px}
+.fig b{display:block; font-family:var(--mono); font-size:clamp(30px,3.6vw,40px);
+  font-weight:500; letter-spacing:-.03em; color:var(--ink); line-height:1;
+  font-variant-numeric:tabular-nums}
+.fig b i{font-style:normal; font-size:.55em; color:var(--muted); margin-left:2px}
+.fig span{display:block; font-size:13.5px; color:var(--ink2); margin-top:11px; line-height:1.45}
+
+/* ---- the inconsistency picture ------------------------------------------- */
+.scatterwrap{position:relative; margin:44px 0 0;
+  background:var(--ground2); border:1px solid var(--line); border-radius:10px;
+  padding:26px; overflow:hidden}
+#scatter{display:block; width:100%; height:auto}
+.scatterlab{display:flex; gap:22px; flex-wrap:wrap; margin:16px 2px 0;
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted)}
+
+/* ---- cards --------------------------------------------------------------- */
+.cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(272px,1fr)); gap:20px; margin:44px 0 0}
+.card{
+  background:var(--ground2); border:1px solid var(--line); border-radius:10px;
+  padding:28px 26px; position:relative;
+}
+.card .n{
+  font-family:var(--mono); font-size:11.5px; letter-spacing:.14em; color:var(--muted);
+  display:block; margin-bottom:14px;
+}
+.card h3{font-size:19px; font-weight:600; letter-spacing:-.012em; margin:0 0 10px}
+.card p{margin:0; font-size:15px; color:var(--ink2); line-height:1.6}
+.card p + p{margin-top:11px}
+
+/* ---- the steps ----------------------------------------------------------- */
+.steps{margin:48px 0 0; border-top:1px solid var(--line)}
+.step{
+  display:grid; grid-template-columns:76px minmax(0,1fr) minmax(0,1.15fr); gap:30px;
+  padding:32px 0; border-bottom:1px solid var(--line); align-items:start;
+}
+.step .k{font-family:var(--mono); font-size:13px; color:var(--lb); letter-spacing:.08em; padding-top:3px}
+.step h3{font-size:20px; font-weight:600; letter-spacing:-.014em}
+.step p{margin:0; color:var(--ink2); font-size:15.5px}
+
+/* ---- honesty panel ------------------------------------------------------- */
+.honest{background:var(--ground2); border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+.honest ul{list-style:none; margin:36px 0 0; padding:0;
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(288px,1fr)); gap:22px 40px}
+.honest li{padding-left:26px; position:relative; color:var(--ink2); font-size:15.5px}
+.honest li::before{
+  content:""; position:absolute; left:0; top:.62em; width:9px; height:9px;
+  border:1.5px solid var(--exc); border-radius:2px;
+}
+.honest li b{color:var(--ink); font-weight:600}
+
+/* ---- close --------------------------------------------------------------- */
+.close{text-align:center; padding:120px 0}
+.close h2{max-width:20ch; margin:0 auto}
+.close .lede{margin:22px auto 0; text-align:center}
+.close .cta{justify-content:center}
+footer{border-top:1px solid var(--line); padding:38px 0 56px; color:var(--muted); font-size:13.5px}
+footer .wrap{display:flex; gap:24px; flex-wrap:wrap; align-items:baseline}
+footer .sp{flex:1}
+footer a{color:var(--ink2)}
+
+/* ---- reveal ---------------------------------------------------------------
+ * Visible by DEFAULT. The hidden state is applied by the script itself, via
+ * .anim on the root, so a page whose script never runs — or never gets a
+ * frame — is fully readable rather than blank.
+ *
+ * That is not a theoretical case. requestAnimationFrame does not fire in a
+ * background tab, so the first version of this page stayed completely blank
+ * for anyone who opened the link in a new tab and read something else first.
+ */
+html.anim .rv{opacity:0; transform:translateY(18px)}
+html.anim .rv.in{opacity:1; transform:none;
+  transition:opacity .7s cubic-bezier(.22,.61,.36,1),
+             transform .7s cubic-bezier(.22,.61,.36,1)}
+
+@media (max-width:900px){
+  .herogrid{grid-template-columns:1fr; gap:40px; padding:130px 0 70px}
+  .step{grid-template-columns:1fr; gap:10px}
+  .step .k{padding-top:0}
+  section{padding:78px 0}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rv{opacity:1; transform:none; transition:none}
+  .btn{transition:none}
+}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="wrap">
+    <span class="brand"><b>PWLBtoday</b> &nbsp;Treasury Reporting Tool</span>
+    <span class="sp"></span>
+    <a class="mini" href="#why">Why</a>
+    <a class="mini" href="#how">How it works</a>
+    <a class="mini" href="liability-benchmark.html">Open the tool &rarr;</a>
+  </div>
+</div>
+
+<!-- ======================= HERO ======================= -->
+<header class="hero">
+  <div class="wrap">
+    <div class="herogrid">
+      <div>
+        <h1 class="rv">The treasury report,<br>built to the <span class="em">liability&nbsp;benchmark</span>.</h1>
+        <p class="sub rv">Strategies, outturns and monitoring reports, produced against CIPFA's
+          2026 revision of the Prudential and Treasury Management Codes. Answer a few questions,
+          paste your figures, and take away a draft with every indicator the Code asks for —
+          complete, correctly presented, and yours to edit.</p>
+        <div class="cta rv">
+          <a class="btn" href="liability-benchmark.html">Open the tool <span class="arw">&rarr;</span></a>
+          <a class="btn ghost" href="#why">Why we built it</a>
+        </div>
+        <p class="freeline rv">Free · no account · nothing leaves your browser</p>
+      </div>
+
+      <div class="chartcard rv">
+        <h4>LB3 &middot; Illustrative authority</h4>
+        <p class="cap">Treasury commitments against the benchmark. Shapes are illustrative;
+          the tool draws this from your own figures.</p>
+        <svg id="hchart" viewBox="0 0 560 300" role="img"
+             aria-label="An illustrative liability benchmark chart. The capital financing
+             requirement falls across the projection while existing loan commitments run off
+             more steeply, opening a borrowing requirement from the early 2030s.">
+          <defs>
+            <linearGradient id="gapfill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#e0776a" stop-opacity=".22"/>
+              <stop offset="100%" stop-color="#e0776a" stop-opacity=".02"/>
+            </linearGradient>
+          </defs>
+          <g id="hgrid" stroke="#1b2c40" stroke-width="1"></g>
+          <g id="hax" font-family="IBM Plex Mono, monospace" font-size="10"
+             fill="#4a6076"></g>
+          <path id="gapArea" fill="url(#gapfill)" opacity="0"></path>
+          <path id="lnCfr"  fill="none" stroke="#5695d1" stroke-width="2"></path>
+          <path id="lnDebt" fill="none" stroke="#c8d8e8" stroke-width="2.2"></path>
+          <path id="lnLb"   fill="none" stroke="#e0776a" stroke-width="2.6"></path>
+          <path id="lnAl"   fill="none" stroke="#b795e0" stroke-width="1.6"
+                stroke-dasharray="7 4" opacity="0"></path>
+          <circle id="dotLb" r="3.6" fill="#e0776a" opacity="0"></circle>
+          <g id="alLabel" opacity="0">
+            <text x="548" y="0" text-anchor="end" font-family="IBM Plex Mono, monospace"
+                  font-size="10.5" fill="#b795e0">authorised limit</text>
+          </g>
+        </svg>
+        <div class="legend">
+          <span><i style="background:#5695d1"></i>Capital financing requirement</span>
+          <span><i style="background:#e0776a"></i>Liability benchmark</span>
+          <span><i style="background:#c8d8e8"></i>Existing loans</span>
+          <span><i style="background:#b795e0"></i>Authorised limit</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ======================= WHY ======================= -->
+<section id="why">
+  <div class="wrap">
+    <p class="eyebrow rv">Why it exists</p>
+    <h2 class="rv">Every council writes this report. No two write it the same way.</h2>
+    <p class="lede rv">We read 551 treasury reports — 201 strategies, 133 outturns, 125 mid-year
+      reviews and 92 quarterly monitors — and catalogued every section heading in them. They
+      came to <b>4,265 distinct headings</b>. Four in five were used by one council and no
+      other.</p>
+
+    <div class="scatterwrap rv">
+      <svg id="scatter" viewBox="0 0 1000 240" role="img"
+           aria-label="A field of 4,265 marks representing every distinct section heading found
+           across 551 treasury reports, which resolves into thirteen ordered rows — the sections
+           the Codes actually require."></svg>
+      <div class="scatterlab">
+        <span id="scatterState">4,265 headings, as the sector writes them</span>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card rv">
+        <span class="n">01</span>
+        <h3>This is not a failure of drafting</h3>
+        <p>Treasury teams are small and the reports are good. What is missing is a shared spine.
+          The Codes say what must be covered, not how to lay it out, so every authority has
+          solved the same problem separately — and solved it well, in its own words.</p>
+      </div>
+      <div class="card rv">
+        <span class="n">02</span>
+        <h3>Advisers supply the templates</h3>
+        <p>Which is why councils on the same adviser read alike and councils on different
+          advisers do not. That is a reasonable service, honestly given. But it means the shape
+          of a council's report tells you who advises it, and a member comparing two authorities
+          is comparing two house styles as much as two balance sheets.</p>
+      </div>
+      <div class="card rv">
+        <span class="n">03</span>
+        <h3>The benchmark is the point of comparison</h3>
+        <p>The liability benchmark is deliberately built to be compared like for like against a
+          loan portfolio. Presented consistently, it lets a member see their own authority
+          clearly, and lets anyone see how it sits against the rest. Presented differently by
+          every authority that publishes one, it does neither.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><div class="rule"></div></div>
+
+<!-- ======================= EVIDENCE ======================= -->
+<section id="evidence">
+  <div class="wrap">
+    <p class="eyebrow rv">What it was built from</p>
+    <h2 class="rv">A survey, two Codes, a consultation, and the loan book.</h2>
+    <p class="lede rv">Nothing here is an opinion about how a treasury report ought to look. It
+      is what the Codes require, laid out the way the best-written reports in the corpus lay it
+      out, with the arithmetic checked against the consultation's own definitions.</p>
+
+    <div class="figs rv" id="figs" style="margin-top:44px">
+      <div class="fig"><b data-to="551">0</b><span>Treasury reports read and catalogued, across four report types</span></div>
+      <div class="fig"><b data-to="4265">0</b><span>Distinct section headings found in them</span></div>
+      <div class="fig"><b data-to="81">0</b><span>Per cent of those headings used by exactly one council</span></div>
+      <div class="fig"><b data-to="311">0</b><span>Authorities whose PWLB loan book is built in, loan by loan</span></div>
+      <div class="fig"><b data-to="73">0</b><span>Binding Code requirements tracked, each named and answered</span></div>
+      <div class="fig"><b data-to="2197">0</b><span>Assertions the benchmark is checked against on every change</span></div>
+    </div>
+
+    <div class="cards">
+      <div class="card rv">
+        <span class="n">The Codes</span>
+        <h3>Read, not summarised</h3>
+        <p>The Prudential Code and the Treasury Management Code, both sets of Guidance Notes,
+          and the 2026 consultation that replaces the single liability benchmark chart with
+          five indicators. Seventy-three binding requirements were extracted and tracked
+          individually: sixty-three are answered, eight fall outside a drafting tool, and two
+          are named as not covered, because a register that only counts successes is a
+          scoreboard rather than a check.</p>
+      </div>
+      <div class="card rv">
+        <span class="n">The corpus</span>
+        <h3>Best practice, located rather than assumed</h3>
+        <p>Every section, table and chart in 551 reports was catalogued so the tool's structure
+          follows what the strongest reports actually do — and so we could tell a strategy from
+          an outturn, which turn out to be genuinely different documents rather than the same
+          one in a different tense.</p>
+      </div>
+      <div class="card rv">
+        <span class="n">The data</span>
+        <h3>The loan book, already filled in</h3>
+        <p>Every PWLB advance to all 311 borrowing authorities, run off contractually across
+          fifty years, so the existing-loans line starts populated. It is a starting point you
+          amend, not an answer: it cannot see market debt, LOBOs, or which pool a loan sits in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= HOW ======================= -->
+<section id="how" class="honest">
+  <div class="wrap">
+    <p class="eyebrow rv">How it works</p>
+    <h2 class="rv">Three passes, and you have a draft.</h2>
+
+    <div class="steps">
+      <div class="step rv">
+        <span class="k">01</span>
+        <div><h3>Answer a few questions</h3></div>
+        <p>Which authority, which report, whether you have an HRA and whether debt is pooled.
+          Nine further choices decide which clauses apply — a council with no HRA is never told
+          about two-pool apportionment, and a Scottish authority gets the loans fund and the
+          section 95 officer rather than MRP and section 151.</p>
+      </div>
+      <div class="step rv">
+        <span class="k">02</span>
+        <div><h3>Paste your figures</h3></div>
+        <p>A grid of years down and measures across — CFR, MRP, capital receipts applied,
+          other balance sheet items, your own projection of year-end loans and investments.
+          Paste it from Excel in whatever shape your spreadsheet holds it, or download a
+          template. Your loan book and investment portfolio go in at whatever level of detail
+          you want to present: every loan, grouped by type, or a single summary line.</p>
+      </div>
+      <div class="step rv">
+        <span class="k">03</span>
+        <div><h3>Take the draft away</h3></div>
+        <p>LB1 to LB5 drawn and tabled, an authorised limit derived from the projection rather
+          than typed, affordability against the net revenue stream, and every section written
+          in full — with each figure only you can supply left as a visible gap. Export to Word
+          and edit it like any other document.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= HONESTY ======================= -->
+<section id="limits">
+  <div class="wrap">
+    <p class="eyebrow rv">What it does not claim</p>
+    <h2 class="rv">A drafting aid, not a compliance statement.</h2>
+    <p class="lede rv">The tool produces the indicators the Code requires, complete and correctly
+      presented. It does not certify that your authority complies with anything, and it is worth
+      being plain about where the edges are.</p>
+    <ul>
+      <li class="rv"><b>Nothing is extrapolated.</b> Every year is a figure you entered. A blank
+        year is nil, and the charts show what that implies — which is the honest answer, and what
+        the Guidance Notes require.</li>
+      <li class="rv"><b>The loan book is a starting point.</b> It is the published PWLB data and
+        we hold it with confidence, but it cannot see market debt or new borrowing you intend.</li>
+      <li class="rv"><b>Two pools cannot be split for you.</b> Nothing published says which pool
+        a loan sits in, so the tool declines to guess and asks for each fund's own projection.</li>
+      <li class="rv"><b>Two requirements are not covered.</b> The chief finance officer's personal
+        responsibilities, and the principles for determining prudently investable funds. Both are
+        your authority's own, and both are named in the register rather than quietly dropped.</li>
+      <li class="rv"><b>Check every figure before it reaches a committee.</b> It is a draft. It
+        says so on itself.</li>
+      <li class="rv"><b>Independent of any adviser.</b> We do not sell treasury advice, arrange
+        loans, or take a position in anything you might do next.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ======================= CLOSE ======================= -->
+<section class="close">
+  <div class="wrap">
+    <h2 class="rv">Open it, fill the worked example, and read it.</h2>
+    <p class="lede rv">Three complete demonstration authorities are built in — no HRA, one pool
+      and two pool — each filled to the last section, so you can see the whole report before
+      typing a figure of your own.</p>
+    <div class="cta rv">
+      <a class="btn" href="liability-benchmark.html">Open the Treasury Reporting Tool <span class="arw">&rarr;</span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>PWLBtoday &middot; Treasury Reporting Tool</span>
+    <span class="sp"></span>
+    <span>Built to the CIPFA 2026 consultation draft</span>
+    <span><a href="liability-benchmark.html">Open the tool</a></span>
+  </div>
+</footer>
+
+<script>
+"use strict";
+/* ---------------------------------------------------------------------------
+ * Motion.
+ *
+ * Written natively rather than against a library: a CDN script is a dependency
+ * a council's IT can block, and the effects wanted here are a few lines of
+ * Web Animations and one IntersectionObserver. Everything below is decoration
+ * — the page reads completely with the script removed, and every effect is
+ * skipped outright when the viewer has asked for reduced motion.
+ * ------------------------------------------------------------------------ */
+const STILL = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+// Opt in to the hidden-then-revealed state only now that a script is
+// demonstrably running. Everything below is enhancement on top of a page that
+// already reads.
+if(!STILL) document.documentElement.classList.add("anim");
+
+/* ---- the hero chart -------------------------------------------------------
+ * Plausible shapes, not a real authority's figures: a CFR amortising, other
+ * balance sheet items falling away, and a loan portfolio running off more
+ * steeply than the benchmark — which is what opens a borrowing requirement,
+ * and the single thing LB3 exists to show.
+ */
+const YRS = 16;
+const cfr  = Array.from({length:YRS}, (_,i)=> 940 - i*31 + Math.sin(i/2.4)*11);
+const obs  = Array.from({length:YRS}, (_,i)=> 300 * Math.pow(0.955,i));
+const liq  = 42;
+const ntp  = cfr.map((c,i)=> c - obs[i]);
+const lb   = ntp.map(n => n + Math.max(liq, -n));
+const debt = Array.from({length:YRS}, (_,i)=> 820 * Math.pow(0.912,i));
+const AL   = Math.max.apply(null, lb);
+
+const P = {t:16, r:16, b:26, l:44}, W = 560, H = 300;
+const iw = W - P.l - P.r, ih = H - P.t - P.b;
+const LO = 0, HI = Math.max(AL, cfr[0]) * 1.06;
+const X = i => P.l + (iw * i) / (YRS - 1);
+const Y = v => P.t + ih - ((v - LO) / (HI - LO)) * ih;
+const line = a => a.map((v,i)=> (i?"L":"M") + X(i).toFixed(1) + " " + Y(v).toFixed(1)).join(" ");
+
+// Grid and axis, drawn from the same numbers as the lines.
+(function frame(){
+  const g = $("#hgrid"), ax = $("#hax");
+  for(let k=0;k<=4;k++){
+    const v = LO + (HI-LO)*k/4, y = Y(v).toFixed(1);
+    g.insertAdjacentHTML("beforeend",
+      `<line x1="${P.l}" y1="${y}" x2="${W-P.r}" y2="${y}" opacity="${k?0.55:0.9}"/>`);
+    ax.insertAdjacentHTML("beforeend",
+      `<text x="${P.l-8}" y="${(+y+3.4).toFixed(1)}" text-anchor="end">${Math.round(v)}</text>`);
+  }
+  [0,5,10,15].forEach(i => ax.insertAdjacentHTML("beforeend",
+    `<text x="${X(i).toFixed(1)}" y="${H-P.b+16}" text-anchor="middle">${26+i}/${String(27+i).padStart(2,"0")}</text>`));
+})();
+
+$("#lnCfr").setAttribute("d", line(cfr));
+$("#lnDebt").setAttribute("d", line(debt));
+$("#lnLb").setAttribute("d", line(lb));
+$("#lnAl").setAttribute("d", `M${P.l} ${Y(AL).toFixed(1)} L${W-P.r} ${Y(AL).toFixed(1)}`);
+$("#gapArea").setAttribute("d",
+  line(lb) + " " + debt.map((v,i)=>`L${X(YRS-1-i).toFixed(1)} ${Y(debt[YRS-1-i]).toFixed(1)}`).join(" ") + " Z");
+$("#alLabel").setAttribute("transform", `translate(0,${(Y(AL)-7).toFixed(1)})`);
+$("#dotLb").setAttribute("cx", X(YRS-1).toFixed(1));
+$("#dotLb").setAttribute("cy", Y(lb[YRS-1]).toFixed(1));
+
+/* Draw each line by running its own dash offset to zero — the cheapest honest
+   way to make a chart appear the way it is read, left to right. */
+function draw(sel, ms, delay){
+  const el = $(sel), len = el.getTotalLength();
+  el.style.strokeDasharray = len;
+  el.style.strokeDashoffset = len;
+  if(STILL){ el.style.strokeDashoffset = 0; return; }
+  el.animate([{strokeDashoffset:len},{strokeDashoffset:0}],
+    {duration:ms, delay:delay, easing:"cubic-bezier(.33,.9,.4,1)", fill:"forwards"});
+}
+function fade(sel, delay, to){
+  const el = $(sel);
+  if(STILL){ el.style.opacity = to==null?1:to; return; }
+  el.animate([{opacity:0},{opacity:to==null?1:to}],
+    {duration:600, delay:delay, easing:"ease-out", fill:"forwards"});
+}
+function drawHero(){
+  draw("#lnCfr", 1500, 260);
+  draw("#lnDebt", 1500, 520);
+  draw("#lnLb", 1700, 780);
+  fade("#gapArea", 1900);
+  fade("#lnAl", 2150);
+  fade("#alLabel", 2300);
+  fade("#dotLb", 2200);
+}
+// Whichever comes first, and only once: a chart that never draws is a card
+// with an empty box in it.
+let drawn = false;
+const once = () => { if(drawn) return; drawn = true; drawHero(); };
+if(document.readyState === "complete") once();
+else window.addEventListener("load", once);
+setTimeout(once, 2500);
+
+// And the same floor under the chart. A Web Animations fill:forwards never
+// lands if the animation was never given a frame, so the end state is written
+// directly: a card with an empty box in it is worse than an unanimated chart.
+setTimeout(()=> {
+  ["#lnCfr","#lnDebt","#lnLb"].forEach(k => { $(k).style.strokeDashoffset = 0; });
+  ["#gapArea","#lnAl","#alLabel","#dotLb"].forEach(k => { $(k).style.opacity = 1; });
+}, 5000);
+
+/* ---- reveal on scroll ---------------------------------------------------- */
+(function reveal(){
+  const items = $$(".rv");
+  if(STILL || !("IntersectionObserver" in window)){
+    items.forEach(el => el.classList.add("in")); return;
+  }
+  // Hero content is above the fold; stagger it immediately rather than on
+  // scroll. On a timer rather than a frame — see the note on .anim above.
+  const hero = $$(".hero .rv");
+  hero.forEach((el,i) => { el.style.transitionDelay = (i*90)+"ms"; });
+  setTimeout(()=> hero.forEach(el => el.classList.add("in")), 40);
+
+  // Whatever happens — an observer that never fires, a tab read in the
+  // background, a browser we have not thought of — the page is visible within
+  // a few seconds. A reveal effect must never be able to withhold the page.
+  //
+  // This drops .anim from the root rather than adding .in to each element,
+  // and the difference matters: adding .in only STARTS a transition, and a
+  // transition does not advance in a hidden tab either. Removing .anim
+  // deletes the rule that hid anything, which needs no frames at all.
+  setTimeout(()=> {
+    document.documentElement.classList.remove("anim");
+    items.forEach(el => {
+      el.classList.add("in");
+      // Removing the rule is still not enough on its own. A transition that
+      // started and was then frozen — which is what happens to every element
+      // in a background tab — keeps holding its start value, and a running
+      // transition outranks the stylesheet. Cancelling it drops the element
+      // back to its underlying style, which by now is simply visible.
+      if(el.getAnimations) el.getAnimations().forEach(a => { try{ a.cancel(); }catch(e){} });
+    });
+  }, 4000);
+
+  const io = new IntersectionObserver((es)=>{
+    es.forEach(e => {
+      if(!e.isIntersecting) return;
+      const sibs = Array.from(e.target.parentElement.children).filter(c=>c.classList.contains("rv"));
+      e.target.style.transitionDelay = (Math.max(0, sibs.indexOf(e.target)) * 70) + "ms";
+      e.target.classList.add("in");
+      io.unobserve(e.target);
+    });
+  }, {rootMargin:"0px 0px -12% 0px", threshold:.12});
+  items.filter(el => !hero.includes(el)).forEach(el => io.observe(el));
+})();
+
+/* ---- counters ------------------------------------------------------------
+ * Counting to a real number is the one flourish that earns its place here:
+ * the figures ARE the argument, so making the reader watch them arrive is
+ * not decoration.
+ */
+function countUp(el){
+  const to = +el.dataset.to;
+  if(STILL){ el.textContent = to.toLocaleString("en-GB"); return; }
+  const t0 = performance.now(), ms = 1250;
+  (function tick(now){
+    const p = Math.min(1, (now - t0)/ms);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(to * e).toLocaleString("en-GB");
+    if(p < 1) requestAnimationFrame(tick);
+  })(t0);
+}
+(function counters(){
+  const figs = $$("#figs b");
+  if(!("IntersectionObserver" in window)){ figs.forEach(countUp); return; }
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if(e.isIntersecting){ countUp(e.target); io.unobserve(e.target); }
+  }), {threshold:.5});
+  figs.forEach(el => io.observe(el));
+  // A figure stuck at zero states something false, so it is never left to
+  // chance: if it has not counted within five seconds, it is simply written.
+  setTimeout(()=> figs.forEach(el => {
+    if(el.textContent === "0") el.textContent = (+el.dataset.to).toLocaleString("en-GB");
+  }), 5000);
+})();
+
+/* ---- the inconsistency picture -------------------------------------------
+ * One mark per distinct section heading found in the corpus, scattered as the
+ * sector writes them, resolving into the thirteen sections the Codes require.
+ * The count is real; the arrangement is illustrative, and says so.
+ */
+(function scatter(){
+  const svg = $("#scatter"), W = 1000, H = 240;
+  const TOTAL = 4265, SHOWN = 620;     // one mark per ~7 headings, so the field reads
+  const ROWS = 13;
+  const pts = [];
+  // A deterministic scatter: no Math.random, so the picture is the same on
+  // every load and in every screenshot.
+  for(let i=0;i<SHOWN;i++){
+    const a = i * 2.39996;                          // golden angle
+    const r = Math.sqrt(i/SHOWN);
+    pts.push({
+      x: W/2 + Math.cos(a) * r * (W/2 - 26) * (0.72 + 0.28*Math.sin(i)),
+      y: H/2 + Math.sin(a) * r * (H/2 - 16),
+      // where it lands once ordered
+      rx: 62 + ((i % 46) / 45) * (W - 130),
+      ry: 22 + Math.floor((i % (ROWS*46)) / 46) * ((H - 46) / (ROWS - 1))
+    });
+  }
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.innerHTML = pts.map((p,i) =>
+    `<rect x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" width="7" height="2.2" rx="1"
+       fill="#7089a0" opacity=".55"></rect>`).join("");
+  const rects = Array.from(svg.children);
+
+  const label = $("#scatterState");
+  let done = false;
+  function order(){
+    if(done) return; done = true;
+    label.textContent = "the thirteen sections the Codes actually require";
+    rects.forEach((el,i) => {
+      const p = pts[i];
+      const to = [{transform:`translate(${(p.rx-p.x).toFixed(1)}px,${(p.ry-p.y).toFixed(1)}px)`,
+                   fill:"#5695d1", opacity:.85}];
+      if(STILL){ el.style.transform = to[0].transform; el.setAttribute("fill","#5695d1"); return; }
+      el.animate([{transform:"translate(0,0)"}, to[0]],
+        {duration:900 + (i%46)*7, delay:(i%ROWS)*40, fill:"forwards",
+         easing:"cubic-bezier(.4,0,.2,1)"});
+    });
+  }
+  if(!("IntersectionObserver" in window)){ order(); return; }
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if(e.isIntersecting){ setTimeout(order, 500); io.unobserve(e.target); }
+  }), {threshold:.45});
+  io.observe(svg);
+})();
+
+/* ---- masthead hairline once the hero is behind you ----------------------- */
+(function mast(){
+  const m = document.querySelector(".masthead");
+  const on = () => {
+    const past = window.scrollY > 60;
+    m.style.background = past ? "rgba(8,15,24,.88)" : "transparent";
+    m.style.backdropFilter = past ? "blur(10px)" : "";
+    m.style.borderBottomColor = past ? "var(--line)" : "transparent";
+  };
+  on(); window.addEventListener("scroll", on, {passive:true});
+})();
+</script>
+</body>
+</html>
