@@ -260,6 +260,13 @@ tr:hover td.ours input{background:var(--cell-ours)}
 .note{font-family:var(--sans);font-size:11.5px;color:var(--muted);line-height:1.55;
   margin:9px 0 0;max-width:78ch}
 .note b{font-family:var(--mono);color:var(--ink)}
+.readout{margin-top:11px;padding:11px 14px;background:var(--sunken);border-radius:var(--r-sm);
+  border-left:3px solid var(--l-cfr)}
+.readout .rt{display:block;font-family:var(--sans);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
+.readout p{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--ink2);
+  margin:0 0 7px;max-width:78ch}
+.readout p:last-child{margin-bottom:0}
 .caveat{font-family:var(--sans);margin-top:24px;padding:13px 15px;border-radius:var(--r-sm);
   background:var(--sunken);border-left:3px solid var(--orange);font-size:12px;
   line-height:1.6;color:var(--ink2)}
@@ -1120,6 +1127,161 @@ function portfolioTable(){
 }
 
 /* ===========================================================================
+ * A written readout beneath each indicator.
+ *
+ * Deliberately mechanical. It states what the series do, in the order the
+ * Code lists them, using the authority's own figures — never an opinion about
+ * whether the position is good, which is the s151 officer's judgement and not
+ * ours. Every branch is enumerated rather than hedged: the position either
+ * crosses zero or it does not, either exceeds the benchmark or falls short,
+ * and the sentence says which.
+ *
+ * Where a case cannot arise from the figures it says nothing, rather than
+ * producing a clause about a circumstance that is not happening.
+ * ======================================================================== */
+const R = {
+  m: v => "£" + m1(Math.abs(v)) + "m",
+  fyOf: r => fy(r.fy),
+  first: d => d[0],
+  last: d => d[d.length-1],
+  peakOf: (d,k) => d.reduce((a,b)=> b[k]>a[k]?b:a, d[0]),
+  troughOf:(d,k) => d.reduce((a,b)=> b[k]<a[k]?b:a, d[0]),
+  anyNeg: (d,k) => d.some(r=>r[k] < -0.05),
+  allZero:(d,k) => d.every(r=>Math.abs(r[k]) < 0.05)
+};
+
+function readout(tag, d, fundLabel){
+  const F = fundLabel ? ` for the ${fundLabel}` : "";
+  const a = R.first(d), z = R.last(d);
+  const bits = [];
+
+  if(tag === "LB1"){
+    bits.push(`The capital financing requirement${F} stands at ${R.m(a.cfr)} at ${R.fyOf(a)} `
+      + `and ${a.cfr > z.cfr ? "falls" : a.cfr < z.cfr ? "rises" : "is unchanged"} to `
+      + `${R.m(z.cfr)} by ${R.fyOf(z)}.`);
+    bits.push(`Other balance sheet items — reserves, provisions and working capital not `
+      + `required in cash — are ${R.m(a.obs)}, offsetting that requirement.`);
+    if(a.ntp >= 0 && !R.anyNeg(d,"ntp"))
+      bits.push(`The net treasury position is positive throughout, so the authority is net `
+        + `indebted across the projection, beginning at ${R.m(a.ntp)}.`);
+    else if(R.allZero(d,"ntp"))
+      bits.push(`The net treasury position is nil throughout on these figures.`);
+    else if(a.ntp < 0 && !d.some(r=>r.ntp > 0.05))
+      bits.push(`The net treasury position is negative throughout, so the authority is in net `
+        + `surplus across the projection: its balance sheet resources exceed its capital `
+        + `financing requirement.`);
+    else {
+      const cross = d.find((r,i)=> i && Math.sign(r.ntp) !== Math.sign(d[i-1].ntp));
+      bits.push(`The net treasury position ${a.ntp<0?"begins in surplus":"begins in net "
+        + "indebtedness"} and crosses${cross?` in ${R.fyOf(cross)}`:""}, so the authority moves `
+        + `${a.ntp<0?"from investing its surplus to needing to borrow":"from net indebtedness "
+        + "into surplus"}.`);
+    }
+    return bits;
+  }
+
+  if(tag === "LB2"){
+    const anyNil = d.some(r=>r.lb < 0.05);
+    bits.push(`The liability benchmark is the net treasury position plus the treasury `
+      + `investment benchmark. It stands at ${R.m(a.lb)} at ${R.fyOf(a)}, peaking at `
+      + `${R.m(R.peakOf(d,"lb").lb)} in ${R.fyOf(R.peakOf(d,"lb"))}.`);
+    if(a.ntp >= 0)
+      bits.push(`The authority is net indebted, so the treasury investment benchmark equals `
+        + `the liquidity allowance of ${R.m(a.liq)}.`);
+    else
+      bits.push(`The authority is in net surplus, so the treasury investment benchmark is the `
+        + `surplus itself, ${R.m(a.tib)}, rather than the liquidity allowance.`);
+    if(anyNil)
+      bits.push(`In some years the benchmark is nil: the net surplus exceeds the liquidity `
+        + `allowance, so no external borrowing is implied by the authority's plans.`);
+    bits.push(`The authorised limit is derived from the benchmark and capped at its projected `
+      + `peak, giving ${R.m(a.al)}. Under the 2026 proposals the operational boundary is no `
+      + `longer a formal indicator.`);
+    return bits;
+  }
+
+  if(tag === "LB3"){
+    const under = d.filter(r=>r.need > 0.05), over = d.filter(r=>r.over > 0.05);
+    bits.push(`Existing loan commitments${F} are ${R.m(a.el)} at ${R.fyOf(a)}, running off to `
+      + `${R.m(z.el)} by ${R.fyOf(z)} as loans mature.`);
+    if(!under.length && !over.length)
+      bits.push(`They track the benchmark closely throughout: neither a borrowing requirement `
+        + `nor an above-benchmark position of any size arises on these figures.`);
+    else if(under.length && !over.length)
+      bits.push(`They sit below the benchmark in ${under.length} of ${d.length} years, so new `
+        + `borrowing is required; the shortfall is greatest in `
+        + `${R.fyOf(R.peakOf(d,"need"))} at ${R.m(R.peakOf(d,"need").need)}.`);
+    else if(over.length && !under.length)
+      bits.push(`They exceed the benchmark in ${over.length} of ${d.length} years — an `
+        + `above-benchmark position, greatest in ${R.fyOf(R.peakOf(d,"over"))} at `
+        + `${R.m(R.peakOf(d,"over").over)}. The benchmark is not a limit and there is no `
+        + `requirement to repay, but the position should be kept under review.`);
+    else {
+      const firstUnder = under[0], firstOver = over[0];
+      bits.push(`The position moves between the two: commitments exceed the benchmark in `
+        + `${over.length} years, peaking at ${R.m(R.peakOf(d,"over").over)} in `
+        + `${R.fyOf(R.peakOf(d,"over"))}, and fall short in ${under.length}, by up to `
+        + `${R.m(R.peakOf(d,"need").need)} in ${R.fyOf(R.peakOf(d,"need"))}. `
+        + `${firstOver && firstUnder && firstOver.i < firstUnder.i
+            ? "Maturing loans bring the position back below the benchmark in time."
+            : "The requirement arises before any surplus position does."}`);
+    }
+    if(d.some(r=>r.ei > 0.05))
+      bits.push(`Existing investment commitments are ${R.m(a.ei)} at ${R.fyOf(a)}.`);
+    return bits;
+  }
+
+  if(tag === "LB4"){
+    const need = R.peakOf(d,"need"), over = R.peakOf(d,"over");
+    if(need.need < 0.05 && over.over < 0.05)
+      return [`Neither a borrowing requirement nor an above-benchmark position arises on these `
+        + `figures: existing commitments match the benchmark throughout.`];
+    if(need.need >= 0.05)
+      bits.push(`New borrowing of up to ${R.m(need.need)} is implied, peaking in `
+        + `${R.fyOf(need)}. The profile above determines the maturities to seek: borrowing `
+        + `long where the requirement persists, and short where it falls away.`);
+    if(over.over >= 0.05)
+      bits.push(`An above-benchmark position of up to ${R.m(over.over)} arises in `
+        + `${R.fyOf(over)}, meaning debt is held that current plans do not require. That is `
+        + `permitted — the benchmark is not a limit — but it carries a cost of carry, and the `
+        + `Code expects new borrowing that increases such a position to be considered `
+        + `carefully.`);
+    return bits;
+  }
+
+  if(tag === "LB5"){
+    const pk = R.peakOf(d,"inv");
+    bits.push(`Treasury investments implied by these figures are ${R.m(a.inv)} at `
+      + `${R.fyOf(a)}, peaking at ${R.m(pk.inv)} in ${R.fyOf(pk)}.`);
+    bits.push(`The liquidity allowance of ${R.m(a.liq)} is the floor: the minimum the `
+      + `authority intends to hold to manage cash flow.`);
+    const strat = d.some(r=>r.strategic > 0.05), exc = d.some(r=>r.excess > 0.05);
+    if(strat)
+      bits.push(`Strategic treasury investments arise where the benchmark exceeds the `
+        + `liquidity allowance — a surplus beyond day-to-day needs, reaching `
+        + `${R.m(R.peakOf(d,"strategic").strategic)} in ${R.fyOf(R.peakOf(d,"strategic"))}.`);
+    if(exc)
+      bits.push(`Excess treasury investments of up to `
+        + `${R.m(R.peakOf(d,"excess").excess)} arise in `
+        + `${R.fyOf(R.peakOf(d,"excess"))}. These are the consequence of holding debt above `
+        + `the benchmark: the cash borrowed but not yet required sits invested, and the `
+        + `difference between the rate paid and the rate earned is the cost of carry.`);
+    if(!strat && !exc)
+      bits.push(`No strategic or excess balances arise: investments sit at the liquidity `
+        + `allowance throughout, which is the position the benchmark treats as optimal.`);
+    return bits;
+  }
+  return bits;
+}
+
+function readoutHTML(tag, d, fundLabel){
+  const bits = readout(tag, d, fundLabel);
+  if(!bits.length) return "";
+  return `<div class="readout"><span class="rt">What ${tag} shows</span>${
+    bits.map(b=>`<p>${b}</p>`).join("")}</div>`;
+}
+
+/* ===========================================================================
  * The clause library.
  *
  * Two kinds of text, and the difference is not stylistic:
@@ -1855,6 +2017,10 @@ function documentHTML(forExport){
     thead th{background:#eee}
     .gap{color:#a33;font-style:italic;font-family:Arial,sans-serif;font-size:10pt}
     .src{color:#555;font-size:9.5pt;font-family:Arial,sans-serif}
+    .readout{margin:8pt 0 0;padding:7pt 9pt;background:#f4f6f8;border-left:3pt solid #2f6fb0}
+    .readout p{font-family:Arial,sans-serif;font-size:9.5pt;line-height:1.5;margin:0 0 5pt}
+    .readout .rt{display:block;font-family:Arial,sans-serif;font-size:8pt;font-weight:bold;
+      text-transform:uppercase;color:#555;margin-bottom:4pt}
     .caveat{margin-top:20pt;padding:8pt 10pt;background:#f4f4f4;border-left:3pt solid #c60;
       font-family:Arial,sans-serif;font-size:9pt;line-height:1.5}
     svg{max-width:100%;height:auto}
@@ -1900,7 +2066,8 @@ function indicatorBlock(d, fundLabel, hraSet, skipLB5){
      `<div class="chartwrap">${chart(D,{label:"LB1",lines:[
        {k:"cfr",c:"var(--l-cfr)",w:2},{k:"obs",c:"var(--l-obs)",w:1.8,dash:"5 3"},
        {k:"ntp",c:"var(--l-ntp)",w:2.4}].concat(XF)})}${L([{c:"var(--l-cfr)",t:"CFR"},
-       {c:"var(--l-obs)",t:"Other balance sheet items"},{c:"var(--l-ntp)",t:"Net treasury position"}].concat(XL))}</div>`)}
+       {c:"var(--l-obs)",t:"Other balance sheet items"},{c:"var(--l-ntp)",t:"Net treasury position"}].concat(XL))}</div>
+      ${readoutHTML("LB1", d, fundLabel)}`)}
    ${IND("LB2","Treasury benchmarks"+tag,
      `<div class="chartwrap">${chart(D,{label:"LB2",lines:[
        {k:"ntp",c:"var(--l-ntp)",w:1.8},{k:"tib",c:"var(--l-inv)",w:1.8},
@@ -1908,7 +2075,8 @@ function indicatorBlock(d, fundLabel, hraSet, skipLB5){
        ${L([{c:"var(--l-ntp)",t:"Net treasury position"},{c:"var(--l-inv)",t:"Investment benchmark"},
             {c:"var(--l-lb)",t:"Liability benchmark"},{c:"var(--l-al)",t:"Authorised limit"}].concat(XL))}</div>
       ${otable(d,[{l:"Net treasury position",k:"ntp"},{l:"Treasury investment benchmark",k:"tib"},
-                  {l:"Liability benchmark",k:"lb",cls:"lb"},{l:"Authorised limit",k:"al",cls:"key"}])}`)}
+                  {l:"Liability benchmark",k:"lb",cls:"lb"},{l:"Authorised limit",k:"al",cls:"key"}])}
+      ${readoutHTML("LB2", d, fundLabel)}`)}
    ${IND("LB3","Treasury commitments against the benchmarks"+tag,
      `<div class="chartwrap">${chart(D,{label:"LB3",h:280,fill:[{k:"lb",to:"el",c:"var(--l-lb)",o:.09}],
        lines:[{k:"lb",c:"var(--l-lb)",w:2.4},{k:"el",c:"var(--l-debt)",w:2.2},
@@ -1917,11 +2085,13 @@ function indicatorBlock(d, fundLabel, hraSet, skipLB5){
        ${L([{c:"var(--l-lb)",t:"Liability benchmark"},{c:"var(--l-debt)",t:"Existing loans"},
             {c:"var(--l-ei)",t:"Existing investments"}].concat(XL))}</div>
       ${otable(d,[{l:"Existing loan commitments",k:"el"},{l:"Liability benchmark",k:"lb",cls:"lb"},
-                  {l:"Existing investment commitments",k:"ei"}])}`)}
+                  {l:"Existing investment commitments",k:"ei"}])}
+      ${readoutHTML("LB3", d, fundLabel)}`)}
    ${IND("LB4","Borrowing requirement / overborrowing"+tag,
      `<div class="chartwrap">${chart(D,{label:"LB4",h:220,fill:[{k:"br",c:"var(--l-lb)",o:.14}],
        lines:[{k:"br",c:"var(--l-lb)",w:2.4}].concat(XF)})}</div>
-      ${otable(d,[{l:"Borrowing requirement",k:"need"},{l:"Above-benchmark borrowing",k:"over"}])}`)}
+      ${otable(d,[{l:"Borrowing requirement",k:"need"},{l:"Above-benchmark borrowing",k:"over"}])}
+      ${readoutHTML("LB4", d, fundLabel)}`)}
    ${skipLB5 ? "" : IND("LB5","Treasury investment projection",
      `<div class="chartwrap">${chart(d,{label:"LB5",h:240,fill:[{k:"liq",c:"var(--l-inv)",o:.16}],
        lines:[{k:"tib",c:"var(--l-inv)",w:2.4},{k:"ei",c:"var(--l-ei)",w:1.8,dash:"3 3"},
@@ -1931,7 +2101,8 @@ function indicatorBlock(d, fundLabel, hraSet, skipLB5){
             {c:"var(--l-strat)",t:"Strategic"},{c:"var(--l-exc)",t:"Excess"}])}</div>
       ${otable(d,[{l:"Treasury investment benchmark",k:"tib",cls:"inv"},{l:"Liquidity allowance",k:"liq"},
                   {l:"Strategic treasury investments",k:"strategic"},
-                  {l:"Excess treasury investments",k:"excess"}])}`)}}`;
+                  {l:"Excess treasury investments",k:"excess"}])}
+      ${readoutHTML("LB5", d, fundLabel)}`)}}`;
 }
 
 function caveat(){
