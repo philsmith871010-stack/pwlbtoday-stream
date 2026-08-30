@@ -497,7 +497,13 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
         </div>
       </div>
       <div class="ltools">
-        <button type="button" class="primary" id="example">Fill a worked example</button>
+        <label class="minliq" for="demokind">Demonstration
+          <select id="demokind">
+            <option value="nohra">No HRA</option>
+            <option value="one">HRA, one pool</option>
+            <option value="two">HRA, two pool</option>
+          </select></label>
+        <button type="button" class="primary" id="example">Fill it completely</button>
         <button type="button" id="filldown">Fill down from selected cell</button>
         <button type="button" id="clear">Clear</button>
         <span class="sp"></span>
@@ -834,8 +840,27 @@ function render(){
  *      strategic           = TIB less the liquidity allowance.
  *      excess              = investments above the benchmark — overborrowing.
  * ======================================================================== */
+/* "all" is the whole authority: the General Fund and HRA balance sheets added
+   together BEFORE the benchmark is computed, which is what a single pool of
+   debt means. It is not the same as adding two benchmarks together, because
+   the treasury investment benchmark takes a max against the liquidity
+   allowance and a max of sums is not the sum of maxes.
+
+   This mattered more than it looks. Under one pool the tool used the General
+   Fund grid for everything and ignored the HRA outright, so a stock-holding
+   authority's liability benchmark came out at the General Fund's share of it —
+   in the demonstration, 525 where the authority's own figure is 936. */
+function combinedGrid(S){
+  const a = S.g.gf, b = S.g.hra, out = {};
+  COLS.forEach(c => {
+    out[c.k] = new Array(S.years);
+    for(let i=0;i<S.years;i++) out[c.k][i] = (a[c.k][i]||0) + (b[c.k][i]||0);
+  });
+  return out;
+}
+
 function buildModel(S, fund){
-  const g = S.g[fund || "gf"];
+  const g = fund === "all" ? combinedGrid(S) : S.g[fund || "gf"];
   const rows = [];
   for (let i = 0; i < S.years; i++){
     const cfr = g.cfr[i] || 0;
@@ -2929,18 +2954,52 @@ function propBlock(have){
       </tbody></table></div>`;
 }
 
+/* Which indicators split, and which do not.
+ *
+ * LB1 is split between the General Fund and the HRA IRRESPECTIVE of whether
+ * debt is pooled — the two funds have their own capital financing
+ * requirements whatever the treasury arrangement. LB2 to LB4 are split only
+ * where two pools are operated, because only then does each fund have its own
+ * debt. LB5 is never split.
+ *
+ * The tool used to gate all of this on two pools alone, so a single-pool
+ * authority saw no split at all AND had its LB2 to LB5 computed from the
+ * General Fund grid with the HRA discarded.
+ */
+function indicatorSplit(gf, hra, all, hasHRA, twoPool){
+  if(!hasHRA) return indicatorBlock(gf, "", null);
+
+  const H = t => `<h4 style="margin-top:24px">${t}</h4>`;
+  if(twoPool)
+    return indicatorBlock(gf, "General Fund", hra, {only:["LB1","LB2","LB3","LB4"]})
+         + H("Housing Revenue Account")
+         + indicatorBlock(hra, "HRA", null, {only:["LB1","LB2","LB3","LB4"]})
+         + H("Whole authority")
+         + indicatorBlock(all, "", null, {only:["LB5"]});
+
+  // One pool. LB1 for each fund; everything else on the combined balance sheet.
+  return indicatorBlock(gf, "General Fund", null, {only:["LB1"]})
+       + H("Housing Revenue Account")
+       + indicatorBlock(hra, "HRA", null, {only:["LB1"]})
+       + H("Whole authority — debt is pooled, so the benchmarks are not split")
+       + indicatorBlock(all, "", null, {only:["LB2","LB3","LB4","LB5"]});
+}
+
 function documentHTML(forExport){
   const d = buildModel(S,"gf");
   const c = LB[S.gss], name = c ? c.n : "Your authority";
   const rep = REPORTS.find(r=>r.k===S.report);
   const secs = docSections();
   const twoPool = S.hra === "two";
-  const hra = twoPool ? buildModel(S,"hra") : null;
+  const hasHRA  = S.hra !== "no";
+  const hra = hasHRA ? buildModel(S,"hra") : null;
+  // The whole authority: one balance sheet, used wherever an indicator is not
+  // split. Under a single pool that is LB2 to LB5; under two pools it is LB5
+  // alone, which the consultation does not split either way.
+  const all = hasHRA ? buildModel(S,"all") : d;
   const body = secs.map(s=>`
     <section class="dsec"><h3><span class="secn">${s.n}</span>${esc(natText(s.t))}</h3>${s.b}
-    ${s.indicators ? indicatorBlock(d, twoPool ? "General Fund" : "", twoPool ? hra : null)
-        + (twoPool ? `<h4 style="margin-top:24px">Housing Revenue Account</h4>`
-                     + indicatorBlock(hra, "HRA", null, true) : "") : ""}</section>`).join("");
+    ${s.indicators ? indicatorSplit(d, hra, all, hasHRA, twoPool) : ""}</section>`).join("");
   const outstanding = secs.filter(s=>/class="gap"/.test(s.b)).length;
   const head = (S.logo ? `<img class="doclogo" src="${S.logo}" alt="">` : "")
     + `<h2>${esc(name)}</h2>
@@ -3012,7 +3071,11 @@ function crossFund(gf, hra){
   });
 }
 
-function indicatorBlock(d, fundLabel, hraSet, skipLB5){
+function indicatorBlock(d, fundLabel, hraSet, opts){
+  const O = (opts === true) ? {skipLB5:true} : (opts || {});
+  const skipLB5 = !!O.skipLB5;
+  const only = O.only || null;
+  const want = tag => !only || only.indexOf(tag) >= 0;
   const L=(items)=>legend(items);
   const tag = fundLabel ? ` — ${esc(fundLabel)}` : "";
   // "In addition, for those authorities it is recommended that a further
@@ -3023,13 +3086,13 @@ function indicatorBlock(d, fundLabel, hraSet, skipLB5){
   const XF = hraSet ? [{k:"cross", c:"var(--l-strat)", w:1.6, dash:"2 3"}] : [];
   const XL = hraSet ? [{c:"var(--l-strat)", t:"GF lending to / borrowing from the HRA"}] : [];
   return `
-   ${IND("LB1","Net treasury position",
+   ${!want("LB1") ? "" : IND("LB1","Net treasury position",
      `<div class="chartwrap">${chart(D,{label:"LB1",lines:[
        {k:"cfr",c:"var(--l-cfr)",w:2},{k:"obs",c:"var(--l-obs)",w:1.8,dash:"5 3"},
        {k:"ntp",c:"var(--l-ntp)",w:2.4}].concat(XF)})}${L([{c:"var(--l-cfr)",t:"CFR"},
        {c:"var(--l-obs)",t:"Other balance sheet items"},{c:"var(--l-ntp)",t:"Net treasury position"}].concat(XL))}</div>
       ${readoutHTML("LB1", d, fundLabel)}`)}
-   ${IND("LB2","Treasury benchmarks"+tag,
+   ${!want("LB2") ? "" : IND("LB2","Treasury benchmarks"+tag,
      `<div class="chartwrap">${chart(D,{label:"LB2",lines:[
        {k:"ntp",c:"var(--l-ntp)",w:1.8},{k:"tib",c:"var(--l-inv)",w:1.8},
        {k:"lb",c:"var(--l-lb)",w:2.4},{k:"al",c:"var(--l-al)",w:1.6,dash:"7 4"}].concat(XF)})}
@@ -3038,7 +3101,7 @@ function indicatorBlock(d, fundLabel, hraSet, skipLB5){
       ${otable(d,[{l:"Net treasury position",k:"ntp"},{l:"Treasury investment benchmark",k:"tib"},
                   {l:"Liability benchmark",k:"lb",cls:"lb"},{l:"Authorised limit",k:"al",cls:"key"}])}
       ${readoutHTML("LB2", d, fundLabel)}`)}
-   ${IND("LB3","Treasury commitments against the benchmarks"+tag,
+   ${!want("LB3") ? "" : IND("LB3","Treasury commitments against the benchmarks"+tag,
      `<div class="chartwrap">${chart(D,{label:"LB3",h:280,fill:[{k:"lb",to:"el",c:"var(--l-lb)",o:.09}],
        lines:[{k:"lb",c:"var(--l-lb)",w:2.4},{k:"el",c:"var(--l-debt)",w:2.2},
               {k:"ei",c:"var(--l-ei)",w:1.8,dash:"3 3"},{k:"ntp",c:"var(--l-ntp)",w:1.6},
@@ -3048,12 +3111,12 @@ function indicatorBlock(d, fundLabel, hraSet, skipLB5){
       ${otable(d,[{l:"Existing loan commitments",k:"el"},{l:"Liability benchmark",k:"lb",cls:"lb"},
                   {l:"Existing investment commitments",k:"ei"}])}
       ${readoutHTML("LB3", d, fundLabel)}`)}
-   ${IND("LB4","Borrowing requirement / overborrowing"+tag,
+   ${!want("LB4") ? "" : IND("LB4","Borrowing requirement / overborrowing"+tag,
      `<div class="chartwrap">${chart(D,{label:"LB4",h:220,fill:[{k:"br",c:"var(--l-lb)",o:.14}],
        lines:[{k:"br",c:"var(--l-lb)",w:2.4}].concat(XF)})}</div>
       ${otable(d,[{l:"Borrowing requirement",k:"need"},{l:"Above-benchmark borrowing",k:"over"}])}
       ${readoutHTML("LB4", d, fundLabel)}`)}
-   ${skipLB5 ? "" : IND("LB5","Treasury investment projection",
+   ${(skipLB5 || !want("LB5")) ? "" : IND("LB5","Treasury investment projection",
      `<div class="chartwrap">${chart(d,{label:"LB5",h:240,fill:[{k:"liq",c:"var(--l-inv)",o:.16}],
        lines:[{k:"tib",c:"var(--l-inv)",w:2.4},{k:"ei",c:"var(--l-ei)",w:1.8,dash:"3 3"},
               {k:"liq",c:"var(--muted)",w:1.6},{k:"strategic",c:"var(--l-strat)",w:1.8},
@@ -3267,24 +3330,52 @@ const KEY = () => `lb:${S.gss||"none"}:${S.report}`;
 function saveVersion(){
   try{
     localStorage.setItem(KEY(), JSON.stringify({
-      v:2, gss:S.gss, report:S.report, fy0:S.fy0, hra:S.hra, years:S.years,
+      v:3, gss:S.gss, report:S.report, fy0:S.fy0, hra:S.hra, years:S.years,
       loans:S.loans, g:S.g, text:S.text, limits:S.limits, choices:S.choices,
-      portfolio:S.portfolio, portfolioText:S.portfolioText, logo:S.logo,
+      portfolio:S.portfolio, portfolioText:S.portfolioText, portfolioNote:S.portfolioNote,
+      logo:S.logo, asAt:S.asAt, minliq:S.minliq,
       at:new Date().toISOString()}));
     stampSaved("Saved");
   }catch(e){ $("saved").textContent = "Could not save — browser storage is unavailable."; }
 }
+/* A grid saved by an older build carries only the columns that existed then.
+   The model reads every column by name, so a missing one is not a missing
+   figure — it is a crash. And restoreVersion's own try/catch swallowed that
+   crash, stamped "Restored", and left a broken page behind: the worst shape a
+   failure can take, because nothing tells anyone. Filling from COLS makes the
+   restore survive this column addition and every future one. */
+function migrateGrid(g, years){
+  const out = {gf:{}, hra:{}};
+  ["gf","hra"].forEach(f => {
+    const src = (g && g[f]) || {};
+    COLS.forEach(c => {
+      const col = Array.isArray(src[c.k]) ? src[c.k].slice(0, years) : [];
+      while(col.length < years) col.push(0);
+      out[f][c.k] = col.map(v => (typeof v === "number" && isFinite(v)) ? v : 0);
+    });
+  });
+  return out;
+}
+
 function restoreVersion(){
   try{
     const raw = localStorage.getItem(KEY());
     if(!raw){ $("saved").textContent = "Nothing saved for this authority and report type yet."; return; }
     const d = JSON.parse(raw);
     S.fy0=d.fy0; S.hra=d.hra; S.years=d.years||51; S.loans=d.loans||[];
-    S.g=d.g; S.text=d.text||{}; S.limits=d.limits||{};
+    S.g=migrateGrid(d.g, d.years||51);
+    S.text=d.text||{}; S.limits=d.limits||{};
     if(d.choices) S.choices=d.choices;
     S.portfolio=d.portfolio||[]; S.portfolioText=d.portfolioText||"";
+    S.portfolioNote=d.portfolioNote||"";
     S.logo=d.logo||null;
+    // The as-at date is the whole point of dating a report: restoring one and
+    // silently moving it to today's data would change the market figures under
+    // a document somebody already took to committee.
+    S.asAt=d.asAt||null; S.minliq=d.minliq||null;
     $("fy0").value=S.fy0; $("hra").value=S.hra; $("horizon").value=S.years;
+    if($("asat")) $("asat").value = S.asAt || MKT.as_at || "";
+    if($("minliq")) $("minliq").value = S.minliq==null ? "" : S.minliq;
     buildLedger(); loanRows(); renderSections(); render();
     stampSaved("Restored");
   }catch(e){ $("saved").textContent = "Could not restore that version."; }
@@ -3451,43 +3542,143 @@ function stampSaved(word){
     COLS.forEach(c=>S.g[S.fund][c.k]=Array(S.years).fill(0));
     if(S.fund==="gf") applyLoans(); else refresh(); });
 
-  $("example").addEventListener("click", ()=>{
-    if(!S.gss){ S.gss=keys.find(k=>LB[k].o>100)||keys[0]; $("council").value=S.gss;
-      S.loans=[{pwlb:true,name:"PWLB",amt:LB[S.gss].o,profile:"actual"}]; loanRows(); }
-    const base=LB[S.gss].o, g=S.g.gf;
-    // Round each figure BEFORE using it in the next year's walk. Computing on
-    // full precision and storing to one decimal made the example fail its own
-    // reconciliation check — four rounded terms can drift 0.2 against a 0.05
-    // tolerance, and a worked example that does not reconcile teaches the
-    // wrong lesson about the tool.
-    const r1 = v => Math.round(v*10)/10;
-    let cfr = r1(base*1.30);
+  /* ---------------------------------------------------------------------
+   * Three complete demonstration authorities.
+   *
+   * One preset was not enough to show the tool, because the thing that most
+   * changes the output is the housing position: a council with no HRA, one
+   * that pools its debt, and one that operates two pools produce three
+   * genuinely different reports. LB1 splits irrespective of pooling, LB2 to
+   * LB4 split only under two pools, LB5 never splits, and under two pools the
+   * HRA has no liquidity allowance of its own. None of that is visible from a
+   * single General Fund example.
+   *
+   * Each preset fills EVERYTHING: both funds where there are two, the loan
+   * book, an investment portfolio, the approved limits, the choices that let
+   * the clauses in, and every section of commentary. The point is a report
+   * somebody can read end to end without typing anything.
+   * ------------------------------------------------------------------- */
+  const r1 = v => Math.round(v*10)/10;
+
+  /* Fill one fund's grid. Each year's figures are rounded BEFORE the next
+     year's walk uses them: computing on full precision and storing to one
+     decimal made the example fail its own CFR reconciliation, because four
+     rounded terms can drift 0.2 against a 0.05 tolerance. A worked example
+     that does not reconcile teaches the wrong lesson about the tool. */
+  function fillFund(g, base, k){
+    let cfr = r1(base * k.cfr0);
     for(let i=0;i<S.years;i++){
       // Only the MTFP years carry new capital spend. Past that the CFR simply
-      // amortises — which is the method, not a shortcut.
-      const capex = i && i<MTFP ? r1(base*0.07) : 0;
-      const mrp   = i ? r1(cfr*0.04) : 0;
-      const rec   = i && i<MTFP ? r1(base*0.005) : 0;
+      // amortises, which is the method rather than a shortcut.
+      const capex = i && i<MTFP ? r1(base*k.capex) : 0;
+      const mrp   = i ? r1(cfr*k.mrp) : 0;
+      const rec   = i && i<MTFP ? r1(base*k.rec) : 0;
       if(i) cfr = r1(Math.max(0, cfr + capex - mrp - rec));
       g.cfr[i]=cfr; g.capex[i]=capex; g.mrp[i]=mrp; g.rec[i]=rec;
-      g.obs[i]=r1(base*0.38*Math.pow(0.97,i));
-      g.liq[i]=r1(Math.max(5,base*0.04));
-      g.inv[i]=r1(Math.max(5,base*0.05)*Math.pow(0.95,i));
-      // Affordability. Interest is charged on the loans actually outstanding
-      // rather than on the CFR, so the ratio moves as debt runs off — which is
-      // the whole point of the indicator.
-      g.intpay[i]=r1((LB[S.gss] && LB[S.gss].r[i] != null ? LB[S.gss].r[i] : base) * 0.042);
-      g.intinc[i]=r1(Math.max(5,base*0.05)*Math.pow(0.95,i) * 0.038);
-      g.nrs[i]=r1(base*0.55*Math.pow(1.02,Math.min(i,MTFP)));
-      // Left at nil: the example authority holds nothing for financial return,
-      // which is the common case, and a worked example that quietly assumes a
-      // commercial portfolio would teach the wrong default.
-      g.comminc[i]=0;
+      g.obs[i]=r1(base*k.obs*Math.pow(0.97,i));
+      g.liq[i]=k.liq==null ? 0 : r1(Math.max(2, base*k.liq));
+      g.inv[i]=r1(Math.max(2, base*k.inv)*Math.pow(0.95,i));
+      g.loans[i]=r1((LB[S.gss] && LB[S.gss].r[i]!=null ? LB[S.gss].r[i] : base) * k.share);
+      // Interest is charged on the loans actually outstanding rather than on
+      // the CFR, so affordability moves as debt runs off — which is the whole
+      // point of the indicator.
+      g.intpay[i]=r1(g.loans[i]*0.042);
+      g.intinc[i]=r1(g.inv[i]*0.038);
+      g.nrs[i]=k.nrs ? r1(base*k.nrs*Math.pow(1.02,Math.min(i,MTFP))) : 0;
+      g.comminc[i]=k.comminc ? r1(base*k.comminc) : 0;
     }
-    if(!S.loans.some(l=>!l.pwlb))
-      S.loans.push({name:"LOBO",amt:Math.round(base*0.12),mat:S.fy0+18,profile:"bullet"});
-    loanRows(); applyLoans();
-  });
+  }
+
+  const DEMOS = {
+    nohra: {mode:"no", label:"no HRA",
+      gf:{cfr0:1.30, capex:0.07, mrp:0.04, rec:0.005, obs:0.38, liq:0.04, inv:0.05,
+          share:1.00, nrs:0.55, comminc:0}},
+    one:  {mode:"one", label:"one pool",
+      gf:{cfr0:0.90, capex:0.05, mrp:0.04, rec:0.004, obs:0.30, liq:0.04, inv:0.05,
+          share:0.65, nrs:0.55, comminc:0},
+      // The HRA carries its own CFR and its own debt. Under one pool it still
+      // holds a liquidity allowance, because the funds are not separated for
+      // treasury purposes.
+      hraK:{cfr0:0.55, capex:0.03, mrp:0.025, rec:0.002, obs:0.06, liq:0.012, inv:0.015,
+            share:0.35, nrs:0.18, comminc:0}},
+    two:  {mode:"two", label:"two pool",
+      gf:{cfr0:0.90, capex:0.05, mrp:0.04, rec:0.004, obs:0.30, liq:0.05, inv:0.06,
+          share:0.65, nrs:0.55, comminc:0},
+      // Under two pools the General Fund manages liquidity on behalf of the
+      // authority, so the HRA has no liquidity allowance of its own — nil, not
+      // a small number.
+      hraK:{cfr0:0.55, capex:0.03, mrp:0.025, rec:0.002, obs:0.06, liq:null, inv:0.015,
+            share:0.35, nrs:0.18, comminc:0}}
+  };
+
+  function fillDemo(which){
+    const D = DEMOS[which];
+    if(!S.gss){ S.gss = keys.find(k=>LB[k].o>100) || keys[0]; $("council").value = S.gss; }
+    const base = LB[S.gss].o;
+
+    S.hra = D.mode; $("hra").value = D.mode;
+    S.loans = [{pwlb:true, name:"PWLB", amt:base, profile:"actual"},
+               {name:"LOBO", amt:r1(base*0.12), mat:S.fy0+18, rate:4.55, type:"LOBO", profile:"bullet"},
+               {name:"Market loan", amt:r1(base*0.05), mat:S.fy0+9, rate:4.10, type:"Market", profile:"bullet"}];
+
+    S.g = {gf:blank(), hra:blank()};
+    fillFund(S.g.gf, base, D.gf);
+    if(D.hraK) fillFund(S.g.hra, base, D.hraK);
+    S.fund = "gf";
+
+    // An investment portfolio, at the granularity a council would actually
+    // paste: grouped by instrument type rather than counterparty by counterparty.
+    const pot = Math.max(4, base*0.05);
+    S.portfolio = [
+      {name:"Debt Management Office", type:"DMADF",        amt:r1(pot*0.30), rate:3.95, mat:S.fy0+1},
+      {name:"Money market funds",     type:"MMF",          amt:r1(pot*0.35), rate:3.88, mat:null},
+      {name:"Other local authorities",type:"Local authority", amt:r1(pot*0.20), rate:4.05, mat:S.fy0+2},
+      {name:"Call accounts",          type:"Call account",  amt:r1(pot*0.15), rate:3.60, mat:null}
+    ];
+    S.portfolioNote = `4 holdings, £${m1(pot)}m in total, grouped by type.`;
+    S.portfolioText = "";
+
+    // The approved limits, so the compliance table is a comparison rather than
+    // a row of gaps. The authorised limit sits above the benchmark peak, which
+    // is what makes it a limit and not a forecast.
+    // The whole authority, not the General Fund: an authorised limit is a
+    // limit on the authority's external debt and there is only one of it.
+    const d0 = buildModel(S, S.hra==="no" ? "gf" : "all");
+    const peak = d0.reduce((a,b)=> b.lb>a.lb ? b : a, d0[0]).lb;
+    const dbt = S.g.gf.loans[0] + (S.hra==="no" ? 0 : S.g.hra.loans[0]);
+    S.limits = {
+      al_approved: r1(Math.max(peak, dbt) * 1.10),
+      ob_approved: r1(Math.max(peak, dbt) * 1.02),
+      debt_max:    r1(dbt * 1.01),
+      debt_close:  r1(dbt),
+      inv_close:   r1(pot),
+      inv_max:     r1(pot * 1.35)
+    };
+    S.minliq = S.g.gf.liq[0];
+    if($("minliq")) $("minliq").value = S.minliq;
+
+    // The choices that let the clauses in, and the market-data references,
+    // because a demonstration should show the tool with its features on.
+    S.choices = {adviser:"", mrpmethod:"asset", cycle:"thrice", vrp:"no", advance:"no",
+                 resched:"no", pooled:"no", nontreas:"no", mifid:"yes",
+                 commprop:"no", commborrow:"no", pwlbtoday:"yes"};
+
+    // Every section of commentary, from the draft wording, so the demo is a
+    // finished report rather than a form with the answers left out.
+    S.text = {};
+    visibleSections().forEach(sec => (sec.qs||[]).forEach(q => {
+      const dr = draftFor(q); if(dr) S.text[q.k] = dr;
+    }));
+
+    S.asAt = MKT.as_at; if($("asat")) $("asat").value = MKT.as_at || "";
+    $("hra").value = S.hra;
+    fundTabs(); buildLedger(); loanRows(); renderChoices(); renderSections();
+    syncLedger(true); render();
+    $("saved").textContent = `Demonstration filled — ${D.label}, every section written. `
+      + `Change anything; nothing here is fixed.`;
+  }
+
+  $("example").addEventListener("click", ()=>fillDemo($("demokind") ? $("demokind").value : "nohra"));
 
   // Choices. Each one either lets a clause in or keeps it out, so the count
   // moves as they answer and the draft changes underneath.
