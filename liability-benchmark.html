@@ -214,24 +214,24 @@ tr:hover td.ours input{background:var(--cell-ours)}
   color:var(--ours);font-weight:600;margin-bottom:3px}
 
 /* output */
-.doc{padding:44px 56px 48px;font-family:var(--serif);max-width:none}
-@media(max-width:760px){.doc{padding:24px 20px}}
+.doc{padding:44px 60px 50px;font-family:var(--serif)}
+.doc > *{max-width:1040px;margin-left:auto;margin-right:auto}
+@media(max-width:760px){.doc{padding:26px 20px}}
 .doclogo{max-height:56px;max-width:230px;margin-bottom:14px;display:block}
 .doc .dh{font-family:var(--sans);font-size:10px;letter-spacing:.11em;text-transform:uppercase;
   color:var(--muted);font-weight:600;padding-bottom:11px;border-bottom:1px solid var(--line2);
   display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .dsec{margin-top:30px;padding-top:22px;border-top:1px solid var(--hair);position:relative}
 .dsec:first-of-type{border-top:0;margin-top:20px;padding-top:0}
-.dsec h3{font-family:var(--sans);font-size:14.5px;font-weight:600;margin:0 0 11px;
+.dsec h3{font-family:var(--sans);font-size:16px;font-weight:600;margin:0 0 12px;
   letter-spacing:-.008em;padding-left:34px;position:relative;line-height:1.35}
-.dsec h3 .secn{position:absolute;left:0;top:1px;font-family:var(--mono);font-size:11px;
-  font-weight:500;color:var(--accent);opacity:.75;letter-spacing:0}
+.dsec h3 .secn{position:absolute;left:0;top:2px;font-family:var(--mono);font-size:12px;
+  font-weight:500;color:var(--accent);opacity:.85;letter-spacing:0}
 @media(max-width:600px){.dsec h3{padding-left:0}.dsec h3 .secn{position:static;
   display:inline-block;margin-right:8px}}
 .dsec h4{font-family:var(--sans);font-size:12.5px;font-weight:600;margin:14px 0 5px}
-.dsec p{font-size:14.5px;line-height:1.68;max-width:66ch;margin:0 0 12px;
-  text-wrap:pretty}
-.dsec h4{letter-spacing:-.004em}
+.dsec p{font-size:15px;line-height:1.66;margin:0 0 13px;text-wrap:pretty}
+.dsec h4{letter-spacing:-.004em;font-size:13.5px}
 .gap{font-family:var(--sans);font-size:12.5px;color:var(--alert);font-style:italic;
   background:rgba(179,53,42,.06);border-left:3px solid var(--alert);padding:7px 11px;
   border-radius:var(--r-sm);max-width:68ch}
@@ -242,6 +242,20 @@ tr:hover td.ours input{background:var(--cell-ours)}
   color:var(--muted);background:var(--sunken);border-radius:3px;padding:1px 5px;
   margin-left:6px;cursor:help;vertical-align:2px}
 .blank{color:var(--yours);font-style:italic}
+/* Bank Rate steps. A rate path is read as levels and moves, so each box
+   carries both, and the direction is in the glyph as well as the colour. */
+.brwrap{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+.brbox{flex:1 1 96px;min-width:96px;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:11px 12px 10px;text-align:center}
+.brbox.now{background:var(--accent-soft);border-color:var(--line2)}
+.brbox .brl{display:block;font-family:var(--sans);font-size:10.5px;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--muted);font-weight:600}
+.brbox b{display:block;font-family:var(--mono);font-size:21px;font-weight:500;
+  color:var(--ink);margin:5px 0 3px;letter-spacing:-.02em}
+.brbox b i{font-style:normal;font-size:12px;color:var(--muted);margin-left:1px}
+.brbox .brd{display:block;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.brbox .brd.up{color:var(--l-exc)}
+.brbox .brd.dn{color:var(--good)}
 .pastebox{margin-top:12px;padding:12px 14px;background:var(--sunken);
   border-radius:var(--r-sm);border-left:3px solid var(--accent)}
 .pastebox textarea{width:100%;min-height:96px;padding:9px 11px;border:1px solid var(--line2);
@@ -255,10 +269,10 @@ tr:hover td.ours input{background:var(--cell-ours)}
   color:var(--on-accent);font-weight:600}
 .pickhint{font-size:11px;color:var(--faint);margin-left:6px}
 .otable tr.breach td{color:var(--alert);font-weight:600;background:rgba(179,53,42,.06)}
-.doc h2{font-size:31px;font-weight:600;letter-spacing:-.022em;margin:22px 0 6px;
-  line-height:1.14;max-width:24ch}
-.doc .lede{font-style:italic;color:var(--ink2);font-size:16.5px;line-height:1.5;
-  margin:0 0 8px;max-width:56ch}
+.doc h2{font-size:32px;font-weight:600;letter-spacing:-.022em;margin:22px 0 6px;
+  line-height:1.13;max-width:26ch}
+.doc .lede{font-style:italic;color:var(--ink2);font-size:17px;line-height:1.5;
+  margin:0 0 8px;max-width:62ch}
 .doc h3{font-family:var(--sans);font-size:13.5px;font-weight:600;margin:0 0 8px;
   display:flex;align-items:baseline;gap:9px}
 .lbtag{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.05em;
@@ -276,31 +290,31 @@ tr:hover td.ours input{background:var(--cell-ours)}
 .headline small{color:var(--muted);font-size:11px}
 .chartwrap{border:1px solid var(--hair);border-radius:var(--r-sm);background:var(--card);
   padding:14px 14px 6px;overflow-x:auto;margin:4px 0 2px}
-.legend{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--sans);font-size:11px;
-  color:var(--ink2);padding:11px 2px 3px;letter-spacing:.005em}
+.legend{display:flex;gap:20px;flex-wrap:wrap;font-family:var(--sans);font-size:12.5px;
+  color:var(--ink);padding:12px 2px 4px;letter-spacing:.002em}
 .legend span{display:flex;align-items:center;gap:6px}
-.legend i{width:16px;height:2.5px;border-radius:2px;flex:none}
-.otable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px;
+.legend i{width:18px;height:3px;border-radius:2px;flex:none}
+.otable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;
   font-variant-numeric:tabular-nums;margin-top:8px}
 .otable th,.otable td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--hair);
   white-space:nowrap}
-.otable th:first-child,.otable td:first-child{text-align:left;font-family:var(--sans);font-size:12px}
-.otable thead th{font-family:var(--sans);font-size:9.5px;font-weight:600;color:var(--muted);
+.otable th:first-child,.otable td:first-child{text-align:left;font-family:var(--sans);font-size:13px}
+.otable thead th{font-family:var(--sans);font-size:10.5px;font-weight:600;color:var(--ink2);
   text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--line2);
   padding-bottom:6px}
 .otable tbody tr:last-child td{border-bottom:0}
 .otable tr.key td{font-weight:600;border-top:1.5px solid var(--line2)}
 .otable tr.lb td{color:var(--l-lb);font-weight:600}
 .otable tr.inv td{color:var(--l-inv);font-weight:600}
-.note{font-family:var(--sans);font-size:11.5px;color:var(--muted);line-height:1.55;
-  margin:9px 0 0;max-width:78ch}
+.note{font-family:var(--sans);font-size:12.5px;color:var(--ink2);line-height:1.6;
+  margin:10px 0 0}
 .note b{font-family:var(--mono);color:var(--ink)}
 .readout{margin-top:11px;padding:11px 14px;background:var(--sunken);border-radius:var(--r-sm);
   border-left:3px solid var(--l-cfr)}
-.readout .rt{display:block;font-family:var(--sans);font-size:10px;letter-spacing:.08em;
+.readout .rt{display:block;font-family:var(--sans);font-size:10.5px;letter-spacing:.08em;
   text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
-.readout p{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--ink2);
-  margin:0 0 7px;max-width:78ch}
+.readout p{font-family:var(--sans);font-size:13.5px;line-height:1.62;color:var(--ink2);
+  margin:0 0 8px}
 .readout p:last-child{margin-bottom:0}
 .caveat{font-family:var(--sans);margin-top:24px;padding:13px 15px;border-radius:var(--r-sm);
   background:var(--sunken);border-left:3px solid var(--orange);font-size:12px;
@@ -511,7 +525,7 @@ const num = v => { const n=parseFloat(String(v).replace(/[£,\s]/g,"")); return 
 
 /* ---- charts -------------------------------------------------------------- */
 function chart(d, spec){
-  const W=900, H=spec.h||260, P={t:16,r:16,b:26,l:60};
+  const W=900, H=(spec.h||260)+14, P={t:18,r:18,b:32,l:70};
   const iw=W-P.l-P.r, ih=H-P.t-P.b;
   const keys=spec.lines.map(l=>l.k).concat((spec.fill||[]).map(f=>f.k));
   // Zero is folded into the range only when the axis is meant to include it.
@@ -531,8 +545,8 @@ function chart(d, spec){
   const gl=[]; for(let n=0;n<=4;n++){const v=LO+(HI-LO)*n/4;
     gl.push(`<line x1="${P.l}" y1="${Y(v).toFixed(1)}" x2="${W-P.r}" y2="${Y(v).toFixed(1)}"
       stroke="var(--hair)" stroke-width="1"/><text x="${P.l-9}" y="${(Y(v)+3.4).toFixed(1)}"
-      text-anchor="end" font-family="var(--mono)" font-size="9.5" letter-spacing="-0.1"
-      fill="var(--faint)">${spec.fmt ? spec.fmt(v) : m1(v)}</text>`);}
+      text-anchor="end" font-family="var(--mono)" font-size="11.5" letter-spacing="-0.1"
+      fill="var(--ink2)">${spec.fmt ? spec.fmt(v) : m1(v)}</text>`);}
   // A left rule and a baseline: the plot reads as a framed field rather than
   // as lines floating on the page.
   gl.push(`<line x1="${P.l}" y1="${P.t}" x2="${P.l}" y2="${P.t+ih}"
@@ -554,8 +568,8 @@ function chart(d, spec){
   const step=Math.max(1,Math.round(d.length/9)), tx=[];
   for(let i=0;i<d.length;i+=step) tx.push(i);
   const mark = `<text x="${W-P.r}" y="${P.t+11}" text-anchor="end"
-    font-family="var(--sans)" font-size="10" font-weight="600"
-    fill="var(--muted)" opacity=".34" letter-spacing="0.5">PWLBtoday</text>`;
+    font-family="var(--sans)" font-size="11" font-weight="600"
+    fill="var(--muted)" opacity=".42" letter-spacing="0.5">PWLBtoday</text>`;
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
     aria-label="${esc(spec.label)}">${gl.join("")}${fills}${zero}${mk}${mark}
     ${spec.lines.map(l=>`<path d="${path(l.k)}" fill="none" stroke="${l.c}"
@@ -566,8 +580,8 @@ function chart(d, spec){
       return last && last[l.k]!=null
         ? `<circle cx="${X(d.length-1).toFixed(1)}" cy="${Y(last[l.k]).toFixed(1)}" r="2.6"
              fill="${l.c}" stroke="var(--card)" stroke-width="1.4"/>` : "";}).join("")}
-    ${tx.map(i=>`<text x="${X(i).toFixed(1)}" y="${H-8}" text-anchor="middle"
-      font-family="var(--mono)" font-size="9.5" fill="var(--faint)">${d[i].fy}</text>`).join("")}
+    ${tx.map(i=>`<text x="${X(i).toFixed(1)}" y="${H-7}" text-anchor="middle"
+      font-family="var(--mono)" font-size="11.5" fill="var(--ink2)">${d[i].fy}</text>`).join("")}
   </svg>`;
 }
 const legend = items => `<div class="legend">${items.map(x=>
@@ -841,15 +855,15 @@ function forecastTable(){
   return `<div style="overflow-x:auto"><table class="otable">
     <thead><tr><th>Rate assumption</th>${d.map(r=>`<th>${fy(r.fy)}</th>`).join("")}</tr></thead>
     <tbody>
-      <tr class="key"><td>Market-implied, forward SONIA</td>${
+      <tr class="key"><td>Market implied</td>${
         d.map(r=>`<td>${r.implied==null?"–":r.implied.toFixed(2)+"%"}</td>`).join("")}</tr>
       <tr><td>Your assumption${own?"":" — not entered"}</td>${
         d.map(r=>`<td>${r.own==null?'<span class="blank">—</span>':r.own.toFixed(2)+"%"}</td>`).join("")}</tr>
     </tbody></table></div>
-    <p class="note">The implied path is the market's forward curve as at
-      <b>${esc(fcDate(FC.as_at))}</b> — what is priced, not a view. Your own assumption is
-      usually your treasury adviser's; enter it above and both appear in the report so members
-      can see the difference.</p>`;
+    <p class="note">The implied path is what the market prices as at
+      <b>${esc(fcDate(FC.as_at))}</b>, not a view. Your own assumption is usually your treasury
+      adviser's; enter it above and both appear in the report so members can see the
+      difference.</p>`;
 }
 
 function forecastChart(){
@@ -862,25 +876,13 @@ function forecastChart(){
     lines.push({k:"own",c:"var(--l-nlr,var(--orange))",w:2,dash:"5 3"});
   }
   return `<div class="chartwrap">${chart(d,{label:"Rate assumptions",h:210,lines})}
-    ${legend([{c:"var(--l-cfr)",t:"Market-implied"}].concat(
+    ${legend([{c:"var(--l-cfr)",t:"Market implied"}].concat(
       d.some(r=>r.own!=null)?[{c:"var(--orange)",t:"Your assumption"}]:[]))}</div>`;
-}
-
-function spotTable(){
-  if(!FC.spot || !FC.spot.length) return "";
-  const want=["1D","1M","3M","6M","12M","2Y","5Y","10Y"];
-  const got=FC.spot.filter(([t])=>want.includes(t));
-  if(!got.length) return "";
-  return `<div style="overflow-x:auto"><table class="otable">
-    <thead><tr><th>SONIA OIS</th>${got.map(([t])=>`<th>${esc(t)}</th>`).join("")}</tr></thead>
-    <tbody><tr><td>Rate</td>${got.map(([,v])=>`<td>${v.toFixed(2)}%</td>`).join("")}</tr></tbody>
-    </table></div>`;
 }
 
 function forecastBlock(){
   if(!FC.implied) return "";
-  return `<h4>Rate assumptions</h4>${forecastChart()}${forecastTable()}
-    <h4>Money market</h4>${spotTable()}`;
+  return `<h4>Rate assumptions</h4>${forecastChart()}${forecastTable()}`;
 }
 
 /* ===========================================================================
@@ -972,19 +974,44 @@ function curveChart(){
       how the shape of the curve has moved.</p></div>`;
 }
 
-/* Bank Rate as the market prices it, from the forward SONIA curve. */
-function bankRateChart(){
-  if(!FC.implied) return "";
-  const n = Math.min(FC.implied.length, 15);
-  const d = Array.from({length:n},(_,i)=>({fy:String(S.fy0+i).slice(2)+"/"+String((S.fy0+i+1)%100).padStart(2,"0"),
-                                           i, implied:FC.implied[i]}));
-  return `<div class="chartwrap">${chart(d,{label:"Bank Rate implied by forward SONIA",
-      h:200, zero:"tight", fmt:v=>v.toFixed(2)+"%", mtfp:false,
-      lines:[{k:"implied", c:"var(--l-cfr)", w:2.4}]})}
-    ${legend([{c:"var(--l-cfr)", t:"Implied by the forward SONIA curve"}])}
-    <p class="note" style="padding:0 4px 6px">What the market prices, as at
-      ${esc(fcDate(FC.as_at))} — not a forecast. Your own assumption goes in the
-      table below.</p></div>`;
+/* Bank Rate, market implied.
+ *
+ * Boxes rather than a line, because that is how a rate path is read: a series
+ * of steps, each with a level and a move, not a curve to interpolate off.
+ *
+ * The horizons are the ones the data supports. The Bank's own meeting
+ * calendar is not in anything we hold, and putting approximate meeting dates
+ * on a committee paper would be inventing the one detail a reader would check.
+ * So the boxes are labelled by horizon, and the panel says the path is what
+ * the market implies rather than anyone's forecast.
+ */
+function bankRateBoxes(){
+  const im = FC.implied || [];
+  if(im.length < 2) return "";
+  const now = im[0];
+  const yrs = im.slice(0, 7);
+  const box = (l,v,d,lead) => {
+    const dir = d==null ? "" : d < -0.02 ? "dn" : d > 0.02 ? "up" : "flat";
+    const arrow = dir==="dn" ? "\u25bc" : dir==="up" ? "\u25b2" : "\u2014";
+    return `<div class="brbox${lead?" now":""}">
+      <span class="brl">${esc(l)}</span>
+      <b>${v.toFixed(2)}<i>%</i></b>
+      ${lead ? `<span class="brd">current</span>`
+             : `<span class="brd ${dir}">${arrow} ${d>0?"+":""}${d.toFixed(2)}</span>`}
+    </div>`;
+  };
+  const boxes = yrs.map((v,i) => i===0
+    ? box(fy(S.fy0), v, null, true)
+    : box(fy(S.fy0+i), v, v-now, false)).join("");
+  const last = yrs[yrs.length-1];
+  const move = last - now;
+  const dirWord = move > 0.05 ? "higher" : move < -0.05 ? "lower" : "broadly unchanged";
+  return `<div class="brwrap">${boxes}</div>
+    <p class="note">Market implied, as at ${esc(fcDate(FC.as_at))}. Each box is the average
+      Bank Rate the market prices for that financial year, and the figure beneath it the
+      movement from the current year. On this pricing Bank Rate is ${esc(dirWord)} by
+      ${fy(S.fy0+yrs.length-1)}. This is what is priced rather than a forecast; the
+      authority's own assumption goes in the table below.</p>`;
 }
 
 function rateBlock(){
@@ -993,7 +1020,7 @@ function rateBlock(){
     ${rateLevelChart()}${rateChangeChart()}
     <h4>The curve over time</h4>${curveChart()}
     <h4>Gilts and the money market</h4>${giltChart()}${soniaChart()}
-    <h4>Bank Rate implied by the market</h4>${bankRateChart()}`;
+    <h4>Bank Rate, market implied</h4>${bankRateBoxes()}`;
 }
 
 /* Prose for the external context, written from the market data we hold, so a
@@ -1030,8 +1057,8 @@ function rateViewNarrative(){
   const n = Math.min(5, FC.implied.length);
   const path = FC.implied.slice(0,n).map((v,i)=>`${fy(S.fy0+i)} ${v.toFixed(2)}%`).join(", ");
   const rising = FC.implied[n-1] > FC.implied[0];
-  return `<p>For planning purposes the authority has taken the path implied by the forward
-    SONIA curve as at ${esc(fcDate(FC.as_at))}, which prices ${path}. On that basis short-term
+  return `<p>For planning purposes the authority has taken the path implied by the money
+    market as at ${esc(fcDate(FC.as_at))}, which prices ${path}. On that basis short-term
     rates are expected to ${rising?"rise gradually":"fall gradually"} across the medium term.
     An implied path is what the market currently prices rather than a forecast, and the
     authority does not treat it as one.</p>
@@ -1039,7 +1066,7 @@ function rateViewNarrative(){
     instead and say whose it is — the table below shows both.</span></p>`;
 }
 
-/* Gilts and SONIA over the same year as the PWLB series. PWLB lending is set
+/* Gilts and the overnight rate over the same year as the PWLB series. PWLB lending is set
    off the gilt curve — standard is gilt plus 80 basis points, certainty plus
    60 — so a treasurer reading a rate movement wants to know whether it came
    from the gilt market or from a change in the margin. Showing both answers
@@ -1073,12 +1100,12 @@ function soniaChart(){
     return o;
   }).filter(o => use.every(k=>o[k]!=null));
   if(d.length < 3) return "";
-  return `<div class="chartwrap">${chart(d,{label:"SONIA curve, 12 months",
+  return `<div class="chartwrap">${chart(d,{label:"Overnight rate, 12 months",
       h:200, zero:"tight", mtfp:false, fmt:v=>v.toFixed(2)+"%",
       lines:use.map((k,ix)=>({k, c:seqFor(ix,use.length), w:1.8}))})}
     ${legend(use.map((k,ix)=>({c:seqFor(ix,use.length), t:k})))}
     <p class="note" style="padding:0 4px 6px">The money market the authority invests in,
-      and the curve from which the implied Bank Rate path above is taken.</p></div>`;
+      and the curve the implied Bank Rate path is taken from.</p></div>`;
 }
 
 /* ===========================================================================
@@ -2098,22 +2125,22 @@ function documentHTML(forExport){
   const resolved = inlineColours(head + body + caveat());
   return `<!doctype html><html><head><meta charset="utf-8">
     <title>${esc(name)} — ${esc(rep.t)}</title><style>
-    body{font-family:Georgia,'Times New Roman',serif;font-size:11pt;line-height:1.5;
-      max-width:17cm;margin:2cm auto;color:#111}
+    body{font-family:Georgia,'Times New Roman',serif;font-size:11.5pt;line-height:1.55;
+      max-width:17.5cm;margin:2cm auto;color:#111}
     h2{font-size:22pt;margin:0 0 3pt;letter-spacing:-0.4pt}
     h3{font-size:12.5pt;margin:20pt 0 7pt;font-family:Arial,sans-serif}
     .secn{color:#5a7fa8;font-weight:normal;margin-right:8pt}
     h4{font-size:11pt;margin:12pt 0 4pt;font-family:Arial,sans-serif}
     .lede{font-style:italic;color:#444;margin:0 0 18pt}
     .doclogo{max-height:56px;max-width:230px;margin-bottom:12pt;display:block}
-    table{border-collapse:collapse;width:100%;font-size:8.5pt;margin:8pt 0;font-family:Arial,sans-serif}
+    table{border-collapse:collapse;width:100%;font-size:9.5pt;margin:9pt 0;font-family:Arial,sans-serif}
     th,td{border:1px solid #ccc;padding:3pt 5pt;text-align:right}
     th:first-child,td:first-child{text-align:left}
     thead th{background:#eee}
     .gap{color:#a33;font-style:italic;font-family:Arial,sans-serif;font-size:10pt}
     .src{color:#555;font-size:9.5pt;font-family:Arial,sans-serif}
     .readout{margin:8pt 0 0;padding:7pt 9pt;background:#f4f6f8;border-left:3pt solid #2f6fb0}
-    .readout p{font-family:Arial,sans-serif;font-size:9.5pt;line-height:1.5;margin:0 0 5pt}
+    .readout p{font-family:Arial,sans-serif;font-size:10.5pt;line-height:1.55;margin:0 0 6pt}
     .readout .rt{display:block;font-family:Arial,sans-serif;font-size:8pt;font-weight:bold;
       text-transform:uppercase;color:#555;margin-bottom:4pt}
     .caveat{margin-top:20pt;padding:8pt 10pt;background:#f4f4f4;border-left:3pt solid #c60;
