@@ -378,6 +378,8 @@ tr:hover td.ours input{background:var(--cell-ours)}
       <div><label for="rtype">Report</label><select id="rtype"></select></div>
       <div><label for="fy0">First year<span class="hint">balance sheet date</span></label>
         <select id="fy0"></select></div>
+      <div><label for="asat">Report as at<span class="hint">market data cut to this date</span></label>
+        <input type="date" id="asat"></div>
       <div><label for="hra">HRA<span class="hint">LB1 must be split either way</span></label>
         <select id="hra"><option value="no">No HRA</option><option value="one">One pool</option>
         <option value="two">Two pool</option></select></div>
@@ -589,21 +591,111 @@ function codeLine(){
   return `Built to the ${esc(ACTIVE.long)} — ${esc(ACTIVE.statusNote)}.`;
 }
 
+/* ===========================================================================
+ * Which country's law this authority is under.
+ *
+ * The tool ships 311 authorities: 261 English, 30 Scottish, 20 Welsh. Every
+ * draft used to cite the Local Government Act 2003, which does not extend to
+ * Scotland, and to call the finance officer the section 151 officer, which is
+ * an English and Welsh title. The worked example picks the first authority
+ * over £100m alphabetically — Aberdeen — so the first thing a new user saw was
+ * a Scottish council written up under English law.
+ *
+ * Scotland differs in substance, not only in citation. There is no minimum
+ * revenue provision: capital is financed through the loans fund and the 2016
+ * Regulations set out how advances are repaid. A section headed "Minimum
+ * revenue provision" is not a wording problem there, it is the wrong section.
+ *
+ * Terms are substituted into clause and draft text as [[token]] at render
+ * time, so a clause that differs only in citation is written once. Where the
+ * substance differs, the clause is gated with `nat` instead.
+ * ======================================================================== */
+const NATIONS = {
+  england: {
+    n:"England",
+    officer:"section 151 officer",
+    act:"the Local Government Act 2003",
+    regs:"the Local Authorities (Capital Finance and Accounting) (England) Regulations 2003",
+    mrp:"minimum revenue provision",
+    mrpCap:"Minimum revenue provision",
+    mrpTitle:"Minimum revenue provision",
+    mrpGuidance:"the statutory guidance on minimum revenue provision",
+    invGuidance:"the statutory guidance on local government investments issued under section 15(1)(a) of that Act"
+  },
+  wales: {
+    n:"Wales",
+    officer:"section 151 officer",
+    act:"the Local Government Act 2003",
+    regs:"the Local Authorities (Capital Finance and Accounting) (Wales) Regulations 2003",
+    mrp:"minimum revenue provision",
+    mrpCap:"Minimum revenue provision",
+    mrpTitle:"Minimum revenue provision",
+    mrpGuidance:"the statutory guidance on minimum revenue provision issued by the Welsh Government",
+    invGuidance:"the statutory guidance on local government investments issued by the Welsh Government"
+  },
+  scotland: {
+    n:"Scotland",
+    officer:"section 95 officer",
+    act:"the Local Government in Scotland Act 2003",
+    regs:"the Local Authority (Capital Finance and Accounting) (Scotland) Regulations 2016",
+    mrp:"repayment of loans fund advances",
+    mrpCap:"Repayment of loans fund advances",
+    mrpTitle:"Loans fund and the repayment of advances",
+    mrpGuidance:"the statutory repayment methods set out in those Regulations",
+    invGuidance:"the Local Government Investments (Scotland) Regulations 2010"
+  }
+};
+
+/* The GSS code carries the country in its first letter, and it is the only
+   thing about an authority we can be certain of without asking. */
+function nationOf(gss){
+  const c = String(gss||"").charAt(0).toUpperCase();
+  if(c === "S") return "scotland";
+  if(c === "W") return "wales";
+  return "england";
+}
+const NAT = () => NATIONS[S.natOverride || nationOf(S.gss)];
+function inNation(c){ return !c.nat || c.nat.indexOf(S.natOverride || nationOf(S.gss)) >= 0; }
+
+/* [[token]] is OUR substitution and always resolves; {{token}} is the
+   authority's and is meant to stay visible. Keeping them as separate
+   brackets means a term we know can never be mistaken for a gap they
+   have to fill. */
+function natText(t){
+  const N = NAT();
+  return String(t).replace(/\[\[(\w+)\]\]/g, (m,k) => N[k] != null ? N[k] : m);
+}
+
 const REPORTS = [{k:"tmss",t:"Annual treasury strategy"},{k:"mid",t:"Mid-year review"},
                  {k:"out",t:"Annual outturn"},{k:"quart",t:"Quarterly monitoring"}];
 const COLS = [
   {k:"cfr",   l:"Capital financing<br>requirement", s:"LB1 (a)"},
-  {k:"mrp",   l:"MRP and VRP",            s:"charged in year"},
+  {k:"mrp",   l:"MRP and VRP",            s:"charged in year", natl:{scotland:"Loans fund<br>repayments"}},
   {k:"rec",   l:"Capital receipts<br>applied", s:"set aside"},
   {k:"capex", l:"Capital expenditure<br>financed by borrowing"},
   {k:"obs",   l:"Other balance<br>sheet items", s:"LB1 (b)"},
   {k:"loans", l:"Existing loan<br>commitments", s:"LB3 (d)", ours:true},
   {k:"inv",   l:"Existing investment<br>commitments", s:"LB3 (e)"},
-  {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark"}
+  {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark"},
+  // Affordability. The Prudential Code's own indicator, and the one the tool
+  // produced no figure for at all: it computed six debt and investment limits
+  // and left the question members actually ask — what does this cost us as a
+  // share of what we raise — to prose.
+  {k:"intpay", l:"Interest<br>payable",     s:"on borrowing and leases"},
+  {k:"intinc", l:"Investment<br>income",    s:"netted off"},
+  {k:"nrs",    l:"Net revenue<br>stream",   s:"grants and local taxpayers"},
+  {k:"comminc",l:"Non-treasury<br>investment income", s:"net, if any"}
 ];
+/* A column whose name changes with the country — Scotland charges loans fund
+   repayments where England and Wales make MRP. */
+function colLabel(c){
+  const n = (typeof S !== "undefined") ? (S.natOverride || nationOf(S.gss)) : "england";
+  return (c.natl && c.natl[n]) || c.l;
+}
+
 const MTFP = 5;   // years most authorities actually forecast — marked, not enforced
 
-let S = {gss:"", report:"tmss", fy0:2026, hra:"no", fund:"gf", years:51,
+let S = {gss:"", report:"tmss", fy0:2026, asAt:null, natOverride:null, hra:"no", fund:"gf", years:51,
          loans:[], g:{}, text:{}, sec:"intro",
          choices:{mrpmethod:"asset", cycle:"thrice"}, rates:[], limits:{}, portfolio:[], portfolioText:"", portfolioNote:"", logo:null};
 const blank = () => { const o={}; COLS.forEach(c=>o[c.k]=Array(S.years).fill(0)); return o; };
@@ -762,7 +854,21 @@ function buildModel(S, fund){
     const tib = hraTwoPool ? 0 : Math.max(liq, -ntp);
     const lb  = hraTwoPool ? ntp : ntp + tib;
 
+    // Financing costs as the Prudential Code defines them, to the extent the
+    // ledger carries them: interest payable, plus the provision made for debt
+    // repayment, less investment income. Depreciation on finance leases and
+    // gains or losses on repurchase are not in the grid, so the figure is what
+    // the authority entered and nothing is imputed for what it did not.
+    const intpay = g.intpay[i] || 0, intinc = g.intinc[i] || 0, nrs = g.nrs[i] || 0;
+    const fincost = intpay + (g.mrp[i]||0) - intinc;
+    const afford  = nrs > 0 ? (fincost / nrs) * 100 : null;
+    // Proportionality: how much of what the authority raises depends on income
+    // from investments it did not have to make. The Code asks whether services
+    // could continue without it, and that question needs a number first.
+    const comminc = g.comminc[i] || 0;
+    const commratio = nrs > 0 ? (comminc / nrs) * 100 : null;
     rows.push({fy:S.fy0+i, i, cfr, obs, liq, el, ei, ntp, tib, lb,
+               intpay, intinc, nrs, fincost, afford, comminc, commratio,
                mrp:g.mrp[i]||0, capex:g.capex[i]||0, rec:g.rec[i]||0,
                br:0, need:0, over:0, inv:0, strategic:0, excess:0, al:0});
   }
@@ -817,6 +923,107 @@ function loanProfile(S, LB){
   return out.map(v => Math.round(v*10)/10);
 }
 
+/* ---------------------------------------------------------------------------
+ * Live market data.
+ *
+ * The page ships a snapshot, which is correct on the day it is built and ages
+ * silently afterwards. It fetches a refreshed copy from its OWN origin on
+ * load, and keeps the snapshot if that fails.
+ *
+ * Same origin, and deliberately: the pwlbtoday API takes a key, and a key in a
+ * public page is a published key. A plain JSON file beside this one needs no
+ * credential, is refreshed by whatever job we choose, and cannot leak anything
+ * the page does not already show. The failure mode is the snapshot — which is
+ * exactly where we started, so a refresh that does not happen costs nothing.
+ *
+ * Because our history grows and the snapshot does not, the fetched file is
+ * usually LONGER. That is the point of the report's as-at date: a longer file
+ * does not change an existing report, it only lets one be dated later.
+ * ------------------------------------------------------------------------- */
+const MKT_LIVE_URL = "market-latest.json";
+
+async function refreshMarket(){
+  try{
+    const res = await fetch(MKT_LIVE_URL, {cache:"no-store"});
+    if(!res.ok) return false;
+    const live = await res.json();
+    // Take it only if it is at least as current as what we already have, and
+    // actually carries the series we draw. A malformed or truncated file must
+    // not replace a good snapshot.
+    if(!live || !live.as_at || !Array.isArray(live.hist) || !live.hist.length) return false;
+    if(MKT.as_at && live.as_at < MKT.as_at) return false;
+    const wasDefault = !S.asAt || S.asAt === MKT.as_at;
+    Object.keys(live).forEach(k => { MKT[k] = live[k]; });
+    // A report still sitting on the old default date follows the new data; one
+    // the user has dated deliberately does not move under them.
+    if(wasDefault){ S.asAt = MKT.as_at; const el = $("asat"); if(el) el.value = MKT.as_at; }
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ---------------------------------------------------------------------------
+ * The report's as-at date.
+ *
+ * Our market history grows; a report does not. A strategy written in March and
+ * taken to committee in April should show the market as it stood when it was
+ * written, and an outturn should show the year it covers — not whatever the
+ * data happens to say on the day someone reopens the file. So the report
+ * carries its own as-at date and every dated series is cut to it.
+ *
+ * The date is free: before our earliest data, after our latest, anywhere. Each
+ * case is stated rather than silently accommodated. Asking for a date beyond
+ * what we hold is a perfectly reasonable thing to do — the report is dated
+ * next month — and the honest answer is to show the latest we have and say so.
+ * ------------------------------------------------------------------------- */
+function asAtDate(){ return (S && S.asAt) || MKT.as_at || null; }
+
+/* A dated series cut to the report's as-at date. Rows carry `d` as ISO, which
+   sorts lexically, so no date parsing is needed to compare them. */
+function upTo(rows){
+  const a = asAtDate();
+  if(!a || !Array.isArray(rows)) return rows || [];
+  return rows.filter(r => !r.d || r.d <= a);
+}
+function mktHist(){       return upTo(MKT.hist); }
+function mktGiltHist(){   return upTo(MKT.gilt_hist); }
+function mktSoniaHist(){  return upTo(MKT.sonia_hist); }
+
+/* The date the figures on the page actually come from, which is the last row
+   we hold at or before the as-at date — not the as-at date itself. */
+/* The date the figures actually come from: the last observation at or before
+   the as-at date. Null when we hold nothing that early — which is a real
+   answer, not a reason to fall back to today's data. Falling back was the
+   first version's bug: an as-at date of January 2025 reported "rates as at 28
+   August 2026, the last observation on or before that date", which is not
+   merely imprecise but false, in a document going to members. */
+function effectiveAsAt(){
+  const h = mktHist(), g = mktGiltHist();
+  const last = [h.length?h[h.length-1].d:null, g.length?g[g.length-1].d:null]
+    .filter(Boolean).sort().pop();
+  return last || null;
+}
+function earliestHeld(){
+  const d = [(MKT.hist||[])[0], (MKT.gilt_hist||[])[0]].filter(Boolean).map(r=>r.d)
+    .filter(Boolean).sort();
+  return d[0] || null;
+}
+function asAtNote(){
+  const want = asAtDate(), have = effectiveAsAt();
+  if(!want) return "";
+  if(!have)
+    return `Report dated ${fcDate(want)}, which is before the market history we hold — that
+            begins ${fcDate(earliestHeld())}. No rate history is shown; move the report date
+            forward, or take the rates for that period from your own records.`;
+  if(want > MKT.as_at)
+    return `Report dated ${fcDate(want)}. Our market data runs to ${fcDate(MKT.as_at)},
+            so the rates shown are the latest we hold rather than the position on the
+            report date.`;
+  if(want > have)
+    return `Report dated ${fcDate(want)}; rates shown as at ${fcDate(have)}, the last
+            observation on or before that date.`;
+  return `Rates as at ${fcDate(have)}.`;
+}
+
 /* ===========================================================================
  * Market data for the External context section.
  *
@@ -866,7 +1073,7 @@ function curveTable(){
 }
 
 function rangeTable(){
-  const h = MKT.hist || [];
+  const h = mktHist();
   if(!h.length) return "";
   const keys = (MKT.histKeys||[]).filter(k=>h.some(r=>r[k]!=null));
   const cells = k => {
@@ -1002,7 +1209,7 @@ function forecastBlock(){
  * ======================================================================== */
 let RATE_ON = null;                     // which terms are shown; null = default
 
-function rateTerms(){ return (MKT.histKeys || []).filter(k => (MKT.hist||[]).some(r=>r[k]!=null)); }
+function rateTerms(){ const h=mktHist(); return (MKT.histKeys || []).filter(k => h.some(r=>r[k]!=null)); }
 function rateShown(){
   const all = rateTerms();
   if(!RATE_ON) RATE_ON = all.filter(k => ["1Y","5Y","10Y","20Y","50Y"].indexOf(k)>=0);
@@ -1019,7 +1226,7 @@ function rateSeriesPicker(){
 }
 
 function rateLevelChart(){
-  const h = MKT.hist || [];
+  const h = mktHist();
   if(h.length < 3) return "";
   const on = rateShown();
   const d = h.map((r,i)=>Object.assign({fy:r.d.slice(2,7), i}, r));
@@ -1032,7 +1239,7 @@ function rateLevelChart(){
 /* Change since the start of the window. Zero belongs here: it is the line
    between terms that have risen and terms that have fallen. */
 function rateChangeChart(){
-  const h = MKT.hist || [];
+  const h = mktHist();
   if(h.length < 3) return "";
   const on = rateShown(), base = {};
   on.forEach(k => { const f = h.find(r=>r[k]!=null); base[k] = f ? f[k] : 0; });
@@ -1112,7 +1319,7 @@ function bankRateBoxes(){
 }
 
 function rateBlock(){
-  if(!MKT.hist) return "";
+  if(!mktHist().length) return "";
   return `<h4>PWLB certainty rates</h4>${rateSeriesPicker()}
     ${rateLevelChart()}${rateChangeChart()}
     <h4>The curve over time</h4>${curveChart()}
@@ -1125,7 +1332,7 @@ function rateBlock(){
    numbers say — where rates have been, where they are, and what the forward
    curve prices — and marks the authority's own view as the thing to add. */
 function marketNarrative(){
-  const h = MKT.hist || [];
+  const h = mktHist();
   if(h.length < 3) return "";
   const k = "10Y", first = h.find(r=>r[k]!=null), last = [...h].reverse().find(r=>r[k]!=null);
   if(!first || !last) return "";
@@ -1138,7 +1345,7 @@ function marketNarrative(){
   const c = t => s5[t]==null ? null : (s5[t]-(MKT.cert_margin||0.2));
   return `<p>PWLB certainty rates over the last twelve months have been ${dir} at the ten-year
     maturity, which has traded between ${lo.toFixed(2)}% and ${hi.toFixed(2)}% and stood at
-    ${last[k].toFixed(2)}% on ${esc(fcDate(MKT.as_at))}. The curve is currently
+    ${last[k].toFixed(2)}% on ${esc(fcDate(effectiveAsAt()))}. The curve is currently
     ${c("5Y")!=null&&c("25Y")!=null&&c("25Y")>c("5Y")?"upward sloping":"broadly flat"} across
     the maturities the authority is most likely to use${
     c("5Y")!=null?`, at ${c("5Y").toFixed(2)}% for five years`:""}${
@@ -1169,7 +1376,7 @@ function rateViewNarrative(){
    from the gilt market or from a change in the margin. Showing both answers
    that without anyone having to say it. */
 function giltChart(){
-  const h = MKT.gilt_hist || [], keys = MKT.gilt_keys || [];
+  const h = mktGiltHist(), keys = MKT.gilt_keys || [];
   if(h.length < 3 || !keys.length) return "";
   const use = keys.filter(k => h.some(r=>r[k]!=null));
   const d = h.map((r,i)=>{
@@ -1188,7 +1395,7 @@ function giltChart(){
 }
 
 function soniaChart(){
-  const h = MKT.sonia_hist || [], keys = MKT.sonia_keys || [];
+  const h = mktSoniaHist(), keys = MKT.sonia_keys || [];
   if(h.length < 3 || !keys.length) return "";
   const use = keys.filter(k => h.some(r=>r[k]!=null));
   const d = h.map((r,i)=>{
@@ -1787,6 +1994,9 @@ const CHOICES = [
   {k:"resched",   l:"Rescheduling or premature repayment considered?", type:"yesno"},
   {k:"pooled",    l:"Use externally managed or pooled funds?", type:"yesno"},
   {k:"nontreas",  l:"Hold non-treasury investments?", type:"yesno"},
+  {k:"commprop",  l:"Hold commercial property or investments for financial return?",
+   type:"yesno"},
+  {k:"commborrow",l:"Was any of it acquired with borrowing?", type:"yesno"},
   {k:"mifid",     l:"Elective professional client under MiFID II?", type:"yesno"},
   {k:"pwlbtoday", l:"Use PWLBtoday for market data, training or counterparty monitoring?",
    type:"yesno"},
@@ -1799,9 +2009,10 @@ const CLAUSES = [
  {sec:"1", rep:FWD_REPORTS, always:true, req:"TM Code — annual strategy before the year begins",
   t:`This strategy is presented to members for approval before the start of the financial
      year, in accordance with the CIPFA Treasury Management in the Public Services Code of
-     Practice and the Prudential Code for Capital Finance in Local Authorities. It sets out
-     the authority's borrowing and investment plans, the prudential indicators against which
-     activity will be monitored, and the policy for making minimum revenue provision.`},
+     Practice and the Prudential Code for Capital Finance in Local Authorities, and under
+     [[act]] and [[regs]]. It sets out the authority's borrowing and investment plans, the
+     prudential indicators against which activity will be monitored, and its policy on the
+     [[mrp]].`},
  {sec:"1", rep:FWD_REPORTS, when:C=>C.cycle==="quarterly", req:"TM Code — reporting",
   t:`Treasury management activity is reported to members quarterly, with a mid-year review
      and an outturn report following the year end.`},
@@ -1913,6 +2124,16 @@ const CLAUSES = [
      before lending that the borrowing authority has not issued a section 114 notice and is
      not subject to a capitalisation direction or other exceptional financial support that
      would bear on its ability to repay.`},
+ {sec:"5", nat:["scotland"], always:true, req:"Local Government Investments (Scotland) Regulations 2010",
+  t:`[[invGuidance]] require the authority to prepare and approve an annual investment strategy
+     before the start of the financial year, setting out the investments it may make and the
+     limits applying to each. The permitted investments approved for the year, and the
+     objectives and risks associated with each, are set out in this strategy and were approved
+     by {{the council}} on {{date}}.`},
+ {sec:"5", nat:["england","wales"], always:true, req:"Statutory guidance on local government investments",
+  t:`The authority has regard to [[invGuidance]] in setting this strategy, which requires it to
+     prioritise security and liquidity over yield and to disclose the risk it is prepared to
+     accept in pursuit of return.`},
  {sec:"5", when:C=>C.pooled==="yes", req:"TM Code — non-specified and long-term investments",
   t:`The authority uses externally managed and pooled funds, which have no fixed maturity date
      and whose capital value may fall as well as rise. These are held for a period of at least
@@ -1928,24 +2149,25 @@ const CLAUSES = [
      the required experience.`},
 
  /* ---- 6 MRP ------------------------------------------------------------- */
- {sec:"6", always:true, req:"Local Authorities (Capital Finance and Accounting) Regulations",
+ {sec:"6", nat:["england","wales"], always:true,
+  req:"Local Authorities (Capital Finance and Accounting) Regulations",
   t:`The authority is required to make a prudent provision each year for the repayment of
      debt incurred to finance capital expenditure. Members are asked to approve the following
      statement before the start of the financial year.`},
- {sec:"6", when:C=>C.mrpmethod==="asset",
+ {sec:"6", nat:["england","wales"], when:C=>C.mrpmethod==="asset",
   t:`For capital expenditure financed by borrowing, minimum revenue provision is charged in
      equal instalments over the estimated useful life of the asset, beginning in the year
      after the asset becomes operational.`},
- {sec:"6", when:C=>C.mrpmethod==="annuity",
+ {sec:"6", nat:["england","wales"], when:C=>C.mrpmethod==="annuity",
   t:`For capital expenditure financed by borrowing, minimum revenue provision is charged on an
      annuity basis over the estimated useful life of the asset, beginning in the year after
      the asset becomes operational. The annuity method charges less in the early years than
      the equal instalment method and more in the later years; it is applied because the
      benefits of the assets concerned are expected to accrue evenly over their life.`},
- {sec:"6", when:C=>C.mrpmethod==="ceb",
+ {sec:"6", nat:["england","wales"], when:C=>C.mrpmethod==="ceb",
   t:`Minimum revenue provision is charged on the capital expenditure basis, over a period
      commensurate with the period over which the expenditure provides benefits.`},
- {sec:"6", when:C=>C.mrpmethod==="other",
+ {sec:"6", nat:["england","wales"], when:C=>C.mrpmethod==="other",
   t:`{{Set out the method applied to each class of capital expenditure, and the estimated
      useful life or period used for each.}}`},
  {sec:"6", when:C=>C.vrp==="yes",
@@ -2018,18 +2240,75 @@ const CLAUSES = [
      recognises that using an adviser does not reduce the knowledge and skills its own
      officers and members require.`},
 
- /* ---- 9 Non-treasury ---------------------------------------------------- */
- {sec:"9", when:C=>C.nontreas==="yes", req:"PC — investments not for treasury purposes",
-  t:`The authority holds investments that are not for treasury management purposes. These are
-     held for service or regeneration objectives rather than for financial return, and are
-     reported separately from treasury investments. {{Describe the holdings, the objectives
-     they serve, how their performance is assessed, and the proportion of net revenue
-     expenditure dependent on income from them.}}`},
- {sec:"9", when:C=>C.nontreas!=="yes",
+ /* ---- 9 Non-treasury ----------------------------------------------------
+  * The largest single gap in the register: eight of the sixteen uncovered
+  * requirements sat here, and the section was one free-text box. The Codes
+  * treat this as a strategy in its own right — categorisation by primary
+  * purpose, proportionality against the net revenue stream, and an explicit
+  * statement on paragraphs 51 to 53. A council that holds commercial property
+  * bought with borrowing has a specific thing it must say, and saying nothing
+  * is not one of the options open to it.
+  * -------------------------------------------------------------------- */
+ {sec:"9", when:C=>C.nontreas!=="yes" && C.commprop!=="yes",
+  req:"PC 51-53 — statement of compliance",
   t:`The authority holds no investments other than for treasury management purposes. Its
      treasury investments are held for the prudent management of its financial affairs and
-     not for financial return, and it does not borrow in order to invest primarily for
-     financial return.`},
+     not for financial return. It has not borrowed, and does not intend to borrow, in order
+     to invest primarily for financial return, and it therefore complies with paragraphs 51
+     to 53 of the Prudential Code.`},
+
+ {sec:"9", when:C=>C.nontreas==="yes" || C.commprop==="yes",
+  req:"PC — categories of investment by primary purpose",
+  t:`The authority holds investments that are not treasury investments. Following the
+     Prudential Code, each is categorised by its primary purpose: SERVICE investments, made
+     to further the authority's service objectives, including loans to third parties and to
+     its own companies where the purpose is a service one; and COMMERCIAL investments, made
+     primarily for financial return. The category determines how each is assessed and
+     reported, and an investment is placed in the category of its primary purpose rather than
+     of any secondary benefit it also brings.`},
+
+ {sec:"9", when:C=>C.nontreas==="yes" || C.commprop==="yes",
+  req:"PC — security, liquidity and yield for non-treasury investments; risk of loss",
+  t:`Non-treasury investments are less liquid than treasury investments and carry a risk to
+     the capital sum. For each, the authority assesses the security of the sum invested, the
+     period over which it is committed, and the return expected, and it holds reserves
+     against the risk of loss. {{State the amount set aside, how the risk of loss is assessed
+     and by whom, and the arrangements for reviewing each investment at least annually.}}`},
+
+ {sec:"9", when:C=>C.nontreas==="yes" || C.commprop==="yes",
+  req:"PC — proportionality of income dependence",
+  t:`The authority assesses the proportion of its net revenue stream that depends on income
+     from non-treasury investments, and whether it could continue to deliver its services if
+     that income ceased. The proportion is shown in the affordability section of this report.
+     {{State what the authority would do if the income fell away, and over what period.}}`},
+
+ {sec:"9", when:C=>C.commprop==="yes" && C.commborrow!=="yes",
+  req:"PC 51-53 — statement of compliance where commercial investments are held",
+  t:`The authority holds investments primarily for financial return. None was acquired with
+     borrowing, and the authority has not borrowed and does not intend to borrow in order to
+     invest primarily for financial return. It therefore complies with paragraphs 51 to 53 of
+     the Prudential Code.`},
+
+ {sec:"9", when:C=>C.commborrow==="yes",
+  req:"PC 51-53 — existing commercial investments acquired with borrowing",
+  t:`The authority holds investments made primarily for financial return which were acquired
+     with borrowing. It does not intend to make any further such investment, and it does not
+     intend to borrow to invest primarily for financial return. On that basis it complies with
+     paragraphs 51 to 53 of the Prudential Code in relation to future activity. The Code's
+     requirement is not retrospective: paragraph 53 makes clear that existing holdings are not
+     required to be disposed of. The authority has, however, an explicit plan to reduce the proportion of
+     its balance sheet that these holdings represent, and reports progress against it
+     annually. {{Set out the plan: what is held, what it cost, what it is now worth, what
+     borrowing remains against it, the intended route and timescale for reducing it, and
+     progress since the last report. State whether the authority has access to the PWLB, and
+     if access is restricted, why.}}`},
+
+ {sec:"9", when:C=>C.commprop==="yes" || C.nontreas==="yes",
+  req:"PC — knowledge and skills for commercial activity",
+  t:`The authority satisfies itself that the officers and members taking decisions on
+     non-treasury investments have the knowledge and skills the decisions require, and that
+     where they do not, external advice is obtained from a source with no interest in the
+     transaction. {{Name the expertise relied on and how independence is assured.}}`},
 
  /* ---- 10 Governance ----------------------------------------------------- */
  {sec:"10", always:true, req:"TM Code — knowledge and skills",
@@ -2047,9 +2326,9 @@ const CLAUSES = [
    anything only the authority can supply visible as a placeholder. */
 function clausesFor(sec){
   const C = S.choices || {};
-  return CLAUSES.filter(c => c.sec === sec && inReport(c) && (c.always || (c.when && c.when(C))))
+  return CLAUSES.filter(c => c.sec === sec && inReport(c) && inNation(c) && (c.always || (c.when && c.when(C))))
     .map(c => {
-      const txt = c.t.replace(/\s+/g," ").trim()
+      const txt = natText(c.t).replace(/\s+/g," ").trim()
         .replace(/\{\{(\w+)\}\}/g, (m,k)=> (C[k]||"").trim() || `{{${k}}}`)
         .replace(/\{\{([^}]+)\}\}/g,
           (m,body)=>`<span class="ph-inline">${esc(body.trim())}</span>`);
@@ -2058,7 +2337,7 @@ function clausesFor(sec){
 }
 function clauseCount(sec){
   const C = S.choices || {};
-  return CLAUSES.filter(c=>c.sec===sec && inReport(c) && (c.always || (c.when && c.when(C)))).length;
+  return CLAUSES.filter(c=>c.sec===sec && inReport(c) && inNation(c) && (c.always || (c.when && c.when(C)))).length;
 }
 
 /* ===========================================================================
@@ -2149,21 +2428,21 @@ function limitsPanel(){
  * publications, so nothing here is lifted from either.
  * ------------------------------------------------------------------------ */
 const DRAFT = {
-  intro_body: 'This strategy is submitted to members for approval before the start of the {{financial year}} financial year. It is prepared under the Local Government Act 2003, the associated regulations, and the CIPFA Prudential Code for Capital Finance in Local Authorities and Treasury Management in the Public Services Code of Practice, to both of which the authority has formally adopted the clauses.\n\nMembers are asked to approve the treasury management strategy and the borrowing strategy set out below, the annual investment strategy and the counterparty criteria within it, the minimum revenue provision policy statement, and the prudential and treasury indicators and limits given in section 7, including the authorised limit for external debt.\n\n{{Name the committee that considered the strategy and when, and any scrutiny or audit committee that reviewed it beforehand.}}',
+  intro_body: 'This strategy is submitted to members for approval before the start of the {{financial year}} financial year. It is prepared under [[act]] and [[regs]], and under the CIPFA Prudential Code for Capital Finance in Local Authorities and Treasury Management in the Public Services Code of Practice, to both of which the authority has formally adopted the clauses.\n\nMembers are asked to approve the treasury management strategy and the borrowing strategy set out below, the annual investment strategy and the counterparty criteria within it, the policy on the [[mrp]], and the prudential and treasury indicators and limits given in section 7, including the authorised limit for external debt.\n\n{{Name the committee that considered the strategy and when, and any scrutiny or audit committee that reviewed it beforehand.}}',
   econ: "{{Most authorities take this section from their treasury adviser and say so. Replace the paragraph below with your adviser's commentary, or edit it to match your own view.}}\n\nThe Monetary Policy Committee has held Bank Rate at {{rate}} since {{date}}. Inflation has {{risen / fallen / held}} against the 2% target, and the Committee's published guidance points to {{a gradual easing / no early change}}. Growth remains {{subdued / steady}}, and the labour market has {{loosened / held firm}}. Gilt yields have {{risen / fallen}} across the curve over the period, which feeds directly into PWLB rates: the certainty rate is set at 60 basis points over the equivalent gilt, and the standard rate at 80.",
   rateview: 'For planning purposes the authority has adopted the interest rate assumptions set out in section 2, taken from {{your adviser, or the market-implied path shown}}. Where the assumption is the path implied by the market it is stated as such: it is what is currently priced rather than a forecast, and the authority does not treat it as one.\n\nThe strategy is not dependent on rates following that path. The borrowing requirement identified by the liability benchmark is driven by the balance sheet rather than by the rate view, and the timing of any borrowing will be taken in the light of rates prevailing at the time.',
   borrow_body: "The authority will borrow only to meet a requirement identified by the liability benchmark, and will not borrow in order to invest at a profit. Sources considered are the Public Works Loan Board at the certainty rate, other local authorities, the UK Infrastructure Bank where the scheme qualifies, and the market where terms are better than PWLB on a like-for-like basis.\n\nThe authority's preference is for the cheapest borrowing consistent with managing refinancing risk. That means it will not concentrate maturities in a small number of years, and will weigh the saving from short-dated borrowing against the risk of having to refinance a large amount at an unknown rate. Internal borrowing is used where it is available, recognising that it defers rather than avoids the requirement and that reserves used in this way must be replaced when they are needed.\n\n{{State the value of new borrowing planned in the year, the sources you expect to use, and who may authorise a loan.}}",
   resched: "{{Answer 'yes' to the rescheduling question in section 4 to include the fuller clause. Otherwise:}} The authority reviews its debt portfolio for rescheduling opportunities but does not expect to undertake any in the year. Premature repayment of PWLB debt is assessed against the discount rate applying at the time; where that rate is below the coupon on the loan a premium is payable, and the authority will only repay early where the whole-life saving is demonstrable and affordable.",
   invest_body: "The authority's investment priorities are, in order, the security of the sum invested, then the liquidity needed to meet its cash flow, and only then the yield obtained. It will not sacrifice security or liquidity in pursuit of return.\n\nBalances arise from reserves, provisions, working capital and the timing difference between receipts and payments. The authority distinguishes between the balance it must hold to remain liquid — its minimum liquidity balance of {{£m}}, set by reference to the largest short-term outflow it could face — and any balance held above that, which is available for investment over a longer horizon at a better return.\n\nInstruments used are {{list: DMADF, money market funds, call and notice accounts, fixed-term deposits, certificates of deposit, other local authorities, pooled funds}}. Investments are made in sterling only. The authority {{does / does not}} use externally managed or pooled funds; where it does, the fuller clause in the draft applies.\n\n{{State the maximum period for which funds may be committed, and the split you intend between instant access and term.}}",
-  credit: "Counterparties are selected from a list approved by the s151 officer against published credit criteria, and every counterparty is subject to both a monetary limit and a maximum duration.\n\nThe minimum long-term rating for a bank or building society counterparty is {{A- / equivalent}}, taken from {{Fitch, Moody's and S&P}}, using the lowest of the ratings held. Ratings are supplemented by credit watches, outlooks and market indicators such as credit default swap spreads, so that a deteriorating counterparty is identified before a rating is formally changed. A counterparty falling below the minimum criteria is withdrawn from use immediately and no new investment is placed with it.\n\nLimits by counterparty type are {{£m and duration for each of: UK Government / DMADF, other local authorities, money market funds, UK banks, non-UK banks, building societies, pooled funds}}. A group of related counterparties counts as one for the purposes of the monetary limit.\n\n{{Name who may approve an exception, and what is reported to members when one is used.}}",
-  mrp_body: 'The authority will make prudent provision for the repayment of debt in accordance with the statutory guidance on minimum revenue provision.\n\nFor capital expenditure financed by borrowing, provision is made on {{an asset life, equal instalment / an asset life, annuity / a capital expenditure}} basis, over a period no longer than the useful life of the asset the expenditure created. Provision begins in the financial year following the one in which the asset became operational.\n\nFor finance leases and arrangements accounted for as such, the provision is equal to the principal element of the rent or charge payable in the year.\n\nThe authority {{may / does not}} make voluntary revenue provision in addition. Where it does, the amount is reported to members and, once made, is not reversed except with their approval.\n\n{{If you apply a different method to any category of expenditure, state which and why. If you have a capital receipts strategy that bears on MRP, cross-refer to it.}}',
+  credit: "Counterparties are selected from a list approved by the [[officer]] against published credit criteria, and every counterparty is subject to both a monetary limit and a maximum duration.\n\nThe minimum long-term rating for a bank or building society counterparty is {{A- / equivalent}}, taken from {{Fitch, Moody's and S&P}}, using the lowest of the ratings held. Ratings are supplemented by credit watches, outlooks and market indicators such as credit default swap spreads, so that a deteriorating counterparty is identified before a rating is formally changed. A counterparty falling below the minimum criteria is withdrawn from use immediately and no new investment is placed with it.\n\nLimits by counterparty type are {{£m and duration for each of: UK Government / DMADF, other local authorities, money market funds, UK banks, non-UK banks, building societies, pooled funds}}. A group of related counterparties counts as one for the purposes of the monetary limit.\n\n{{Name who may approve an exception, and what is reported to members when one is used.}}",
+  mrp_body: 'The authority will make prudent provision for the repayment of debt in accordance with [[mrpGuidance]].\n\nFor capital expenditure financed by borrowing, provision is made on {{an asset life, equal instalment / an asset life, annuity / a capital expenditure}} basis, over a period no longer than the useful life of the asset the expenditure created. Provision begins in the financial year following the one in which the asset became operational.\n\nFor finance leases and arrangements accounted for as such, the provision is equal to the principal element of the rent or charge payable in the year.\n\nThe authority {{may / does not}} make voluntary revenue provision in addition. Where it does, the amount is reported to members and, once made, is not reversed except with their approval.\n\n{{If you apply a different method to any category of expenditure, state which and why. If you have a capital receipts strategy that bears on MRP, cross-refer to it.}}',
   activity_body: 'Borrowing and investment activity in the period is set out below against the strategy approved by members.\n\nNew borrowing of {{£m}} was taken in {{period}} at an average rate of {{%}}, against a plan of {{£m}}. {{Explain any material difference.}} Repayments of {{£m}} fell due and were met from {{internal balances / new borrowing}}. External debt at the period end stood at {{£m}}, against the authorised limit of {{£m}} and the capital financing requirement of {{£m}}.\n\nInvestment balances averaged {{£m}} over the period and stood at {{£m}} at the period end, earning an average rate of {{%}} against a benchmark of {{benchmark}}. No counterparty failed to repay in full and on time, and no institution on the approved list was downgraded below the minimum criteria while funds were placed with it. {{Amend if either did occur, and say what was done.}}',
   deals: '{{Some authorities list every transaction and others summarise. If you list them, one line each: date, counterparty, amount, rate, and maturity. If you summarise, give the number of deals, the total value and the weighted average rate, by instrument type. Delete this section if your practice is not to publish deal-level detail.}}',
   corefunds_body: "The authority's core cash comes from reserves, provisions, balances held on behalf of others, and the working capital arising from the timing of receipts and payments. Core funds are distinguished from cash that is merely passing through: only the former can prudently be invested for a term.\n\nReserves and balances are projected at {{£m}} at the start of the year, {{rising / falling}} to {{£m}} by {{year}} as approved reserve movements take effect. The cash flow through the year has a predictable seasonal shape, with balances at their lowest in {{month}} and their highest in {{month}}; the minimum liquidity balance of {{£m}} is set with reference to that low point rather than to the average.\n\nExpected investment balances over the forecast are shown in section 3. Where the projection shows a balance above the liquidity requirement it is available for longer-dated investment; where it falls to the liquidity requirement, the authority holds it in instant access.",
   compliance_body: 'All treasury management activity in the period was undertaken within the limits and indicators approved by members. {{Amend if it was not.}}\n\n{{Where a limit was exceeded, state which, when, the amount by which it was exceeded and for how long, why it happened, what action was taken at the time, and what has changed to prevent a recurrence. A breach of the authorised limit is a breach of a statutory limit and must be reported to members explicitly rather than noted in a table.}}',
-  training_body: "The authority recognises that the effective management of treasury risk depends on officers and members having the knowledge and skills to exercise it, and on those responsible for scrutiny being able to challenge what is put to them.\n\nThe s151 officer maintains a record of the training undertaken by treasury officers and by members of the {{committee}}, and assesses annually whether it remains adequate to the authority's treasury activity. Officers involved in treasury management hold {{qualifications}} and undertook {{hours / courses}} of continuing professional development in the year.\n\nTraining delivered in the period comprised {{list: sessions, dates, and who delivered them}}. Members receiving treasury reports were offered {{session}} in advance of the strategy being presented.\n\n{{Say how the assessment was made and what it concluded, not only that training took place — the Code asks for the assessment.}}",
+  training_body: "The authority recognises that the effective management of treasury risk depends on officers and members having the knowledge and skills to exercise it, and on those responsible for scrutiny being able to challenge what is put to them.\n\nThe [[officer]] maintains a record of the training undertaken by treasury officers and by members of the {{committee}}, and assesses annually whether it remains adequate to the authority's treasury activity. Officers involved in treasury management hold {{qualifications}} and undertook {{hours / courses}} of continuing professional development in the year.\n\nTraining delivered in the period comprised {{list: sessions, dates, and who delivered them}}. Members receiving treasury reports were offered {{session}} in advance of the strategy being presented.\n\n{{Say how the assessment was made and what it concluded, not only that training took place — the Code asks for the assessment.}}",
   nontreasury_body: '{{Delete this section if the authority holds no non-treasury investments.}}\n\nThe authority holds investments that are not treasury investments: {{property held for rental return, loans to subsidiaries and joint ventures, loans to third parties in pursuit of service objectives, and equity in companies}}. These are held for {{service / regeneration / financial}} purposes and are not made in pursuit of a treasury return.\n\nThe total held is {{£m}} at {{date}}, against which the authority has set aside {{£m}}. The income they generate is {{£m}} a year, representing {{%}} of the net revenue budget; the authority is satisfied that this dependence is {{proportionate / being reduced}}, and the plan for reducing it is {{set out at ...}}.\n\nEach is reviewed at least annually for its contribution to the objective it was made for and for any indication of impairment. The authority does not borrow in order to make investments primarily for financial return. {{If any part of the portfolio was acquired with borrowing, say so and set out the plan required by the Prudential Code.}}',
-  gov_body: "Responsibility for treasury management rests with the s151 officer, who exercises it under the scheme of delegation approved by members and within the treasury management practices adopted by the authority.\n\nMembers receive this strategy before the start of the year, {{a mid-year review and an outturn report after the year end / quarterly monitoring reports}}. {{Committee}} scrutinises treasury management activity and reports to {{full council / cabinet}}. The authority's treasury management practices and the schedules beneath them are reviewed {{annually}} and are available to members on request.\n\nDay-to-day dealing is undertaken by {{officers}}, with each transaction authorised and recorded separately from the officer who arranged it. {{State the separation of duties you operate, and the limits above which a second authorisation is required.}}",
+  gov_body: "Responsibility for treasury management rests with the [[officer]], who exercises it under the scheme of delegation approved by members and within the treasury management practices adopted by the authority.\n\nMembers receive this strategy before the start of the year, {{a mid-year review and an outturn report after the year end / quarterly monitoring reports}}. {{Committee}} scrutinises treasury management activity and reports to {{full council / cabinet}}. The authority's treasury management practices and the schedules beneath them are reviewed {{annually}} and are available to members on request.\n\nDay-to-day dealing is undertaken by {{officers}}, with each transaction authorised and recorded separately from the officer who arranged it. {{State the separation of duties you operate, and the limits above which a second authorisation is required.}}",
   advisers: "The authority retains {{adviser}} as its external treasury management adviser under a contract running to {{date}}. The scope of the contract covers {{credit advice, interest rate views, technical guidance, and training}}.\n\nThe authority recognises that responsibility for its treasury management decisions remains with it at all times and that undue reliance must not be placed on external advice. Decisions are taken having regard to all available information, of which the adviser's view is one source among several. The value obtained from the contract is assessed {{annually, by ...}}, and the appointment was made following {{a competitive process in ...}}.",
 };
 
@@ -2219,9 +2498,9 @@ const SECTIONS = [
         d:DRAFT.credit, ph:"Minimum credit criteria, the rating agencies used, monetary and time limits by "
            +"counterparty type, and what happens on a downgrade."}]},
 
-  {k:"mrp", n:"6", t:"Minimum revenue provision", kind:"both", in:FWD,
+  {k:"mrp", n:"6", t:"[[mrpTitle]]", kind:"both", in:FWD,
    lead:"The MRP statement members approve. Your ledger carries the charge; the policy is yours.",
-   qs:[{k:"mrp_body", l:"MRP policy statement",
+   qs:[{k:"mrp_body", l:"[[mrpTitle]] policy statement",
         d:DRAFT.mrp_body, ph:"Method for each class of expenditure — asset life, annuity, or equal instalment. "
            +"Any voluntary provision. Whether the policy has changed, and the effect if so."}]},
 
@@ -2272,7 +2551,7 @@ const SECTIONS = [
   {k:"governance", n:"10", t:"Governance and reporting", kind:"yours", in:ALL,
    lead:"Who decides, who is told, and how often.",
    qs:[{k:"gov_body", l:"Governance and reporting cycle",
-        d:DRAFT.gov_body, ph:"Scheme of delegation, the s151 officer's role, which committee receives what and "
+        d:DRAFT.gov_body, ph:"Scheme of delegation, the [[officer]]'s role, which committee receives what and "
            +"when. Member and officer training — the Code requires you to address knowledge "
            +"and skills."},
        {k:"advisers", l:"Treasury advisers",
@@ -2287,15 +2566,15 @@ const SECTIONS = [
    the wrong document. Where a question reads differently by report type, its
    draft is keyed by type with `_` as the default. */
 const DRAFT_BY_REPORT = {
-  intro_body: {out: "This report is presented to members after the year end and sets out the authority's treasury management activity for {{financial year}}, measured against the strategy they approved on {{date}}.\n\nIt is prepared under the Local Government Act 2003 and the CIPFA Treasury Management in the Public Services Code of Practice, which requires the authority to report on its treasury activity and on its performance against the prudential and treasury indicators it set.\n\nMembers are asked to note the outturn position, the activity reported in section 8, and the position against each indicator and limit set out in section 7.\n\n{{Name the committee receiving the report and when, and record whether any limit was exceeded — a breach of the authorised limit must be reported explicitly, not left to a table.}}", mid: "This report is presented to members part way through {{financial year}} and reviews the authority's treasury management activity against the strategy they approved on {{date}}.\n\nIt is prepared under the CIPFA Treasury Management in the Public Services Code of Practice, which requires the authority to review its treasury position during the year and to report any proposed change to the strategy or to the indicators approved for it.\n\nMembers are asked to note the position at {{date}}, the activity reported below, and {{to approve the revisions to the indicators set out in section 7 / that no revision to the approved strategy is proposed}}.\n\n{{Name the committee receiving the report and when.}}",
+  intro_body: {out: "This report is presented to members after the year end and sets out the authority's treasury management activity for {{financial year}}, measured against the strategy they approved on {{date}}.\n\nIt is prepared under [[act]] and the CIPFA Treasury Management in the Public Services Code of Practice, which requires the authority to report on its treasury activity and on its performance against the prudential and treasury indicators it set.\n\nMembers are asked to note the outturn position, the activity reported in section 8, and the position against each indicator and limit set out in section 7.\n\n{{Name the committee receiving the report and when, and record whether any limit was exceeded — a breach of the authorised limit must be reported explicitly, not left to a table.}}", mid: "This report is presented to members part way through {{financial year}} and reviews the authority's treasury management activity against the strategy they approved on {{date}}.\n\nIt is prepared under the CIPFA Treasury Management in the Public Services Code of Practice, which requires the authority to review its treasury position during the year and to report any proposed change to the strategy or to the indicators approved for it.\n\nMembers are asked to note the position at {{date}}, the activity reported below, and {{to approve the revisions to the indicators set out in section 7 / that no revision to the approved strategy is proposed}}.\n\n{{Name the committee receiving the report and when.}}",
                quart: "This report is presented to members part way through {{financial year}} and reviews the authority's treasury management activity against the strategy they approved on {{date}}.\n\nIt is prepared under the CIPFA Treasury Management in the Public Services Code of Practice, which requires the authority to review its treasury position during the year and to report any proposed change to the strategy or to the indicators approved for it.\n\nMembers are asked to note the position at {{date}}, the activity reported below, and {{to approve the revisions to the indicators set out in section 7 / that no revision to the approved strategy is proposed}}.\n\n{{Name the committee receiving the report and when.}}"},
   rateview:   {out: 'Rates over the period moved as follows. Bank Rate {{was held at / moved from ... to ...}}, and gilt yields {{rose / fell}} across the curve, carrying PWLB rates with them: the certainty rate is fixed at 60 basis points over the equivalent gilt and the standard rate at 80, so movement in PWLB pricing over the period reflects the gilt market rather than any change in margin.\n\nThe assumptions on which the strategy was set are compared with what happened in the table below. {{Where borrowing or investment was timed by reference to the rate view, say what was decided and what it achieved.}}', mid: 'Rates over the period moved as follows. Bank Rate {{was held at / moved from ... to ...}}, and gilt yields {{rose / fell}} across the curve, carrying PWLB rates with them: the certainty rate is fixed at 60 basis points over the equivalent gilt and the standard rate at 80, so movement in PWLB pricing over the period reflects the gilt market rather than any change in margin.\n\nThe assumptions on which the strategy was set are compared with what happened in the table below. {{Where borrowing or investment was timed by reference to the rate view, say what was decided and what it achieved.}}',
                quart: 'Rates over the period moved as follows. Bank Rate {{was held at / moved from ... to ...}}, and gilt yields {{rose / fell}} across the curve, carrying PWLB rates with them: the certainty rate is fixed at 60 basis points over the equivalent gilt and the standard rate at 80, so movement in PWLB pricing over the period reflects the gilt market rather than any change in margin.\n\nThe assumptions on which the strategy was set are compared with what happened in the table below. {{Where borrowing or investment was timed by reference to the rate view, say what was decided and what it achieved.}}'}
 };
 function draftFor(q){
   const byRep = DRAFT_BY_REPORT[q.k];
-  if(byRep && byRep[S.report]) return byRep[S.report];
-  return q.d || null;
+  const raw = (byRep && byRep[S.report]) || q.d || null;
+  return raw ? natText(raw) : null;
 }
 
 function secStatus(k){
@@ -2317,10 +2596,10 @@ function renderSections(){
   $("seclist").innerHTML = VIS.map(s=>{
     const st=secStatus(s.k);
     return `<button type="button" data-s="${s.k}" aria-pressed="${S.sec===s.k}">
-      ${s.n}. ${esc(s.t)}<span class="st ${st.cls}">${esc(st.t)}</span></button>`;
+      ${s.n}. ${esc(natText(s.t))}<span class="st ${st.cls}">${esc(st.t)}</span></button>`;
   }).join("");
   const s = VIS.find(x=>x.k===S.sec) || VIS[0];
-  let body = `<h4>${s.n}. ${esc(s.t)}</h4><p class="lead">${esc(s.lead)}</p>`;
+  let body = `<h4>${s.n}. ${esc(natText(s.t))}</h4><p class="lead">${esc(s.lead)}</p>`;
   if(s.kind==="auto"){
     body += autoNote(s.k);
   } else {
@@ -2334,7 +2613,7 @@ function renderSections(){
         ? `<button type="button" class="usedraft" data-d="${q.k}">${
              written ? "Replace with our draft wording" : "Use our draft wording"}</button>`
         : "";
-      body += `<div class="q"><label for="t_${q.k}">${esc(q.l)}</label>
+      body += `<div class="q"><label for="t_${q.k}">${esc(natText(q.l))}</label>
         <textarea id="t_${q.k}" data-t="${q.k}"
           placeholder="${esc(q.ph)}">${esc(S.text[q.k]||"")}</textarea>
         <div class="qtools">${btn}<span class="ph">${esc(q.ph)}</span></div></div>`;
@@ -2533,7 +2812,7 @@ function docSections(){
       + clausesFor("5b")
       + (t("corefunds_body")?para(t("corefunds_body")):"")},
 
-   {k:"mrp", n:"6", t:"Minimum revenue provision",
+   {k:"mrp", n:"6", t:"[[mrpTitle]]",
     b: clausesFor("6") + (t("mrp_body")?para(t("mrp_body")):"")
      + `<p class="src">MRP of <b>£${m1(d[0].mrp)}m</b> is charged in ${fy(S.fy0)} on the
         authority's own figures.</p>`},
@@ -2544,6 +2823,8 @@ function docSections(){
         limit is <b>£${m1(d[0].al)}m</b>, the peak of the projected liability benchmark. Under
         those proposals the operational boundary and the maturity structure of borrowing are no
         longer formal indicators.</p>`},
+
+   {k:"afford", n:"7c", t:"Affordability", b: affordBlock(d)},
 
    {k:"compliance", n:"7b", t:"Compliance with treasury and prudential limits",
     b: clausesFor("7b") + complianceTable()
@@ -2574,6 +2855,80 @@ function docSections(){
 
 /* Export: a clean HTML document. Word opens it with headings, tables and the
    charts intact, which is where these reports go. */
+/* Affordability — the Prudential Code's own indicator.
+ *
+ * Financing costs against the net revenue stream is the question members
+ * actually ask: what does the capital programme cost us as a share of what we
+ * raise. The tool produced six debt and investment limits and no answer to it.
+ *
+ * Nothing is imputed. If the authority has not entered a net revenue stream
+ * the ratio cannot be computed, and the section says so rather than showing a
+ * plausible number built out of a guess.
+ */
+function affordBlock(d){
+  const have = d.filter(r => r.nrs > 0);
+  const N = NAT();
+  const basis = `<p class="src">Financing costs are interest payable plus the
+    ${esc(N.mrp)} charged in the year, less investment income, as entered in the ledger.
+    Depreciation on finance leases and gains or losses on the repurchase of debt are not
+    held in the ledger and are not imputed — add them to interest payable if they are
+    material to you.</p>`;
+  if(!have.length)
+    return `<p>The ratio of financing costs to the net revenue stream is the Prudential
+      Code's indicator of affordability.</p>
+      <p class="gap">To be completed: enter the net revenue stream, interest payable and
+      investment income in the ledger and the ratio is calculated here for every year.</p>`
+      + basis;
+  const n = Math.min(have.length, MTFP);
+  const first = have[0], last = have[n-1];
+  const dir = Math.abs(last.afford - first.afford) < 0.1 ? "holds broadly flat at"
+            : last.afford > first.afford ? "rises to" : "falls to";
+  const peak = have.reduce((a,b)=> b.afford > a.afford ? b : a, have[0]);
+  return `<p>The ratio of financing costs to the net revenue stream is
+      <b>${first.afford.toFixed(1)}%</b> in ${fy(first.fy)}, and ${esc(dir)}
+      <b>${last.afford.toFixed(1)}%</b> by ${fy(last.fy)}. Across the whole projection it
+      peaks at <b>${peak.afford.toFixed(1)}%</b> in ${fy(peak.fy)}. This is the proportion of
+      the authority's net revenue stream committed to servicing and repaying debt before any
+      service is delivered${have.length < d.length
+        ? `, over the ${have.length} year${have.length===1?"":"s"} for which a net revenue
+           stream has been entered` : ""}.</p>`
+    + `<div class="chartwrap">${chart(have.map(r=>({fy:fy(r.fy).slice(2), i:r.i, afford:r.afford})),
+        {label:"Financing costs as a share of net revenue stream", h:210, zero:"tight",
+         fmt:v=>v.toFixed(1)+"%", lines:[{k:"afford", c:"var(--l-lb)", w:2.2}]})}</div>`
+    + otable(have,[{l:"Interest payable",k:"intpay"},
+                   {l:NAT().mrpCap+" charged",k:"mrp"},
+                   {l:"Investment income",k:"intinc"},
+                   {l:"Financing costs",k:"fincost",cls:"key"},
+                   {l:"Net revenue stream",k:"nrs"}], Math.min(have.length,6))
+    + `<div style="overflow-x:auto"><table class="otable"><thead><tr><th>Ratio</th>${
+        have.slice(0,6).map(r=>`<th>${fy(r.fy)}</th>`).join("")}</tr></thead>
+      <tbody><tr class="key"><td>Financing costs to net revenue stream</td>${
+        have.slice(0,6).map(r=>`<td>${r.afford.toFixed(1)}%</td>`).join("")}</tr></tbody></table></div>`
+    + propBlock(have)
+    + basis;
+}
+
+/* Proportionality. Only drawn where there is income to be proportionate about
+   — a council with none should not be shown a row of zeroes and invited to
+   worry about them. */
+function propBlock(have){
+  const any = have.some(r => r.comminc);
+  if(!any) return "";
+  const peak = have.reduce((a,b)=> (b.commratio||0) > (a.commratio||0) ? b : a, have[0]);
+  return `<h4>Dependence on non-treasury investment income</h4>
+    <p>Net income from non-treasury investments is
+      <b>${peak.commratio.toFixed(1)}%</b> of the net revenue stream at its highest, in
+      ${fy(peak.fy)}. The Prudential Code asks whether the authority could continue to deliver
+      its services if that income ceased; the answer belongs in section 9.</p>`
+    + `<div style="overflow-x:auto"><table class="otable"><thead><tr><th></th>${
+        have.slice(0,6).map(r=>`<th>${fy(r.fy)}</th>`).join("")}</tr></thead><tbody>
+      <tr><td>Net non-treasury investment income</td>${
+        have.slice(0,6).map(r=>`<td>${m1(r.comminc)}</td>`).join("")}</tr>
+      <tr class="key"><td>As a share of net revenue stream</td>${
+        have.slice(0,6).map(r=>`<td>${r.commratio==null?"–":r.commratio.toFixed(1)+"%"}</td>`).join("")}</tr>
+      </tbody></table></div>`;
+}
+
 function documentHTML(forExport){
   const d = buildModel(S,"gf");
   const c = LB[S.gss], name = c ? c.n : "Your authority";
@@ -2582,7 +2937,7 @@ function documentHTML(forExport){
   const twoPool = S.hra === "two";
   const hra = twoPool ? buildModel(S,"hra") : null;
   const body = secs.map(s=>`
-    <section class="dsec"><h3><span class="secn">${s.n}</span>${esc(s.t)}</h3>${s.b}
+    <section class="dsec"><h3><span class="secn">${s.n}</span>${esc(natText(s.t))}</h3>${s.b}
     ${s.indicators ? indicatorBlock(d, twoPool ? "General Fund" : "", twoPool ? hra : null)
         + (twoPool ? `<h4 style="margin-top:24px">Housing Revenue Account</h4>`
                      + indicatorBlock(hra, "HRA", null, true) : "") : ""}</section>`).join("");
@@ -2720,8 +3075,9 @@ function caveat(){
     of the current and new Codes.
     Nothing is extrapolated — every year is a figure the authority entered, and the benchmark
     makes no assumption about borrowing in capital budgets not entered. Existing PWLB loans are
-    taken from the published loan book. Check every figure and every word before this reaches a
-    committee.${S.hra==="two" ? ` Under the two-pool approach LB2 to LB4 are shown separately
+    taken from the published loan book. ${asAtNote()} Check every figure and every word before
+    this reaches a committee. This report is prepared on the basis of the law applying in
+    ${esc(NAT().n)}.${S.hra==="two" ? ` Under the two-pool approach LB2 to LB4 are shown separately
     for each fund, with General Fund lending to or borrowing from the HRA as a further series,
     as the Code recommends.` : ""}</div>`;
 }
@@ -2731,7 +3087,7 @@ let SEL = null;                                   // last focused cell, for fill
 
 function buildLedger(){
   let h = `<thead><tr><th class="yr">Year end</th>` + COLS.map(c=>
-    `<th>${c.l}${c.s?`<small>${esc(c.s)}</small>`:""}</th>`).join("") + `</tr></thead><tbody>`;
+    `<th>${colLabel(c)}${c.s?`<small>${esc(c.s)}</small>`:""}</th>`).join("") + `</tr></thead><tbody>`;
   for(let i=0;i<S.years;i++){
     h += `<tr class="${i<MTFP?"mtfp":"beyond"}"><th class="yr">${fy(S.fy0+i)}</th>` +
       COLS.map(c=>`<td class="${c.ours?"ours":""}">
@@ -2987,6 +3343,18 @@ function stampSaved(word){
     loanRows(); applyLoans(); });
   $("rtype").addEventListener("change", e=>{ S.report=e.target.value;
     $("saved").textContent=""; renderSections(); render(); });
+  // The report's as-at date. Defaults to the data we hold, and is free to be
+  // moved either side of it.
+  $("asat").value = MKT.as_at || "";
+  // Refresh in the background. The page is already usable from the snapshot,
+  // so nothing waits on the network and a failure is not an error state.
+  refreshMarket().then(ok => { if(ok){ renderSections(); render();
+    const el=$("saved"); if(el) el.textContent = `Market data refreshed to ${fcDate(MKT.as_at)}.`; } });
+  $("asat").addEventListener("change", e=>{
+    S.asAt = e.target.value || null;
+    renderSections(); render();
+  });
+
   $("fy0").addEventListener("change", e=>{ S.fy0=+e.target.value; buildLedger(); loanRows(); applyLoans(); });
   $("hra").addEventListener("change", e=>{ S.hra=e.target.value; fundTabs(); render(); });
   // The logo is read into a data URI and kept in browser storage with the
@@ -3105,6 +3473,16 @@ function stampSaved(word){
       g.obs[i]=r1(base*0.38*Math.pow(0.97,i));
       g.liq[i]=r1(Math.max(5,base*0.04));
       g.inv[i]=r1(Math.max(5,base*0.05)*Math.pow(0.95,i));
+      // Affordability. Interest is charged on the loans actually outstanding
+      // rather than on the CFR, so the ratio moves as debt runs off — which is
+      // the whole point of the indicator.
+      g.intpay[i]=r1((LB[S.gss] && LB[S.gss].r[i] != null ? LB[S.gss].r[i] : base) * 0.042);
+      g.intinc[i]=r1(Math.max(5,base*0.05)*Math.pow(0.95,i) * 0.038);
+      g.nrs[i]=r1(base*0.55*Math.pow(1.02,Math.min(i,MTFP)));
+      // Left at nil: the example authority holds nothing for financial return,
+      // which is the common case, and a worked example that quietly assumes a
+      // commercial portfolio would teach the wrong default.
+      g.comminc[i]=0;
     }
     if(!S.loans.some(l=>!l.pwlb))
       S.loans.push({name:"LOBO",amt:Math.round(base*0.12),mat:S.fy0+18,profile:"bullet"});
