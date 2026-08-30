@@ -244,6 +244,37 @@ tr:hover td.ours input{background:var(--cell-ours)}
 .blank{color:var(--yours);font-style:italic}
 /* Bank Rate steps. A rate path is read as levels and moves, so each box
    carries both, and the direction is in the glyph as well as the colour. */
+/* Sub-heads inside a panel, where one panel now carries two things. */
+/* The draft-wording control sits with the guidance it supersedes. */
+.qtools{display:flex;align-items:baseline;gap:10px;margin-top:5px;flex-wrap:wrap}
+.qtools .ph{margin-top:0;flex:1 1 300px}
+.usedraft{font-family:var(--sans);font-size:11.5px;font-weight:600;white-space:nowrap;
+  padding:5px 10px;border:1px solid var(--accent);background:var(--accent-soft);
+  color:var(--accent);border-radius:var(--r-sm);cursor:pointer}
+.usedraft:hover{background:var(--accent);color:#fff}
+.sub{font-family:var(--sans);font-size:12px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;margin:18px 0 8px;padding-bottom:6px;
+  border-bottom:1px solid var(--line)}
+.sub:first-child{margin-top:0}
+.ghost{background:transparent;border-style:dashed}
+.minliq{display:inline-flex;align-items:center;gap:7px;font-family:var(--sans);font-size:12.5px;
+  color:var(--ink2);font-weight:600}
+.minliq input{width:76px}
+.minliq select{font-family:var(--sans);font-size:12.5px}
+
+/* Bars for what is actually held. The benchmark charts stay lines, as the
+   Code draws them; a portfolio at a point in time is a different thing and
+   reads better as bars. */
+.barwrap{margin:10px 0 2px}
+.barrow{display:grid;grid-template-columns:minmax(120px,190px) 1fr auto;gap:10px;
+  align-items:center;padding:4px 0}
+.barrow .bn{font-family:var(--sans);font-size:12.5px;color:var(--ink2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barrow .bt{background:var(--line);border-radius:2px;height:16px;position:relative}
+.barrow .bt i{display:block;height:100%;border-radius:2px;background:var(--l-debt)}
+.barrow.inv .bt i{background:var(--l-inv)}
+.barrow .bv{font-family:var(--mono);font-size:12.5px;color:var(--ink);
+  font-variant-numeric:tabular-nums}
 .brwrap{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
 .brbox{flex:1 1 96px;min-width:96px;background:var(--card);border:1px solid var(--line);
   border-radius:var(--r-sm);padding:11px 12px 10px;text-align:center}
@@ -364,42 +395,104 @@ tr:hover td.ours input{background:var(--cell-ours)}
   </section>
 
   <section class="panel">
-    <div class="phead"><span class="n">2</span><h2>Existing debt you already hold</h2>
-      <span class="why">PWLB from the loan book. Add LOBOs, market and other debt — the ledger's
-        loans column updates as you do.</span></div>
+    <div class="phead"><span class="n">2</span><h2>What you hold now</h2>
+      <span class="why">Your debt and your investments, in whatever detail you want to present
+        them — every loan, grouped by type, or a single summary line. Paste from your
+        spreadsheet; templates below if that is easier.</span></div>
     <div class="pbody">
+
+      <h3 class="sub">Debt</h3>
       <table class="loans"><thead><tr>
         <th style="width:34%">Source</th><th style="width:22%">Amount £m</th>
         <th style="width:26%">Final maturity</th><th style="width:14%">Profile</th><th></th>
       </tr></thead><tbody id="loanrows"></tbody></table>
       <div class="ltools"><button type="button" id="addloan">Add a debt source</button>
-        <button type="button" id="pasteloans">Paste a loan list</button>
-        <span class="hintline">PWLB is taken from the published book — edit it only if you disagree.</span></div>
+        <button type="button" id="pasteloans">Paste your loans</button>
+        <button type="button" class="ghost" id="tmplloans">Template .csv</button>
+        <span class="hintline">PWLB is filled from the published book. Everything here is
+          yours to amend.</span></div>
       <div class="pastebox" id="loanpaste" hidden>
-        <label for="loantext">Paste your non-PWLB loans<span class="hint">Any order —
-          lender, amount, maturity, rate. Tabs or commas. A header row is fine.</span></label>
-        <textarea id="loantext" rows="5" placeholder="Barclays LOBO&#9;12,000,000&#9;2041&#9;4.35
-Dexia&#9;£8.5m&#9;15/06/2038&#9;3.90
-Another authority&#9;5.0&#9;2029"></textarea>
+        <label for="loantext">Paste your loans<span class="hint">Any order, any detail —
+          every loan, or one row per type. Lender, type, fund, amount, rate, maturity.
+          Tabs or commas. A header row is read if you give one.</span></label>
+        <textarea id="loantext" rows="5" placeholder="Lender&#9;Type&#9;Amount&#9;Rate&#9;Maturity
+Barclays&#9;LOBO&#9;12,000,000&#9;4.35&#9;2041
+Dexia&#9;Market&#9;£8.5m&#9;3.90&#9;15/06/2038
+Another authority&#9;Local authority&#9;5.0&#9;4.10&#9;2029"></textarea>
         <div class="ltools"><button type="button" class="primary" id="loanread">Read it</button>
           <button type="button" id="loancancel">Cancel</button>
           <span class="hintline" id="loannote"></span></div>
       </div>
+
+      <h3 class="sub">Investments</h3>
+      <div class="ltools"><button type="button" id="pasteinv">Paste your portfolio</button>
+        <button type="button" class="ghost" id="tmplinv">Template .csv</button>
+        <span class="hintline" id="invsummary">Nothing pasted yet.</span></div>
+      <div class="pastebox" id="invpaste" hidden>
+        <label for="invtext">Paste your investment portfolio<span class="hint">As much or as
+          little as you like — every holding, or one row per instrument type. A holding with
+          no maturity is treated as instant access.</span></label>
+        <textarea id="invtext" rows="5" placeholder="Counterparty&#9;Type&#9;Amount&#9;Rate&#9;Maturity
+Debt Management Office&#9;DMADF&#9;15,000,000&#9;3.95&#9;2027
+Money market fund&#9;MMF&#9;20,000,000&#9;3.88
+Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
+        <div class="ltools"><button type="button" class="primary" id="invread">Read it</button>
+          <button type="button" id="invcancel">Cancel</button>
+          <span class="hintline" id="invnote"></span></div>
+      </div>
+      <div id="portfoliocharts"></div>
+
       <div class="prefill" id="prefill"></div>
     </div>
   </section>
 
   <section class="panel">
     <div class="phead"><span class="n">3</span><h2>Your projections</h2>
-      <span class="why">Years down, measures across. Most authorities know the first few from the
-        MTFP — enter as many as you have. Paste a block straight from Excel.</span></div>
+      <span class="why">Years down, measures across. The loans and investments rows are your own
+        projection of year-end balances across the whole portfolio — paste them from Excel, or
+        start from the PWLB run-off and amend it.</span></div>
     <div class="pbody">
       <div class="fundtabs" id="fundtabs" role="group" aria-label="Fund"></div>
       <div class="ledgerwrap"><table class="ledger" id="ledger"></table></div>
       <div class="legendkey">
-        <span><i style="background:var(--cell-ours)"></i>filled from the loan book — editable</span>
+        <span><i style="background:var(--cell-ours)"></i>seeded from the PWLB book — yours to amend</span>
         <span><i style="background:var(--cell)"></i>yours</span>
         <span><i style="border-left:3px solid var(--accent);border-radius:0"></i>your MTFP years</span>
+      </div>
+      <div class="ltools">
+        <label class="minliq" for="minliq">Minimum liquidity balance £m
+          <input type="text" inputmode="decimal" id="minliq" value="" placeholder="e.g. 15">
+        </label>
+        <button type="button" id="applyliq">Apply across the horizon</button>
+        <span class="hintline">The lowest balance you would run to. It sets the liquidity
+          allowance, and so the benchmark. Vary a year in the grid if it changes.</span>
+      </div>
+      <div class="ltools">
+        <button type="button" id="pasteproj">Paste year-end balances</button>
+        <button type="button" class="ghost" id="tmplproj">Balances template .csv</button>
+        <button type="button" id="seedloans">Fill loans from the PWLB book</button>
+        <span class="hintline" id="projnote"></span>
+      </div>
+      <div class="pastebox" id="projpaste" hidden>
+        <label for="projtext">Paste a projection of year-end balances<span class="hint">Years
+          down a column beside the balances, or a row of years above a row of balances —
+          either way round. Choose which row it fills below.</span></label>
+        <textarea id="projtext" rows="5" placeholder="2026/27&#9;412.6
+2027/28&#9;398.1
+2028/29&#9;385.4"></textarea>
+        <div class="ltools">
+          <label class="minliq" for="projrow">Fills
+            <select id="projrow">
+              <option value="loans">Existing loan commitments</option>
+              <option value="inv">Existing investment commitments</option>
+              <option value="cfr">Capital financing requirement</option>
+              <option value="obs">Other balance sheet items</option>
+              <option value="liq">Liquidity allowance</option>
+            </select></label>
+          <button type="button" class="primary" id="projread">Read it</button>
+          <button type="button" id="projcancel">Cancel</button>
+          <span class="hintline" id="projreadnote"></span>
+        </div>
       </div>
       <div class="ltools">
         <button type="button" class="primary" id="example">Fill a worked example</button>
@@ -601,9 +694,13 @@ function render(){
     `<div class="dh"><span>Draft — ${esc(c?c.n:"your authority")}</span>
       <span>Assembled from your ledger and your commentary</span></div>`
     + documentHTML(false);
+  const pc = $("portfoliocharts");
+  if(pc) pc.innerHTML = portfolioCharts();
   $("prefill").innerHTML = c
-    ? `<span class="t">Filled from the loan book</span><b>£${m1(c.o)}m</b> across <b>${c.l}</b>
-       PWLB loan${c.l===1?"":"s"} — the loans column is filled for all ${S.years} years.`
+    ? `<span class="t">From the published loan book</span><b>£${m1(c.o)}m</b> across <b>${c.l}</b>
+       PWLB loan${c.l===1?"":"s"}. We hold this with high confidence, but it is a starting
+       point: amend it, and add whatever else you hold. Your own projection of year-end
+       balances is what drives the benchmark.`
     : `<span class="t">Nothing filled yet</span>Pick an authority above.`;
 }
 
@@ -1173,8 +1270,35 @@ function classify(rows){
     else if(tx>0.5) kind.push("name");
     else            kind.push(null);
   }
-  // A header row names things that later rows do not.
-  const head = rows.length>1 && rows[0].some(v=>/^(lender|counterparty|amount|principal|rate|maturity|name|type|fund)/i.test(String(v)));
+  // A header row names things that later rows do not. Where one is present it
+  // BEATS the content sniffing: a column headed "Fund" holding "GF" and "HRA"
+  // sniffs as a name, and a "Type" column beside a "Lender" column cannot be
+  // told from it by content at all. Our own templates carry headers precisely
+  // so that this path is the one that runs.
+  const HEAD = [
+    [/^(lender|counterpart|name|borrower|issuer|institution|bank)/i, "name"],
+    [/^(type|category|group|instrument|class|product)/i,             "type"],
+    [/^(fund|pool|gf|hra)$/i,                                        "fund"],
+    [/^(amount|principal|balance|value|£|gbp|nominal|outstanding)/i, "amount"],
+    [/^(rate|coupon|interest|yield)/i,                               "rate"],
+    [/^(maturity|matures|repay|end|expiry|due)/i,                    "year"]
+  ];
+  let head = false;
+  if(rows.length > 1){
+    const hits = rows[0].map(v => { const t=String(v).trim();
+      const h = HEAD.find(([re]) => re.test(t)); return h ? h[1] : null; });
+    if(hits.filter(Boolean).length >= 2){
+      head = true;
+      hits.forEach((h,i) => { if(h) kind[i] = h; });
+    }
+  }
+  if(!head) head = rows.length>1 && rows[0].some(v=>/^(lender|counterparty|amount|principal|rate|maturity|name|type|fund)/i.test(String(v)));
+  // Without a header, a second text column is the grouping — a council pasting
+  // "Barclays, LOBO, 10.0" means the middle one is what kind of debt it is.
+  if(!head){
+    const txt = kind.map((k,i)=>k==="name"?i:-1).filter(i=>i>=0);
+    if(txt.length > 1) kind[txt[1]] = "type";
+  }
   return {kind, body: head ? rows.slice(1) : rows};
 }
 
@@ -1186,19 +1310,25 @@ function parseLoans(txt){
     return {loans:[], note:"No column of amounts recognised. Include one column of principal "
                           +"— £m, or full pounds — and a maturity year."};
   const iA=kind.indexOf("amount"), iY=kind.indexOf("year"),
-        iN=kind.indexOf("name"), iR=kind.indexOf("rate");
+        iN=kind.indexOf("name"), iR=kind.indexOf("rate"),
+        iT=kind.indexOf("type"), iF=kind.indexOf("fund");
   const loans=[]; let skipped=0;
   body.forEach(r=>{
     const amt=money(r[iA]);
     if(amt==null || !amt){ skipped++; return; }
     loans.push({name: iN>=0 && r[iN] ? String(r[iN]).slice(0,44) : "Market loan",
-                amt, mat: (iY>=0 ? asYear(r[iY]) : null) || (S.fy0+20),
+                amt, mat: (iY>=0 ? asYear(r[iY]) : null),
                 rate: iR>=0 ? parseFloat(String(r[iR]).replace("%","")) : null,
+                type: iT>=0 && r[iT] ? String(r[iT]).slice(0,28) : null,
+                fund: iF>=0 && r[iF] ? fundOf(r[iF]) : null,
                 profile:"bullet"});
   });
+  const noMat = loans.filter(l=>l.mat==null).length;
   return {loans, note:`${loans.length} loan${loans.length===1?"":"s"} read`
-    + (iN<0?", no lender column found":"") + (iY<0?", no maturity found — 20 years assumed":"")
-    + (skipped?`, ${skipped} row${skipped===1?"":"s"} without an amount ignored`:"") + "."};
+    + (iN<0?", no lender column found":"") + (iT>=0?", grouped by type":"")
+    + (noMat?`, ${noMat} without a maturity`:"")
+    + (skipped?`, ${skipped} row${skipped===1?"":"s"} without an amount ignored`:"")
+    + ". These are presented as you gave them; they do not drive the projection."};
 }
 
 function parseInvestments(txt){
@@ -1208,18 +1338,173 @@ function parseInvestments(txt){
   if(kind.indexOf("amount")<0)
     return {inv:[], note:"No column of amounts recognised. Include one column of principal."};
   const iA=kind.indexOf("amount"), iN=kind.indexOf("name"),
-        iR=kind.indexOf("rate"), iY=kind.indexOf("year");
+        iR=kind.indexOf("rate"), iY=kind.indexOf("year"),
+        iT=kind.indexOf("type"), iF=kind.indexOf("fund");
   const inv=[];
   body.forEach(r=>{
     const amt=money(r[iA]); if(amt==null || !amt) return;
     inv.push({name: iN>=0 && r[iN] ? String(r[iN]).slice(0,48) : "Counterparty",
               amt, rate: iR>=0 ? parseFloat(String(r[iR]).replace("%","")) : null,
-              mat: iY>=0 ? asYear(r[iY]) : null});
+              mat: iY>=0 ? asYear(r[iY]) : null,
+              type: iT>=0 && r[iT] ? String(r[iT]).slice(0,28) : null,
+              fund: iF>=0 && r[iF] ? fundOf(r[iF]) : null});
   });
   const tot=inv.reduce((a,b)=>a+b.amt,0);
   return {inv, total:tot,
           note:`${inv.length} holding${inv.length===1?"":"s"}, £${m1(tot)}m in total`
-               + (iR<0?", no rate column found":"") + "."};
+               + (iR<0?", no rate column found":"") + (iT>=0?", grouped by type":"") + "."};
+}
+
+
+/* GF or HRA, however they wrote it. Anything we cannot read stays null rather
+   than being guessed into a pool — see parseProjection on why that matters. */
+function fundOf(v){
+  const t = String(v).trim().toLowerCase();
+  if(/^(hra|housing|housing revenue|h)$/.test(t)) return "hra";
+  if(/^(gf|general|general fund|g)$/.test(t))     return "gf";
+  return null;
+}
+
+/* ---------------------------------------------------------------------------
+ * A projection of year-end balances.
+ *
+ * This is the authority's own number, not ours. We know their PWLB book with
+ * high confidence and can run it off contractually, but that is a starting
+ * point they amend, not an answer: it says nothing about market debt, about
+ * new borrowing they intend to take, or about which pool a loan sits in under
+ * a two-pool HRA. So the projection is pasted, and whatever is pasted wins.
+ *
+ * Accepts either orientation, because a spreadsheet holds it both ways:
+ *   vertical    a column of years beside a column of balances
+ *   horizontal  a row of years above a row of balances
+ * Years may be 2026, 2026/27 or 31/03/2027; balances in £m or full pounds.
+ * ------------------------------------------------------------------------ */
+function parseProjection(txt){
+  const rows = splitRows(txt);
+  if(!rows.length) return {vals:null, note:"Nothing pasted."};
+  const pairs = [];
+
+  // Horizontal: a row that is mostly years, with a later row of amounts.
+  const yearRow = rows.findIndex(r => r.filter(asYear).length >= Math.max(2, r.length*0.6));
+  if(yearRow >= 0){
+    const yrs = rows[yearRow].map(asYear);
+    const amtRow = rows.slice(yearRow+1).find(r => r.filter(v=>MONEY.test(String(v))).length >= 2);
+    if(amtRow){
+      yrs.forEach((y,i) => { const a = money(amtRow[i]);
+        if(y!=null && a!=null) pairs.push([y,a]); });
+    }
+  }
+  // Vertical: a year column and an amount column.
+  if(!pairs.length){
+    const {kind, body} = classify(rows);
+    const iY = kind.indexOf("year"), iA = kind.indexOf("amount");
+    if(iY>=0 && iA>=0)
+      body.forEach(r => { const y=asYear(r[iY]), a=money(r[iA]);
+        if(y!=null && a!=null) pairs.push([y,a]); });
+  }
+  if(!pairs.length)
+    return {vals:null, note:"No year-and-balance pairs recognised. Paste a column of years "
+      + "beside a column of balances, or a row of years above a row of balances."};
+
+  // A year label may be the financial year it opens (2026 = 2026/27) or the
+  // 31 March it closes on (2027 = 2026/27). Both are written in the sector.
+  // Whichever reading puts more of the block inside the horizon is the one
+  // meant; ties go to the opening year, which is how our own grid is keyed.
+  const fit = off => pairs.filter(([y]) => y-off >= S.fy0 && y-off < S.fy0+S.years).length;
+  const off = fit(1) > fit(0) ? 1 : 0;
+  const vals = new Array(S.years).fill(null);
+  let used=0, outside=0;
+  pairs.forEach(([y,a]) => { const i = (y-off) - S.fy0;
+    if(i>=0 && i<S.years){ vals[i]=a; used++; } else outside++; });
+  if(!used) return {vals:null, note:`${pairs.length} figures read, but none fall inside `
+    + `${fy(S.fy0)} to ${fy(S.fy0+S.years-1)}. Check the opening year above the grid.`};
+
+  // Years between two given figures are held flat rather than interpolated:
+  // a balance the authority did not state is not a balance we will invent.
+  let last=null, held=0, lead=0;
+  for(let i=0;i<S.years;i++){
+    if(vals[i]==null){ if(last!=null){ vals[i]=last; held++; } else { vals[i]=0; lead++; } }
+    else last=vals[i];
+  }
+  // A gap BEFORE the first figure is not the same as a gap after it. Holding
+  // the last figure flat is a stated convention; leaving the opening years at
+  // zero is a hole, and a zero in year one drags every chart down. A year
+  // label can mean the year it opens or the 31 March it closes, and when both
+  // readings fit the horizon there is nothing in the data to settle it — so
+  // say which was taken and where the hole is, rather than let it pass.
+  const gap = lead
+    ? ` Nothing was given for ${lead===1?fy(S.fy0):fy(S.fy0)+" to "+fy(S.fy0+lead-1)}, `
+      + `left at zero — a bare ${S.fy0+1} is read as the year it opens. If that figure is `
+      + `${fy(S.fy0)}, label it ${fy(S.fy0)} and read it again.`
+    : "";
+  return {vals, used, lead, note:`${used} year-end balance${used===1?"":"s"} read`
+    + (off?", read as years ending 31 March":"")
+    + (held?`, ${held} later year${held===1?"":"s"} held flat at the last figure given`:"")
+    + (outside?`, ${outside} outside the horizon ignored`:"") + "." + gap};
+}
+
+/* ---------------------------------------------------------------------------
+ * Spreadsheet templates.
+ *
+ * Downloaded as CSV because every finance team opens CSV in Excel without
+ * being told how. The headers are the ones the parser above recognises, so a
+ * template filled in and pasted back is read without a guess anywhere.
+ * ------------------------------------------------------------------------ */
+const TEMPLATES = {
+  loans: {
+    file: "loan-book",
+    head: ["Lender","Type","Fund","Amount","Rate","Maturity"],
+    rows: [["PWLB","Maturity","GF","10,000,000","4.25","2041"],
+           ["PWLB","EIP","GF","5,000,000","3.90","2035"],
+           ["Barclays","LOBO","GF","8,000,000","4.55","2054"],
+           ["Another authority","Local authority","HRA","6,000,000","4.10","2028"]],
+    help: "One row per loan, or one row per type if you would rather group them. "
+        + "Amounts in £m or in full pounds. The Fund column only matters under a "
+        + "two-pool HRA; leave it out if you do not need it."
+  },
+  investments: {
+    file: "investment-portfolio",
+    head: ["Counterparty","Type","Fund","Amount","Rate","Maturity"],
+    rows: [["Debt Management Office","DMADF","GF","15,000,000","3.95","2027"],
+           ["Money market fund","MMF","GF","20,000,000","3.88",""],
+           ["Lloyds Bank","Call account","GF","5,000,000","3.60",""],
+           ["Pooled property fund","Pooled fund","GF","10,000,000","4.40",""]],
+    help: "As much or as little detail as you like — every holding, or one row per "
+        + "instrument type. A holding with no maturity is treated as instant access."
+  },
+  projection: {
+    file: "year-end-balances",
+    head: ["Year","External debt","Investments"],
+    rows: null,          // written from the live horizon
+    help: "Your own projection of year-end balances across the whole portfolio. "
+        + "This is what drives the benchmark charts — paste it back into the grid."
+  }
+};
+
+function templateCSV(kind){
+  const T = TEMPLATES[kind];
+  const q = v => /[",]/.test(String(v)) ? '"'+String(v).replace(/"/g,'""')+'"' : String(v);
+  let rows = T.rows;
+  if(kind === "projection"){
+    // Seeded with the PWLB run-off so the column is not blank, and labelled in
+    // the file itself as a starting point rather than an answer.
+    const c = LB[S.gss], run = c ? c.r : [];
+    rows = [];
+    for(let i=0;i<S.years;i++)
+      rows.push([fy(S.fy0+i), c && run[i]!=null ? run[i].toFixed(1) : "", ""]);
+  }
+  return [T.head, ...rows].map(r => r.map(q).join(",")).join("\r\n") + "\r\n";
+}
+
+function downloadTemplate(kind){
+  const c = LB[S.gss];
+  const who = c ? c.n.replace(/\W+/g,"-").toLowerCase() : "authority";
+  const blob = new Blob(["\ufeff" + templateCSV(kind)], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${TEMPLATES[kind].file}-${who}.csv`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
 }
 
 /* The portfolio as a table for the investment section — whatever detail they
@@ -1244,6 +1529,66 @@ function portfolioTable(){
     </tbody></table></div>
     ${hasRate?`<p class="note">Weighted average rate <b>${wAvg.toFixed(2)}%</b> across
       <b>£${m1(tot)}m</b>.</p>`:""}`;
+}
+
+
+/* ---------------------------------------------------------------------------
+ * The portfolio as bars.
+ *
+ * The benchmark charts are lines because that is how the Code draws them and
+ * a report that departs from it invites the wrong argument. What is HELD, on
+ * the other hand, is a set of amounts at one date, not a series over time, and
+ * bars are the honest picture of that. So the two are drawn differently on
+ * purpose.
+ *
+ * Grouped by type where a type column was given, by counterparty where it was
+ * not, and left alone where they pasted a single summary line.
+ * ------------------------------------------------------------------------ */
+function groupHoldings(list){
+  if(!list || !list.length) return [];
+  const byType = list.some(x=>x.type);
+  const map = new Map();
+  list.forEach(x => {
+    const k = (byType ? (x.type || "Unclassified") : (x.name || "Unnamed"));
+    map.set(k, (map.get(k)||0) + x.amt);
+  });
+  return [...map.entries()].map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
+}
+
+function barChart(items, kind){
+  if(!items.length) return "";
+  const max = Math.max(...items.map(x=>Math.abs(x.v)));
+  if(!max) return "";
+  const tot = items.reduce((a,b)=>a+b.v,0);
+  const col = kind==="inv" ? "var(--l-inv)" : "var(--l-debt)";
+  const rows = items.map(x=>`<div class="barrow ${kind==="inv"?"inv":""}">
+      <span class="bn" title="${esc(x.k)}">${esc(x.k)}</span>
+      <span class="bt"><i style="width:${(Math.abs(x.v)/max*100).toFixed(1)}%;background:${col}"></i></span>
+      <span class="bv">£${m1(x.v)}m</span></div>`).join("");
+  return `<div class="barwrap">${rows}
+    <div class="barrow ${kind==="inv"?"inv":""}" style="border-top:1px solid var(--line);margin-top:4px">
+      <span class="bn"><b>Total</b></span><span class="bt" style="background:none"></span>
+      <span class="bv"><b>£${m1(tot)}m</b></span></div></div>`;
+}
+
+/* Debt by type, on the same footing. S.loans holds the PWLB book as one row
+   plus whatever was pasted; the book is one line because the published data
+   gives us a total and a count, not a type breakdown. */
+function debtHoldings(){
+  const out = [];
+  (S.loans||[]).forEach(L => {
+    if(L.pwlb){ const c = LB[S.gss];
+      out.push({name:"PWLB", type:"PWLB", amt: L.amt != null ? L.amt : (c?c.o:0)}); }
+    else out.push(L);
+  });
+  return out.filter(x=>x.amt);
+}
+
+function portfolioCharts(){
+  const d = groupHoldings(debtHoldings()), v = groupHoldings(S.portfolio||[]);
+  if(!d.length && !v.length) return "";
+  return (d.length ? `<h3 class="sub">Debt held, by ${debtHoldings().some(x=>x.type)?"type":"source"}</h3>${barChart(d,"debt")}` : "")
+       + (v.length ? `<h3 class="sub">Investments held, by ${(S.portfolio||[]).some(x=>x.type)?"type":"counterparty"}</h3>${barChart(v,"inv")}` : "");
 }
 
 /* ===========================================================================
@@ -1422,6 +1767,15 @@ function readoutHTML(tag, d, fundLabel){
  * draft as a visible placeholder — a strategy that reads as finished while
  * still carrying our defaults would be worse than one with obvious gaps.
  * ======================================================================== */
+/* A clause with no `rep` belongs in every report — which is right for standing
+   policy an outturn properly restates ("the authority will not borrow to invest
+   for profit"), and wrong for anything that fixes the report in time. An
+   outturn opening "this strategy is presented for approval before the start of
+   the year" is not an infelicity, it is the wrong document. */
+const FWD_REPORTS  = ["tmss"];
+const BACK_REPORTS = ["mid","out","quart"];
+function inReport(c){ return !c.rep || c.rep.indexOf(S.report) >= 0; }
+
 const CHOICES = [
   {k:"adviser",   l:"Treasury adviser", type:"text",
    ph:"e.g. Arlingclose, Link, MUFG — or leave blank if none"},
@@ -1434,24 +1788,39 @@ const CHOICES = [
   {k:"pooled",    l:"Use externally managed or pooled funds?", type:"yesno"},
   {k:"nontreas",  l:"Hold non-treasury investments?", type:"yesno"},
   {k:"mifid",     l:"Elective professional client under MiFID II?", type:"yesno"},
+  {k:"pwlbtoday", l:"Use PWLBtoday for market data, training or counterparty monitoring?",
+   type:"yesno"},
   {k:"cycle",     l:"Reporting cycle", type:"select",
    opts:[["quarterly","Quarterly"],["thrice","Strategy, mid-year, outturn"],["other","Other"]]}
 ];
 
 const CLAUSES = [
  /* ---- 1 Introduction --------------------------------------------------- */
- {sec:"1", always:true, req:"TM Code — annual strategy before the year begins",
+ {sec:"1", rep:FWD_REPORTS, always:true, req:"TM Code — annual strategy before the year begins",
   t:`This strategy is presented to members for approval before the start of the financial
      year, in accordance with the CIPFA Treasury Management in the Public Services Code of
      Practice and the Prudential Code for Capital Finance in Local Authorities. It sets out
      the authority's borrowing and investment plans, the prudential indicators against which
      activity will be monitored, and the policy for making minimum revenue provision.`},
- {sec:"1", when:C=>C.cycle==="quarterly", req:"TM Code — reporting",
+ {sec:"1", rep:FWD_REPORTS, when:C=>C.cycle==="quarterly", req:"TM Code — reporting",
   t:`Treasury management activity is reported to members quarterly, with a mid-year review
      and an outturn report following the year end.`},
- {sec:"1", when:C=>C.cycle==="thrice", req:"TM Code — reporting",
+ {sec:"1", rep:FWD_REPORTS, when:C=>C.cycle==="thrice", req:"TM Code — reporting",
   t:`Treasury management activity is reported to members three times a year: this strategy
      before the year begins, a mid-year review, and an outturn report after the year end.`},
+
+ {sec:"1", rep:["out"], always:true, req:"TM Code — report on activity after the year end",
+  t:`This report is presented to members after the year end, in accordance with the CIPFA
+     Treasury Management in the Public Services Code of Practice, which requires the authority
+     to report on its treasury management activity and on its performance against the
+     prudential and treasury indicators approved for the year. It reports the outturn position
+     against the strategy members approved before the year began.`},
+ {sec:"1", rep:["mid","quart"], always:true, req:"TM Code — review during the year",
+  t:`This report is presented to members during the financial year, in accordance with the
+     CIPFA Treasury Management in the Public Services Code of Practice, which requires the
+     authority to review its treasury management position during the year and to report on
+     activity against the strategy approved before the year began. Any proposed revision to
+     the approved strategy or to the indicators set for the year is identified below.`},
 
  /* ---- 2 External context ----------------------------------------------- */
  {sec:"2", when:C=>!!(C.adviser||"").trim(), req:"TM Code — use of advisers",
@@ -1494,6 +1863,36 @@ const CLAUSES = [
      demonstrate a benefit against the liability benchmark rather than a short-term saving
      alone. {{Set out the circumstances in which rescheduling would be undertaken and who
      approves it.}}`},
+
+ /* ---- product references -----------------------------------------------
+  * These name a supplier, and they are gated on the authority saying it
+  * actually uses one. A template that drops a vendor's name into a committee
+  * paper unasked would be putting a claim in the s151 officer's mouth that
+  * might not be true, which is a worse failure than leaving the sentence out.
+  * Each still carries {{...}} for the detail only the authority can give.
+  * -------------------------------------------------------------------- */
+ {sec:"2", when:C=>C.pwlbtoday==="yes", req:"TM Code — market information",
+  t:`The authority monitors gilt yields, PWLB certainty and standard rates, Bank Rate and
+     money market rates through PWLBtoday, which it uses alongside its adviser's commentary
+     to inform the timing of borrowing and investment decisions. Rate movements quoted in
+     this report are taken from that source as at {{date}}.`},
+
+ {sec:"4", when:C=>C.pwlbtoday==="yes", req:"Prudential Code — borrowing at the lowest cost",
+  t:`Before any loan is taken the authority compares the PWLB certainty rate against the
+     rates available from other local authorities and from the market on the day, using
+     PWLBtoday's published rate history to judge whether the level offered is favourable in
+     the context of the recent range rather than in isolation.`},
+
+ {sec:"5", when:C=>C.pwlbtoday==="yes", req:"TM Code — creditworthiness of local authority counterparties",
+  t:`Lending to other local authorities is not covered by the credit rating agencies, so the
+     authority does not rely on ratings for it. It monitors the published financial position
+     of prospective borrowing authorities using CouncilIntel, which draws on the statutory
+     returns to MHCLG and on the authorities' own published committee papers, and takes
+     account of indicators of financial stress — the level of reserves against net revenue
+     expenditure, debt against the capital financing requirement, exceptional financial
+     support, and any auditor's statutory recommendation or section 24 notice — before a
+     loan is placed. {{State the limit and maximum duration applied to a local authority
+     counterparty, and who reviews the assessment.}}`},
 
  /* ---- 5 Investments ----------------------------------------------------- */
  {sec:"5", always:true, req:"TM Code — security, liquidity, yield in that order",
@@ -1597,6 +1996,13 @@ const CLAUSES = [
      rather than a saving in a single year.`},
 
  /* ---- 10b Knowledge, skills and training --------------------------------- */
+ {sec:"10b", when:C=>C.pwlbtoday==="yes", req:"TM Code — knowledge and skills",
+  t:`Treasury officers and members with a scrutiny role have access to the PWLBtoday Academy,
+     which provides structured training on the Prudential and Treasury Management Codes, the
+     liability benchmark and the prudential indicators. Completion is recorded and forms part
+     of the annual assessment of whether the authority's treasury knowledge and skills remain
+     adequate to its activity. {{State who completed which modules in the period, and what
+     the assessment concluded.}}`},
  {sec:"10b", always:true, req:"TM Code — knowledge and skills",
   t:`The Treasury Management Code requires the authority to ensure that everyone involved in
      the treasury management function has the knowledge and skills to discharge the duties
@@ -1641,7 +2047,7 @@ const CLAUSES = [
    anything only the authority can supply visible as a placeholder. */
 function clausesFor(sec){
   const C = S.choices || {};
-  return CLAUSES.filter(c => c.sec === sec && (c.always || (c.when && c.when(C))))
+  return CLAUSES.filter(c => c.sec === sec && inReport(c) && (c.always || (c.when && c.when(C))))
     .map(c => {
       const txt = c.t.replace(/\s+/g," ").trim()
         .replace(/\{\{(\w+)\}\}/g, (m,k)=> (C[k]||"").trim() || `{{${k}}}`)
@@ -1652,7 +2058,7 @@ function clausesFor(sec){
 }
 function clauseCount(sec){
   const C = S.choices || {};
-  return CLAUSES.filter(c=>c.sec===sec && (c.always || (c.when && c.when(C)))).length;
+  return CLAUSES.filter(c=>c.sec===sec && inReport(c) && (c.always || (c.when && c.when(C)))).length;
 }
 
 /* ===========================================================================
@@ -1726,6 +2132,41 @@ function limitsPanel(){
        value="${L[x.k]==null?"":m1(L[x.k])}"></div>`).join("")}</div>`;
 }
 
+/* ---------------------------------------------------------------------------
+ * Draft wording.
+ *
+ * The `ph` beside each question is guidance — what to cover. This is the other
+ * thing: copy the authority can put in front of members and edit, which is
+ * what "run it and change nothing" has to mean if it is to mean anything.
+ *
+ * Every figure and every local fact stays a visible {{placeholder}}. A draft
+ * that reads as finished while carrying our invented numbers would be far
+ * worse than one with obvious holes in it, and the holes are the point: they
+ * are the list of what only the authority knows.
+ *
+ * Wording is original, drafted against the Codes' requirements. Council
+ * reports are not licensed for reuse and the Codes are commercial
+ * publications, so nothing here is lifted from either.
+ * ------------------------------------------------------------------------ */
+const DRAFT = {
+  intro_body: 'This strategy is submitted to members for approval before the start of the {{financial year}} financial year. It is prepared under the Local Government Act 2003, the associated regulations, and the CIPFA Prudential Code for Capital Finance in Local Authorities and Treasury Management in the Public Services Code of Practice, to both of which the authority has formally adopted the clauses.\n\nMembers are asked to approve the treasury management strategy and the borrowing strategy set out below, the annual investment strategy and the counterparty criteria within it, the minimum revenue provision policy statement, and the prudential and treasury indicators and limits given in section 7, including the authorised limit for external debt.\n\n{{Name the committee that considered the strategy and when, and any scrutiny or audit committee that reviewed it beforehand.}}',
+  econ: "{{Most authorities take this section from their treasury adviser and say so. Replace the paragraph below with your adviser's commentary, or edit it to match your own view.}}\n\nThe Monetary Policy Committee has held Bank Rate at {{rate}} since {{date}}. Inflation has {{risen / fallen / held}} against the 2% target, and the Committee's published guidance points to {{a gradual easing / no early change}}. Growth remains {{subdued / steady}}, and the labour market has {{loosened / held firm}}. Gilt yields have {{risen / fallen}} across the curve over the period, which feeds directly into PWLB rates: the certainty rate is set at 60 basis points over the equivalent gilt, and the standard rate at 80.",
+  rateview: 'For planning purposes the authority has adopted the interest rate assumptions set out in section 2, taken from {{your adviser, or the market-implied path shown}}. Where the assumption is the path implied by the market it is stated as such: it is what is currently priced rather than a forecast, and the authority does not treat it as one.\n\nThe strategy is not dependent on rates following that path. The borrowing requirement identified by the liability benchmark is driven by the balance sheet rather than by the rate view, and the timing of any borrowing will be taken in the light of rates prevailing at the time.',
+  borrow_body: "The authority will borrow only to meet a requirement identified by the liability benchmark, and will not borrow in order to invest at a profit. Sources considered are the Public Works Loan Board at the certainty rate, other local authorities, the UK Infrastructure Bank where the scheme qualifies, and the market where terms are better than PWLB on a like-for-like basis.\n\nThe authority's preference is for the cheapest borrowing consistent with managing refinancing risk. That means it will not concentrate maturities in a small number of years, and will weigh the saving from short-dated borrowing against the risk of having to refinance a large amount at an unknown rate. Internal borrowing is used where it is available, recognising that it defers rather than avoids the requirement and that reserves used in this way must be replaced when they are needed.\n\n{{State the value of new borrowing planned in the year, the sources you expect to use, and who may authorise a loan.}}",
+  resched: "{{Answer 'yes' to the rescheduling question in section 4 to include the fuller clause. Otherwise:}} The authority reviews its debt portfolio for rescheduling opportunities but does not expect to undertake any in the year. Premature repayment of PWLB debt is assessed against the discount rate applying at the time; where that rate is below the coupon on the loan a premium is payable, and the authority will only repay early where the whole-life saving is demonstrable and affordable.",
+  invest_body: "The authority's investment priorities are, in order, the security of the sum invested, then the liquidity needed to meet its cash flow, and only then the yield obtained. It will not sacrifice security or liquidity in pursuit of return.\n\nBalances arise from reserves, provisions, working capital and the timing difference between receipts and payments. The authority distinguishes between the balance it must hold to remain liquid — its minimum liquidity balance of {{£m}}, set by reference to the largest short-term outflow it could face — and any balance held above that, which is available for investment over a longer horizon at a better return.\n\nInstruments used are {{list: DMADF, money market funds, call and notice accounts, fixed-term deposits, certificates of deposit, other local authorities, pooled funds}}. Investments are made in sterling only. The authority {{does / does not}} use externally managed or pooled funds; where it does, the fuller clause in the draft applies.\n\n{{State the maximum period for which funds may be committed, and the split you intend between instant access and term.}}",
+  credit: "Counterparties are selected from a list approved by the s151 officer against published credit criteria, and every counterparty is subject to both a monetary limit and a maximum duration.\n\nThe minimum long-term rating for a bank or building society counterparty is {{A- / equivalent}}, taken from {{Fitch, Moody's and S&P}}, using the lowest of the ratings held. Ratings are supplemented by credit watches, outlooks and market indicators such as credit default swap spreads, so that a deteriorating counterparty is identified before a rating is formally changed. A counterparty falling below the minimum criteria is withdrawn from use immediately and no new investment is placed with it.\n\nLimits by counterparty type are {{£m and duration for each of: UK Government / DMADF, other local authorities, money market funds, UK banks, non-UK banks, building societies, pooled funds}}. A group of related counterparties counts as one for the purposes of the monetary limit.\n\n{{Name who may approve an exception, and what is reported to members when one is used.}}",
+  mrp_body: 'The authority will make prudent provision for the repayment of debt in accordance with the statutory guidance on minimum revenue provision.\n\nFor capital expenditure financed by borrowing, provision is made on {{an asset life, equal instalment / an asset life, annuity / a capital expenditure}} basis, over a period no longer than the useful life of the asset the expenditure created. Provision begins in the financial year following the one in which the asset became operational.\n\nFor finance leases and arrangements accounted for as such, the provision is equal to the principal element of the rent or charge payable in the year.\n\nThe authority {{may / does not}} make voluntary revenue provision in addition. Where it does, the amount is reported to members and, once made, is not reversed except with their approval.\n\n{{If you apply a different method to any category of expenditure, state which and why. If you have a capital receipts strategy that bears on MRP, cross-refer to it.}}',
+  activity_body: 'Borrowing and investment activity in the period is set out below against the strategy approved by members.\n\nNew borrowing of {{£m}} was taken in {{period}} at an average rate of {{%}}, against a plan of {{£m}}. {{Explain any material difference.}} Repayments of {{£m}} fell due and were met from {{internal balances / new borrowing}}. External debt at the period end stood at {{£m}}, against the authorised limit of {{£m}} and the capital financing requirement of {{£m}}.\n\nInvestment balances averaged {{£m}} over the period and stood at {{£m}} at the period end, earning an average rate of {{%}} against a benchmark of {{benchmark}}. No counterparty failed to repay in full and on time, and no institution on the approved list was downgraded below the minimum criteria while funds were placed with it. {{Amend if either did occur, and say what was done.}}',
+  deals: '{{Some authorities list every transaction and others summarise. If you list them, one line each: date, counterparty, amount, rate, and maturity. If you summarise, give the number of deals, the total value and the weighted average rate, by instrument type. Delete this section if your practice is not to publish deal-level detail.}}',
+  corefunds_body: "The authority's core cash comes from reserves, provisions, balances held on behalf of others, and the working capital arising from the timing of receipts and payments. Core funds are distinguished from cash that is merely passing through: only the former can prudently be invested for a term.\n\nReserves and balances are projected at {{£m}} at the start of the year, {{rising / falling}} to {{£m}} by {{year}} as approved reserve movements take effect. The cash flow through the year has a predictable seasonal shape, with balances at their lowest in {{month}} and their highest in {{month}}; the minimum liquidity balance of {{£m}} is set with reference to that low point rather than to the average.\n\nExpected investment balances over the forecast are shown in section 3. Where the projection shows a balance above the liquidity requirement it is available for longer-dated investment; where it falls to the liquidity requirement, the authority holds it in instant access.",
+  compliance_body: 'All treasury management activity in the period was undertaken within the limits and indicators approved by members. {{Amend if it was not.}}\n\n{{Where a limit was exceeded, state which, when, the amount by which it was exceeded and for how long, why it happened, what action was taken at the time, and what has changed to prevent a recurrence. A breach of the authorised limit is a breach of a statutory limit and must be reported to members explicitly rather than noted in a table.}}',
+  training_body: "The authority recognises that the effective management of treasury risk depends on officers and members having the knowledge and skills to exercise it, and on those responsible for scrutiny being able to challenge what is put to them.\n\nThe s151 officer maintains a record of the training undertaken by treasury officers and by members of the {{committee}}, and assesses annually whether it remains adequate to the authority's treasury activity. Officers involved in treasury management hold {{qualifications}} and undertook {{hours / courses}} of continuing professional development in the year.\n\nTraining delivered in the period comprised {{list: sessions, dates, and who delivered them}}. Members receiving treasury reports were offered {{session}} in advance of the strategy being presented.\n\n{{Say how the assessment was made and what it concluded, not only that training took place — the Code asks for the assessment.}}",
+  nontreasury_body: '{{Delete this section if the authority holds no non-treasury investments.}}\n\nThe authority holds investments that are not treasury investments: {{property held for rental return, loans to subsidiaries and joint ventures, loans to third parties in pursuit of service objectives, and equity in companies}}. These are held for {{service / regeneration / financial}} purposes and are not made in pursuit of a treasury return.\n\nThe total held is {{£m}} at {{date}}, against which the authority has set aside {{£m}}. The income they generate is {{£m}} a year, representing {{%}} of the net revenue budget; the authority is satisfied that this dependence is {{proportionate / being reduced}}, and the plan for reducing it is {{set out at ...}}.\n\nEach is reviewed at least annually for its contribution to the objective it was made for and for any indication of impairment. The authority does not borrow in order to make investments primarily for financial return. {{If any part of the portfolio was acquired with borrowing, say so and set out the plan required by the Prudential Code.}}',
+  gov_body: "Responsibility for treasury management rests with the s151 officer, who exercises it under the scheme of delegation approved by members and within the treasury management practices adopted by the authority.\n\nMembers receive this strategy before the start of the year, {{a mid-year review and an outturn report after the year end / quarterly monitoring reports}}. {{Committee}} scrutinises treasury management activity and reports to {{full council / cabinet}}. The authority's treasury management practices and the schedules beneath them are reviewed {{annually}} and are available to members on request.\n\nDay-to-day dealing is undertaken by {{officers}}, with each transaction authorised and recorded separately from the officer who arranged it. {{State the separation of duties you operate, and the limits above which a second authorisation is required.}}",
+  advisers: "The authority retains {{adviser}} as its external treasury management adviser under a contract running to {{date}}. The scope of the contract covers {{credit advice, interest rate views, technical guidance, and training}}.\n\nThe authority recognises that responsibility for its treasury management decisions remains with it at all times and that undue reliance must not be placed on external advice. Decisions are taken having regard to all available information, of which the adviser's view is one source among several. The value obtained from the contract is assessed {{annually, by ...}}, and the appointment was made following {{a competitive process in ...}}.",
+};
+
 /* ===========================================================================
  * The strategy sections. Structure follows the Model TMS synthesised from 43
  * councils' own strategies, so the shape is what the sector actually writes
@@ -1744,16 +2185,16 @@ const SECTIONS = [
   {k:"intro", n:"1", t:"Introduction", kind:"yours", in:ALL,
    lead:"Why the strategy is before members, and what they are being asked to approve.",
    qs:[{k:"intro_body", l:"Purpose and approvals sought",
-        ph:"Statutory basis, the CIPFA Codes you comply with, what members are approving, "
+        d:DRAFT.intro_body, ph:"Statutory basis, the CIPFA Codes you comply with, what members are approving, "
            +"and when the strategy was considered by scrutiny."}]},
 
   {k:"context", n:"2", t:"External context", kind:"both", in:ALL,
    lead:"The economic and market backdrop. We supply the rates; the outlook is yours or your adviser's.",
    qs:[{k:"econ", l:"Economic commentary",
-        ph:"Bank Rate and the MPC's direction, inflation, growth, labour market, and what your "
+        d:DRAFT.econ, ph:"Bank Rate and the MPC's direction, inflation, growth, labour market, and what your "
            +"treasury adviser expects. Most authorities take this from their adviser — say which."},
        {k:"rateview", l:"Interest rate view",
-        ph:"Your working assumption for Bank Rate and PWLB rates across the forecast, and the "
+        d:DRAFT.rateview, ph:"Your working assumption for Bank Rate and PWLB rates across the forecast, and the "
            +"source. State it as an assumption, not a forecast of your own."}]},
 
   {k:"balance", n:"3", t:"Balance sheet summary and forecast", kind:"auto", in:ALL,
@@ -1762,26 +2203,26 @@ const SECTIONS = [
   {k:"borrow", n:"4", t:"Borrowing strategy", kind:"both", in:FWD,
    lead:"LB4 gives the requirement; the strategy for meeting it is a judgement.",
    qs:[{k:"borrow_body", l:"How you intend to borrow",
-        ph:"Sources considered — PWLB certainty rate, market loans, other authorities, "
+        d:DRAFT.borrow_body, ph:"Sources considered — PWLB certainty rate, market loans, other authorities, "
            +"UK Infrastructure Bank. Preferred maturities and why. Timing, and your policy on "
            +"borrowing in advance of need."},
        {k:"resched", l:"Debt rescheduling",
-        ph:"Whether rescheduling or premature repayment is being considered, and the "
+        d:DRAFT.resched, ph:"Whether rescheduling or premature repayment is being considered, and the "
            +"circumstances in which it would be taken."}]},
 
   {k:"invest", n:"5", t:"Treasury investment strategy", kind:"both", in:FWD,
    lead:"LB5 gives the projection; the counterparty policy is yours.",
    qs:[{k:"invest_body", l:"Investment objectives and approach",
-        ph:"Security, liquidity, yield — in that order. Instruments used, and the balance "
+        d:DRAFT.invest_body, ph:"Security, liquidity, yield — in that order. Instruments used, and the balance "
            +"between internally and externally managed funds."},
        {k:"credit", l:"Creditworthiness and counterparty policy",
-        ph:"Minimum credit criteria, the rating agencies used, monetary and time limits by "
+        d:DRAFT.credit, ph:"Minimum credit criteria, the rating agencies used, monetary and time limits by "
            +"counterparty type, and what happens on a downgrade."}]},
 
   {k:"mrp", n:"6", t:"Minimum revenue provision", kind:"both", in:FWD,
    lead:"The MRP statement members approve. Your ledger carries the charge; the policy is yours.",
    qs:[{k:"mrp_body", l:"MRP policy statement",
-        ph:"Method for each class of expenditure — asset life, annuity, or equal instalment. "
+        d:DRAFT.mrp_body, ph:"Method for each class of expenditure — asset life, annuity, or equal instalment. "
            +"Any voluntary provision. Whether the policy has changed, and the effect if so."}]},
 
   {k:"indicators", n:"7", t:"Treasury management prudential indicators", kind:"auto", in:ALL,
@@ -1790,10 +2231,10 @@ const SECTIONS = [
   {k:"activity", n:"8", t:"Borrowing and investment activity", kind:"yours", in:BACK,
    lead:"For an outturn or mid-year report: what actually happened.",
    qs:[{k:"activity_body", l:"Borrowing and investment activity",
-        ph:"New loans taken — amount, rate, maturity, lender. Repayments and rescheduling. "
+        d:DRAFT.activity_body, ph:"New loans taken — amount, rate, maturity, lender. Repayments and rescheduling. "
            +"Investment activity and average balances."},
        {k:"deals", l:"Individual transactions (optional)",
-        ph:"Some authorities list every deal; others summarise. If you list them, one line "
+        d:DRAFT.deals, ph:"Some authorities list every deal; others summarise. If you list them, one line "
            +"each: date, counterparty, amount, rate, maturity."}]},
 
   {k:"portfolio", n:"3b", t:"Current portfolio position", kind:"auto", in:ALL,
@@ -1803,7 +2244,7 @@ const SECTIONS = [
   {k:"corefunds", n:"5b", t:"Core funds and expected investment balances", kind:"both", in:FWD,
    lead:"The balances available to invest, which drive LB5. Written by 15% of strategies.",
    qs:[{k:"corefunds_body", l:"Core funds and cash flow",
-        ph:"Reserves, balances and provisions held; the extent to which they are used for "
+        d:DRAFT.corefunds_body, ph:"Reserves, balances and provisions held; the extent to which they are used for "
            +"internal borrowing; and the expected pattern of cash flow across the year."}]},
 
   {k:"compliance", n:"7b", t:"Compliance with treasury and prudential limits", kind:"both",
@@ -1811,33 +2252,51 @@ const SECTIONS = [
    lead:"Did the authority stay within the limits it set? Written by a tenth of outturns and "
        +"mid-year reports, and by none of the strategies — it can only be answered backwards.",
    qs:[{k:"compliance_body", l:"Commentary on any breach",
-        ph:"If a limit was exceeded, when, by how much, why, and what was done. If none were, "
+        d:DRAFT.compliance_body, ph:"If a limit was exceeded, when, by how much, why, and what was done. If none were, "
            +"say so plainly — members are entitled to a clear statement either way."}]},
 
   {k:"training", n:"10b", t:"Knowledge, skills and training", kind:"both", in:ALL,
    lead:"Its own section in 31% of strategies. The Code requires the authority to address the "
        +"knowledge and skills of officers and of the members who scrutinise them.",
    qs:[{k:"training_body", l:"Training provided and how it is assessed",
-        ph:"What training officers and members received, when, from whom, and how the "
+        d:DRAFT.training_body, ph:"What training officers and members received, when, from whom, and how the "
            +"authority satisfies itself that it was adequate."}]},
 
   {k:"nontreasury", n:"9", t:"Non-treasury investments and commercial activity", kind:"yours", in:ALL,
    lead:"Required where the authority holds investments that are not for treasury purposes.",
    qs:[{k:"nontreasury_body", l:"Non-treasury investments",
-        ph:"Property and service investments, loans to subsidiaries and third parties. The "
+        d:DRAFT.nontreasury_body, ph:"Property and service investments, loans to subsidiaries and third parties. The "
            +"Prudential Code prohibits borrowing primarily for financial return — say how you "
            +"comply."}]},
 
   {k:"governance", n:"10", t:"Governance and reporting", kind:"yours", in:ALL,
    lead:"Who decides, who is told, and how often.",
    qs:[{k:"gov_body", l:"Governance and reporting cycle",
-        ph:"Scheme of delegation, the s151 officer's role, which committee receives what and "
+        d:DRAFT.gov_body, ph:"Scheme of delegation, the s151 officer's role, which committee receives what and "
            +"when. Member and officer training — the Code requires you to address knowledge "
            +"and skills."},
        {k:"advisers", l:"Treasury advisers",
-        ph:"Who advises you, the scope of the contract, and how their advice is evaluated. "
+        d:DRAFT.advisers, ph:"Who advises you, the scope of the contract, and how their advice is evaluated. "
            +"The Code requires you to state that responsibility remains with the authority."}]}
 ];
+
+
+/* The same question needs different words in a forward-looking strategy and a
+   backward-looking outturn. An outturn that opens "this strategy is submitted
+   for approval before the start of the year" is not a small infelicity — it is
+   the wrong document. Where a question reads differently by report type, its
+   draft is keyed by type with `_` as the default. */
+const DRAFT_BY_REPORT = {
+  intro_body: {out: "This report is presented to members after the year end and sets out the authority's treasury management activity for {{financial year}}, measured against the strategy they approved on {{date}}.\n\nIt is prepared under the Local Government Act 2003 and the CIPFA Treasury Management in the Public Services Code of Practice, which requires the authority to report on its treasury activity and on its performance against the prudential and treasury indicators it set.\n\nMembers are asked to note the outturn position, the activity reported in section 8, and the position against each indicator and limit set out in section 7.\n\n{{Name the committee receiving the report and when, and record whether any limit was exceeded — a breach of the authorised limit must be reported explicitly, not left to a table.}}", mid: "This report is presented to members part way through {{financial year}} and reviews the authority's treasury management activity against the strategy they approved on {{date}}.\n\nIt is prepared under the CIPFA Treasury Management in the Public Services Code of Practice, which requires the authority to review its treasury position during the year and to report any proposed change to the strategy or to the indicators approved for it.\n\nMembers are asked to note the position at {{date}}, the activity reported below, and {{to approve the revisions to the indicators set out in section 7 / that no revision to the approved strategy is proposed}}.\n\n{{Name the committee receiving the report and when.}}",
+               quart: "This report is presented to members part way through {{financial year}} and reviews the authority's treasury management activity against the strategy they approved on {{date}}.\n\nIt is prepared under the CIPFA Treasury Management in the Public Services Code of Practice, which requires the authority to review its treasury position during the year and to report any proposed change to the strategy or to the indicators approved for it.\n\nMembers are asked to note the position at {{date}}, the activity reported below, and {{to approve the revisions to the indicators set out in section 7 / that no revision to the approved strategy is proposed}}.\n\n{{Name the committee receiving the report and when.}}"},
+  rateview:   {out: 'Rates over the period moved as follows. Bank Rate {{was held at / moved from ... to ...}}, and gilt yields {{rose / fell}} across the curve, carrying PWLB rates with them: the certainty rate is fixed at 60 basis points over the equivalent gilt and the standard rate at 80, so movement in PWLB pricing over the period reflects the gilt market rather than any change in margin.\n\nThe assumptions on which the strategy was set are compared with what happened in the table below. {{Where borrowing or investment was timed by reference to the rate view, say what was decided and what it achieved.}}', mid: 'Rates over the period moved as follows. Bank Rate {{was held at / moved from ... to ...}}, and gilt yields {{rose / fell}} across the curve, carrying PWLB rates with them: the certainty rate is fixed at 60 basis points over the equivalent gilt and the standard rate at 80, so movement in PWLB pricing over the period reflects the gilt market rather than any change in margin.\n\nThe assumptions on which the strategy was set are compared with what happened in the table below. {{Where borrowing or investment was timed by reference to the rate view, say what was decided and what it achieved.}}',
+               quart: 'Rates over the period moved as follows. Bank Rate {{was held at / moved from ... to ...}}, and gilt yields {{rose / fell}} across the curve, carrying PWLB rates with them: the certainty rate is fixed at 60 basis points over the equivalent gilt and the standard rate at 80, so movement in PWLB pricing over the period reflects the gilt market rather than any change in margin.\n\nThe assumptions on which the strategy was set are compared with what happened in the table below. {{Where borrowing or investment was timed by reference to the rate view, say what was decided and what it achieved.}}'}
+};
+function draftFor(q){
+  const byRep = DRAFT_BY_REPORT[q.k];
+  if(byRep && byRep[S.report]) return byRep[S.report];
+  return q.d || null;
+}
 
 function secStatus(k){
   const s = SECTIONS.find(x=>x.k===k);
@@ -1866,27 +2325,36 @@ function renderSections(){
     body += autoNote(s.k);
   } else {
     (s.qs||[]).forEach(q=>{
+      const written = (S.text[q.k]||"").trim();
+      // The draft is offered, never imposed. Inserting it over something they
+      // have already written would lose their work, so once a box has words in
+      // it the button says what it would do.
+      const draft = draftFor(q);
+      const btn = draft
+        ? `<button type="button" class="usedraft" data-d="${q.k}">${
+             written ? "Replace with our draft wording" : "Use our draft wording"}</button>`
+        : "";
       body += `<div class="q"><label for="t_${q.k}">${esc(q.l)}</label>
         <textarea id="t_${q.k}" data-t="${q.k}"
           placeholder="${esc(q.ph)}">${esc(S.text[q.k]||"")}</textarea>
-        <div class="ph">${esc(q.ph)}</div></div>`;
+        <div class="qtools">${btn}<span class="ph">${esc(q.ph)}</span></div></div>`;
     });
     if(s.kind==="both") body += autoNote(s.k);
   }
   $("secbody").innerHTML = body;
-  const ir=$("invread");
-  if(ir) ir.addEventListener("click", ()=>{
-    const r=parseInvestments($("invtext").value);
-    S.portfolio=r.inv; S.portfolioText=$("invtext").value; S.portfolioNote=r.note;
-    // A pasted portfolio is today's position, so it seeds year 0 of the
-    // existing-investments column. Later years stay theirs to project.
-    if(r.total!=null && S.g.gf.inv) S.g.gf.inv[0]=Math.round(r.total*10)/10;
-    syncLedger(true); renderSections(); render();
-  });
-  const ic=$("invclear");
-  if(ic) ic.addEventListener("click", ()=>{
-    S.portfolio=[]; S.portfolioText=""; S.portfolioNote="";
-    renderSections(); render(); });
+  $("secbody").querySelectorAll(".usedraft").forEach(b =>
+    b.addEventListener("click", e=>{
+      const k = e.target.dataset.d;
+      const q = (SECTIONS.find(x=>x.k===S.sec).qs||[]).find(x=>x.k===k);
+      const draft = q && draftFor(q);
+      if(!draft) return;
+      if((S.text[k]||"").trim() &&
+         !confirm("Replace what you have written with our draft wording?")) return;
+      S.text[k] = draft;
+      renderSections(); render();
+      const t = $("t_"+k); if(t){ t.focus(); t.setSelectionRange(0,0); t.scrollTop=0; }
+    }));
+
   const rp=$("secbody").querySelector('[data-pick="rates"]');
   if(rp) rp.addEventListener("click", e=>{
     const b=e.target.closest("button[data-r]"); if(!b) return;
@@ -1938,16 +2406,10 @@ function autoNote(k){
     return box("From your ledger", `Implied treasury investments peak at <b>£${m1(p.inv)}m</b>
       in ${fy(p.fy)}, against a liquidity allowance of <b>£${m1(d[0].liq)}m</b>. LB5 splits that
       between liquidity, strategic and excess.`)
-      + `<div class="pastebox"><label for="invtext">Paste your investment portfolio
-         <span class="hint">In whatever detail you hold it — counterparty, amount, rate,
-         maturity. Any order, tabs or commas. Only the amount is needed.</span></label>
-         <textarea id="invtext" rows="5" placeholder="Money market fund A&#9;12.0&#9;4.55
-Bank of X 6m deposit&#9;5,000,000&#9;4.80&#9;2027
-Other local authority&#9;£3m">${esc(S.portfolioText||"")}</textarea>
-         <div class="ltools"><button type="button" class="primary" id="invread">Read it</button>
-           <button type="button" id="invclear">Clear</button>
-           <span class="hintline" id="invnote">${esc(S.portfolioNote||"")}</span></div></div>`
-      + portfolioTable();
+      + ((S.portfolio||[]).length
+         ? portfolioTable() + barChart(groupHoldings(S.portfolio), "inv")
+         : `<p class="note">Paste your portfolio in <b>What you hold now</b> above and it is
+            tabulated here, in whatever detail you give it.</p>`);
   }
   if(k==="portfolio"){
     const c=LB[S.gss];
@@ -2027,7 +2489,16 @@ function docSections(){
         <b>£${m1(d[0].ntp)}m</b>.</p>`
       + otable(d,[{l:"Existing loan commitments",k:"el"},
                   {l:"Existing investment commitments",k:"ei"},
-                  {l:"Net treasury position",k:"ntp",cls:"key"}], 6)},
+                  {l:"Net treasury position",k:"ntp",cls:"key"}], 6)
+      // What is actually held, at whatever granularity they gave it to us.
+      // The table above is the projection; this is the composition behind its
+      // first year, and members read the two differently.
+      + (debtHoldings().length
+         ? `<h4>Debt held at ${fy(S.fy0)}</h4>` + barChart(groupHoldings(debtHoldings()), "debt")
+         : "")
+      + ((S.portfolio||[]).length
+         ? `<h4>Investments held at ${fy(S.fy0)}</h4>` + barChart(groupHoldings(S.portfolio), "inv")
+         : "")},
 
    {k:"borrow", n:"4", t:"Borrowing strategy",
     b: (peakNeed.need>0.05
@@ -2047,7 +2518,12 @@ function docSections(){
      + clausesFor("5")
      + (t("invest_body")?para(t("invest_body")):"")
      + (t("credit")?`<h4>Creditworthiness and counterparty policy</h4>${para(t("credit"))}`:"")
-     + portfolioTable()},
+     + portfolioTable()
+     // Bars for what is held, lines for the benchmark. The Code draws the
+     // benchmark as a series over time and departing from that invites the
+     // wrong argument; a portfolio is a set of amounts at one date, and bars
+     // are the honest picture of that.
+     + ((S.portfolio||[]).length ? barChart(groupHoldings(S.portfolio), "inv") : "")},
 
    {k:"corefunds", n:"5b", t:"Core funds and expected investment balances",
     b: `<p>Other balance sheet items of <b>£${m1(d[0].obs)}m</b> are set against the capital
@@ -2137,6 +2613,14 @@ function documentHTML(forExport){
     th,td{border:1px solid #ccc;padding:3pt 5pt;text-align:right}
     th:first-child,td:first-child{text-align:left}
     thead th{background:#eee}
+    .barwrap{margin:8pt 0}
+    .barrow{display:table;width:100%;table-layout:fixed;margin:0 0 2pt}
+    .barrow>span{display:table-cell;vertical-align:middle;font-family:Arial,sans-serif;
+      font-size:9.5pt;padding:1pt 0}
+    .barrow .bn{width:34%;padding-right:8pt}
+    .barrow .bt{width:52%;background:#e6e9ec}
+    .barrow .bt i{display:block;height:11pt}
+    .barrow .bv{width:14%;text-align:right}
     .gap{color:#a33;font-style:italic;font-family:Arial,sans-serif;font-size:10pt}
     .src{color:#555;font-size:9.5pt;font-family:Arial,sans-serif}
     .readout{margin:8pt 0 0;padding:7pt 9pt;background:#f4f6f8;border-left:3pt solid #2f6fb0}
@@ -2296,11 +2780,36 @@ function syncLedger(force){
 }
 function refresh(){ syncLedger(); render(); }
 
-function applyLoans(){
+/* Say what happened, or what did not. An action that refuses silently — the
+   book that cannot be split between pools, the liquidity figure that was not
+   a number — reads as a broken button. */
+function flash(msg){
+  const el = $("projnote") || $("saved");
+  if(el) el.textContent = msg;
+}
+
+/* Seed the existing-loans row from the PWLB book.
+ *
+ * This used to run on every change, which made the row OURS: whatever an
+ * authority typed into it was overwritten on the next keystroke elsewhere.
+ * That was the wrong owner. We know the PWLB book with high confidence and
+ * can run it off contractually, but the row has to carry market debt, LOBOs,
+ * loans from other authorities and whatever new borrowing the authority
+ * intends — none of which we can see. So the book is a starting point that
+ * is applied when asked for, and the row belongs to the authority after that.
+ *
+ * Under a two-pool HRA it is not offered at all. The published book does not
+ * say which pool a loan sits in, and nothing else does either; splitting it
+ * on any rule we could invent would put a made-up number in front of members.
+ */
+function seedLoansFromBook(){
+  if(S.hra === "two"){ flash("The book cannot be split between pools — enter each fund's own projection."); return; }
   const prof = loanProfile(S, LB);
-  S.g.gf.loans = prof.slice();          // the book is a General Fund figure here
+  S.g[S.fund].loans = prof.slice();
+  S.loansSeeded = S.fund;
   syncLedger(true); render();
 }
+function applyLoans(){ syncLedger(true); render(); }
 
 /* ---- loans --------------------------------------------------------------- */
 function loanRows(){
@@ -2505,6 +3014,62 @@ function stampSaved(word){
   });
   $("addloan").addEventListener("click", ()=>{
     S.loans.push({name:"LOBO",amt:0,mat:S.fy0+15,profile:"bullet"}); loanRows(); applyLoans(); });
+
+  /* ---- investments ------------------------------------------------------ */
+  $("pasteinv").addEventListener("click", ()=>{
+    const b=$("invpaste"); b.hidden=!b.hidden; if(!b.hidden) $("invtext").focus(); });
+  $("invcancel").addEventListener("click", ()=>{ $("invpaste").hidden=true; });
+  $("invread").addEventListener("click", ()=>{
+    const r=parseInvestments($("invtext").value);
+    $("invnote").textContent=r.note;
+    if(!r.inv.length) return;
+    S.portfolio = r.inv; S.portfolioText = $("invtext").value; S.portfolioNote = r.note;
+    // Today's portfolio is today's position, so it seeds the FIRST year of the
+    // existing-investments column and nothing beyond it. What the balance does
+    // in later years is a projection, and that is theirs.
+    if(r.total!=null && S.g[S.fund].inv) S.g[S.fund].inv[0]=Math.round(r.total*10)/10;
+    $("invsummary").textContent = r.note;
+    $("invpaste").hidden=true;
+    syncLedger(true); renderSections(); render();
+  });
+
+  /* ---- templates -------------------------------------------------------- */
+  $("tmplloans").addEventListener("click", ()=>downloadTemplate("loans"));
+  $("tmplinv").addEventListener("click",   ()=>downloadTemplate("investments"));
+  $("tmplproj").addEventListener("click",  ()=>downloadTemplate("projection"));
+
+  /* ---- the authority's own projection ----------------------------------- */
+  $("pasteproj").addEventListener("click", ()=>{
+    const b=$("projpaste"); b.hidden=!b.hidden; if(!b.hidden) $("projtext").focus(); });
+  $("projcancel").addEventListener("click", ()=>{ $("projpaste").hidden=true; });
+  $("projread").addEventListener("click", ()=>{
+    const r = parseProjection($("projtext").value);
+    $("projreadnote").textContent = r.note;
+    if(!r.vals) return;
+    const row = $("projrow").value;
+    S.g[S.fund][row] = r.vals.slice();
+    $("projnote").textContent =
+      `${COLS.find(c=>c.k===row).l.replace(/<br>/g," ")} filled from your projection `
+      + `(${S.fund==="hra"?"HRA":"General Fund"}).`;
+    $("projpaste").hidden = true;
+    syncLedger(true); render();
+  });
+  $("seedloans").addEventListener("click", seedLoansFromBook);
+
+  /* ---- minimum liquidity balance ---------------------------------------- */
+  // One figure across the horizon, because that is how an authority holds it:
+  // a floor it will not go below. A year that differs is edited in the grid.
+  const applyMinLiq = () => {
+    const v = num($("minliq").value);
+    if(!isFinite(v) || v <= 0){ flash("Enter the minimum balance you would run to, in £m."); return; }
+    S.minliq = v;
+    S.g[S.fund].liq = Array(S.years).fill(Math.round(v*10)/10);
+    flash(`Liquidity allowance set to £${m1(v)}m across all ${S.years} years `
+        + `(${S.fund==="hra"?"HRA":"General Fund"}).`);
+    syncLedger(true); render();
+  };
+  $("applyliq").addEventListener("click", applyMinLiq);
+  $("minliq").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); applyMinLiq(); } });
 
   // Fill down: the honest way to enter a constant like the liquidity allowance
   // across fifty years without typing it fifty times. It is still their figure.
