@@ -1298,10 +1298,25 @@ function buildModel(S, fund){
     r.al   = al;
     r.br   = r.lb - r.el;
     r.need = Math.max(0, r.br);
-    r.over = Math.max(0, -r.br);
+    // OVERBORROWING IS DEBT, AND CANNOT EXCEED THE DEBT HELD.
+    //
+    // This was max(0, −br), which is the same thing wherever the benchmark is
+    // non-negative — and the benchmark is non-negative everywhere except one
+    // place. A two-pool HRA has no liquidity allowance, so its benchmark is
+    // its net treasury position, and an HRA holding more reserves than CFR has
+    // a NEGATIVE benchmark. With no loans at all that gave br = −350 and
+    // reported £350m of overborrowing on a fund with no debt to be over.
+    //
+    // Debt above a benchmark that cannot fall below nil is what the indicator
+    // means, and it is bounded by what is actually owed.
+    r.over = Math.max(0, r.el - Math.max(0, r.lb));
     r.inv  = Math.max(0, r.el + r.need - r.ntp);
     r.strategic = Math.max(0, r.tib - r.liq);
     r.excess    = Math.max(0, r.inv - r.tib);
+    // What is actually held, netted. Positive is a net borrower, negative a
+    // net investor — the same sign convention as the net treasury position, so
+    // the two can be read side by side without translating one of them.
+    r.netdebt = r.el - r.ei;
   });
   return rows;
 }

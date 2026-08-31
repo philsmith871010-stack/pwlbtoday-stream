@@ -216,6 +216,7 @@ table.bo tr.hi td,table.bo tr.hi th{background:var(--accent-soft)}
     <button type="button" class="bbtn" data-preset="within">Surplus &lt; allowance</button>
     <button type="button" class="bbtn" data-preset="crossing">Crossing</button>
     <button type="button" class="bbtn" data-preset="over">Overborrowed</button>
+    <button type="button" class="bbtn" data-preset="hrasurplus">HRA in surplus</button>
     <button type="button" class="bbtn" data-preset="zero">Empty</button>
   </div>
 
@@ -924,10 +925,25 @@ function buildModel(S, fund){
     r.al   = al;
     r.br   = r.lb - r.el;
     r.need = Math.max(0, r.br);
-    r.over = Math.max(0, -r.br);
+    // OVERBORROWING IS DEBT, AND CANNOT EXCEED THE DEBT HELD.
+    //
+    // This was max(0, −br), which is the same thing wherever the benchmark is
+    // non-negative — and the benchmark is non-negative everywhere except one
+    // place. A two-pool HRA has no liquidity allowance, so its benchmark is
+    // its net treasury position, and an HRA holding more reserves than CFR has
+    // a NEGATIVE benchmark. With no loans at all that gave br = −350 and
+    // reported £350m of overborrowing on a fund with no debt to be over.
+    //
+    // Debt above a benchmark that cannot fall below nil is what the indicator
+    // means, and it is bounded by what is actually owed.
+    r.over = Math.max(0, r.el - Math.max(0, r.lb));
     r.inv  = Math.max(0, r.el + r.need - r.ntp);
     r.strategic = Math.max(0, r.tib - r.liq);
     r.excess    = Math.max(0, r.inv - r.tib);
+    // What is actually held, netted. Positive is a net borrower, negative a
+    // net investor — the same sign convention as the net treasury position, so
+    // the two can be read side by side without translating one of them.
+    r.netdebt = r.el - r.ei;
   });
   return rows;
 }
@@ -1037,6 +1053,17 @@ const PRESETS = {
         obs:i=>120*Math.pow(.97,i), liq:25, loans:i=>700-i*5, inv:i=>300-i*4,
         intpay:i=>29-i*.2, intinc:i=>11-i*.15, nrs:450, comminc:0},
     hra:{cfr0:0}},
+
+  // Set the pools to two and look at the HRA: this is where the benchmark is
+  // allowed to go negative, and where reporting overborrowing on a fund with
+  // no debt used to come from.
+  hrasurplus: {lab:"HRA holding more reserves than CFR — under two pools its benchmark goes negative",
+    gf:{cfr0:800, mrp:i=>i?24:0, capex:0, rec:0,
+        obs:i=>200*Math.pow(.98,i), liq:40, loans:i=>700*Math.pow(.94,i), inv:50,
+        intpay:i=>29*Math.pow(.94,i), intinc:2, nrs:500, comminc:0},
+    hra:{cfr0:120, mrp:i=>i?4:0, capex:0, rec:0,
+         obs:i=>460*Math.pow(.995,i), liq:0, loans:0, inv:i=>340-i*4,
+         intpay:0, intinc:13, nrs:150, comminc:0}},
 
   zero: {lab:"nothing entered — every indicator should be nil, and none should throw",
     gf:{}, hra:{}}
@@ -1163,7 +1190,26 @@ function bInvariants(d, fund){
                 : "Liability benchmark = NTP + investment benchmark",
      twoPoolHra ? "lb = ntp" : "lb = ntp + tib",
      all(r => near(r.lb, twoPoolHra ? r.ntp : r.ntp + r.tib))],
-    ["The benchmark is never negative", "lb ≥ 0", all(r => r.lb >= -0.051)],
+    // Nil is the floor wherever the fund has an allowance of its own. The
+    // two-pool HRA is the exception and not by accident: with no allowance its
+    // benchmark IS its net position, and a negative one means it is lending to
+    // the General Fund. Asserting lb ≥ 0 there would fail a correct model.
+    [twoPoolHra ? "A two-pool HRA in surplus may show a NEGATIVE benchmark — it is lending to the General Fund"
+                : "The benchmark cannot be negative",
+     twoPoolHra ? "lb = ntp, either sign" : "lb ≥ 0",
+     twoPoolHra ? true : all(r => r.lb >= -0.051)],
+    ["Indebtedness reads positive, surplus negative",
+     "ntp > 0 indebted · ntp < 0 surplus",
+     all(r => (r.cfr - r.obs > 0.05 ? r.ntp > 0 : true)
+           && (r.cfr - r.obs < -0.05 ? r.ntp < 0 : true))],
+    ["Net debt is loans less investments, same sign convention",
+     "netdebt = el − ei",
+     all(r => Math.abs(r.netdebt - (r.el - r.ei)) < 0.051)],
+    ["Overborrowing is debt above the benchmark, and never more than is owed",
+     "over = max(0, el − max(0, lb)) ≤ el",
+     all(r => near(r.over, Math.max(0, r.el - Math.max(0, r.lb))) && r.over <= r.el + 0.051)],
+    ["A fund is short of debt or over it, never both", "need and over cannot both bite",
+     all(r => !(r.need > 0.051 && r.over > 0.051))],
     // The distinction the Code turns on, stated as two separate claims. The
     // first attempt wrote it as one equivalence and fired on an all-zero sheet,
     // where there is no surplus and no allowance and a nil benchmark is simply
@@ -1181,9 +1227,13 @@ function bInvariants(d, fund){
        all(r => near(r.al, d[0].al))],
     ["LB4 is the benchmark less existing loans", "br = lb − el",
      all(r => near(r.br, r.lb - r.el))],
-    ["A gap is a borrowing requirement; a surplus of debt is overborrowing",
-     "need = max(0, br), over = max(0, −br)",
-     all(r => near(r.need, Math.max(0, r.br)) && near(r.over, Math.max(0, -r.br)))],
+    // Overborrowing has its own claim below, stated the way the model now
+    // computes it. This one was left asserting max(0, −br) after the model
+    // stopped using it, so it failed on the very case it was extended to
+    // cover — a stale check that contradicts a correct model is worse than
+    // no check, because the instinct is to trust the check.
+    ["A shortfall is a borrowing requirement", "need = max(0, lb − el)",
+     all(r => near(r.need, Math.max(0, r.br)))],
     ["Strategic investments are the benchmark above the allowance",
      "strategic = max(0, tib − liq)",
      all(r => near(r.strategic, Math.max(0, r.tib - r.liq)))],
@@ -1214,7 +1264,8 @@ const BOUT = [
   ["lb","Liability benchmark"], ["al","Authorised limit"],
   ["el","Existing loans"], ["br","LB4 (benchmark − loans)"],
   ["need","Borrowing requirement"], ["over","Overborrowing"],
-  ["ei","Existing investments"], ["inv","LB5 investments"],
+  ["ei","Existing investments"], ["netdebt","Net debt (loans less investments)"],
+  ["inv","LB5 investments"],
   ["strategic","of which strategic"], ["excess","of which excess"],
   ["fincost","Financing costs"], ["afford","Financing costs / net revenue %"]
 ];
