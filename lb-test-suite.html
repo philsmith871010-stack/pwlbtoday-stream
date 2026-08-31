@@ -1,0 +1,957 @@
+<meta charset="utf-8"><title>LB test suite — PWLBreports</title>
+<title>PWLBreports</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+:root{
+  --paper:#f4f6f8; --card:#ffffff; --sunken:#edf1f5; --ink:#0f1a24; --ink2:#3a4a5a;
+  --muted:#68757f; --faint:#9aa5af; --line:#e6eaee; --line2:#d3dae0;
+  --hair:#eef2f5;
+  --accent:#0a2540; --accent-soft:#e8eef5; --on-accent:#ffffff;
+  --orange:#c25708; --good:#1a7f4b; --alert:#b3352a;
+  /* Series colours are fixed by MEANING, not by chart. Net treasury position
+     is the same navy in LB1, LB2 and LB3; the benchmark is the same red
+     everywhere. A reader should learn the key once. */
+  --l-cfr:#2f6fb0;    /* capital financing requirement        */
+  --l-obs:#7a8794;    /* other balance sheet items            */
+  --l-ntp:#0a2540;    /* net treasury position                */
+  --l-lb:#b3352a;     /* liability benchmark                  */
+  --l-al:#8a4bbd;     /* authorised limit                     */
+  --l-inv:#1a7f4b;    /* treasury investment benchmark        */
+  --l-debt:#0f3059;   /* existing loan commitments            */
+  --l-ei:#0f9b8e;     /* existing investment commitments      */
+  --l-strat:#5b4bb3;  /* strategic investments / cross-fund   */
+  --l-exc:#c25708;    /* excess investments                   */
+  --ours:#1a7f4b; --yours:#c25708; --derived:#5b4bb3;
+  --seq1:#a8c8e8; --seq2:#7fb0dd; --seq3:#5695d1; --seq4:#2f6fb0;
+  --seq5:#1d4f86; --seq6:#0f3059;
+  --cell:#ffffff; --cell-ours:#eef7f2; --cell-derived:#f2f0fa;
+  --r:9px; --r-sm:5px;
+  --sp:4px;                     /* the spacing unit everything is a multiple of */
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+  /* Depth by hairline and a whisper of shadow, not by drop shadows. */
+  --sh:0 0 0 1px rgba(15,26,36,.03), 0 1px 2px rgba(15,26,36,.04),
+       0 4px 14px -6px rgba(15,26,36,.10);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0c1218; --card:#141d26; --sunken:#1a242f; --ink:#e8eef4; --ink2:#b4c1cd;
+    --muted:#8494a2; --faint:#61707c; --line:#212c38; --line2:#2e3c49;
+    --hair:#1c2732;
+    --accent:#8fb6de; --accent-soft:#1c2b3a; --on-accent:#0e151d;
+    --orange:#e8974a; --good:#4cb583; --alert:#e0776a;
+    --l-debt:#c8d8e8; --l-cfr:#6fa4d8; --l-obs:#8d9aa8; --l-ntp:#c8d8e8;
+    --l-lb:#e0776a; --l-al:#b795e0; --l-inv:#4cb583; --l-ei:#4fc2b5;
+    --l-strat:#a99ae8; --l-exc:#e8974a;
+    --ours:#4cb583; --yours:#e8974a; --derived:#a99ae8;
+  --seq1:#2b4566; --seq2:#33587f; --seq3:#4a7bab; --seq4:#6fa4d8;
+  --seq5:#9cc4e8; --seq6:#c8dcf0;
+    --seq1:#2b4566; --seq2:#33587f; --seq3:#4a7bab; --seq4:#6fa4d8;
+    --seq5:#9cc4e8; --seq6:#c8dcf0;
+    --cell:#182430; --cell-ours:#162a24; --cell-derived:#221f33;
+    --sh:0 0 0 1px rgba(0,0,0,.28), 0 1px 2px rgba(0,0,0,.30),
+       0 6px 18px -8px rgba(0,0,0,.55);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0c1218; --card:#141d26; --sunken:#1a242f; --ink:#e8eef4; --ink2:#b4c1cd;
+  --muted:#8494a2; --faint:#61707c; --line:#212c38; --line2:#2e3c49;
+  --hair:#1c2732;
+  --accent:#8fb6de; --accent-soft:#1c2b3a; --on-accent:#0e151d;
+  --orange:#e8974a; --good:#4cb583; --alert:#e0776a;
+  --l-debt:#c8d8e8; --l-cfr:#6fa4d8; --l-obs:#8d9aa8; --l-ntp:#c8d8e8;
+  --l-lb:#e0776a; --l-al:#b795e0; --l-inv:#4cb583; --l-ei:#4fc2b5;
+  --l-strat:#a99ae8; --l-exc:#e8974a;
+  --ours:#4cb583; --yours:#e8974a; --derived:#a99ae8;
+  --seq1:#2b4566; --seq2:#33587f; --seq3:#4a7bab; --seq4:#6fa4d8;
+  --seq5:#9cc4e8; --seq6:#c8dcf0;
+  --cell:#182430; --cell-ours:#162a24; --cell-derived:#221f33;
+  --sh:0 0 0 1px rgba(0,0,0,.28), 0 1px 2px rgba(0,0,0,.30),
+       0 6px 18px -8px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;font-feature-settings:"kern" 1,"liga" 1}
+::selection{background:var(--accent);color:var(--on-accent)}
+h1,h2,h3{text-wrap:balance;margin:0}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-radius:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<style>
+/* ===========================================================================
+ * LB test suite — internal.
+ *
+ * Not for authorities. This is a bench: type a balance sheet, see every
+ * indicator the model derives from it, and see whether the Code's identities
+ * still hold. Deliberately plain — nothing here is trying to look finished,
+ * because a bench that looks like a product invites someone to send it out.
+ *
+ * It runs the SHIPPED model.js and the shipped chart(). A bench with its own
+ * copy of the arithmetic tests its copy, which is worse than no bench at all.
+ * ======================================================================== */
+body{background:var(--sunken)}
+.bwrap{max-width:1640px;margin:0 auto;padding:14px 16px 60px}
+.bmast{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin:0 0 12px}
+.bmast h1{font-family:var(--sans);font-size:16px;font-weight:700;letter-spacing:-.01em}
+.bmast .warn2{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:#fff;background:var(--alert);padding:3px 8px;
+  border-radius:3px}
+.bmast .sp{flex:1}
+.bmast a{font-family:var(--sans);font-size:12.5px;color:var(--ink2)}
+
+.bgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;
+  align-items:start}
+@media (max-width:1180px){.bgrid{grid-template-columns:1fr}}
+.bcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:12px 14px 14px}
+.bcard h2{font-family:var(--sans);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 10px;
+  padding-bottom:6px;border-bottom:1px solid var(--line)}
+
+.btools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+.btools label{font-family:var(--sans);font-size:12px;color:var(--ink2);font-weight:600;
+  display:inline-flex;align-items:center;gap:6px}
+.btools select,.btools input{font-family:var(--mono);font-size:12px;padding:4px 6px;
+  border:1px solid var(--line2);border-radius:3px;background:var(--card);color:var(--ink)}
+.btools input[type=number]{width:62px}
+.bbtn{font-family:var(--sans);font-size:12px;font-weight:600;padding:5px 10px;
+  border:1px solid var(--line2);background:var(--card);color:var(--ink2);
+  border-radius:3px;cursor:pointer}
+.bbtn:hover{border-color:var(--muted);color:var(--ink)}
+.bbtn.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+
+/* the input grid */
+.bscroll{overflow:auto;max-height:52vh;border:1px solid var(--line);border-radius:4px}
+table.bg{border-collapse:separate;border-spacing:0;font-family:var(--mono);font-size:11.5px}
+table.bg th,table.bg td{border-bottom:1px solid var(--hair);padding:0;white-space:nowrap}
+table.bg thead th{position:sticky;top:0;z-index:2;background:var(--sunken);
+  font-family:var(--sans);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;padding:6px 7px;text-align:right;
+  border-bottom:1px solid var(--line2)}
+table.bg thead th:first-child{text-align:left;left:0;z-index:3}
+table.bg tbody th{position:sticky;left:0;background:var(--card);z-index:1;
+  font-family:var(--mono);font-size:11px;color:var(--ink2);font-weight:500;
+  padding:0 8px;text-align:left;border-right:1px solid var(--line)}
+table.bg input{width:74px;border:0;background:transparent;font-family:var(--mono);
+  font-size:11.5px;text-align:right;padding:4px 7px;color:var(--ink)}
+table.bg input:focus{outline:2px solid var(--accent);outline-offset:-2px;
+  background:var(--accent-soft)}
+table.bg tr:nth-child(even) td{background:var(--hair)}
+
+/* outputs */
+.bout{overflow:auto;max-height:46vh;border:1px solid var(--line);border-radius:4px}
+table.bo{border-collapse:separate;border-spacing:0;font-family:var(--mono);font-size:11.5px;
+  width:100%}
+table.bo th,table.bo td{padding:3px 8px;white-space:nowrap;text-align:right;
+  border-bottom:1px solid var(--hair)}
+table.bo thead th{position:sticky;top:0;background:var(--sunken);z-index:2;
+  font-family:var(--sans);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;border-bottom:1px solid var(--line2)}
+table.bo tbody th{position:sticky;left:0;background:var(--card);text-align:left;
+  font-family:var(--sans);font-size:11px;font-weight:600;color:var(--ink2);
+  border-right:1px solid var(--line)}
+table.bo tr.hi td,table.bo tr.hi th{background:var(--accent-soft)}
+
+/* the identities */
+.binv{margin:10px 0 0;display:grid;gap:5px}
+.binv div{display:flex;gap:9px;align-items:baseline;font-family:var(--sans);font-size:12px;
+  padding:5px 9px;border-radius:3px;background:var(--sunken)}
+.binv .tick{font-family:var(--mono);font-weight:700;flex:0 0 auto}
+.binv .ok{color:var(--good)}
+.binv .no{color:var(--alert)}
+.binv div.bad{background:rgba(179,53,42,.10)}
+.binv .w{color:var(--ink2);min-width:0}
+.binv code{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+
+.bnote{font-family:var(--sans);font-size:11.5px;color:var(--muted);margin:8px 2px 0;
+  line-height:1.55}
+.blegend{display:flex;flex-wrap:wrap;gap:5px 14px;margin:8px 2px 0}
+.blegend span{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);
+  font-size:11px;color:var(--ink2)}
+.blegend i{width:13px;height:2.5px;border-radius:2px}
+</style>
+
+<div class="bwrap">
+  <div class="bmast">
+    <h1>LB test suite</h1>
+    <span class="warn2">internal — not for authorities</span>
+    <span class="sp"></span>
+    <a href="pwlbreports-tool.html">&larr; the tool</a>
+  </div>
+
+  <div class="btools">
+    <label>Pools
+      <select id="bmode">
+        <option value="no">No HRA</option>
+        <option value="one">HRA — one pool</option>
+        <option value="two">HRA — two pool</option>
+      </select></label>
+    <label>Years <input type="number" id="byears" value="10" min="2" max="60"></label>
+    <label>Show
+      <select id="bshow">
+        <option value="gf">General Fund</option>
+        <option value="hra">HRA</option>
+        <option value="all">Whole authority (combined)</option>
+      </select></label>
+    <span style="flex:1"></span>
+    <button type="button" class="bbtn" data-preset="indebted">Indebted</button>
+    <button type="button" class="bbtn" data-preset="surplus">Surplus &gt; allowance</button>
+    <button type="button" class="bbtn" data-preset="within">Surplus &lt; allowance</button>
+    <button type="button" class="bbtn" data-preset="crossing">Crossing</button>
+    <button type="button" class="bbtn" data-preset="over">Overborrowed</button>
+    <button type="button" class="bbtn" data-preset="zero">Empty</button>
+  </div>
+
+  <div class="bgrid">
+    <div class="bcard">
+      <h2>Inputs <span id="bfundlab" style="color:var(--ink2)"></span></h2>
+      <div class="btools" style="margin-bottom:8px">
+        <button type="button" class="bbtn" id="bfundgf">General Fund</button>
+        <button type="button" class="bbtn" id="bfundhra">HRA</button>
+        <span class="bnote" style="margin:0">Edit either fund; the chart shows whichever
+          you select above.</span>
+      </div>
+      <div class="bscroll"><table class="bg" id="bgrid"></table></div>
+      <p class="bnote">Every column the model reads. Blank is nil — nothing is
+        extrapolated, so a year you leave empty is a year with no figures, not a
+        year we guessed.</p>
+    </div>
+
+    <div class="bcard">
+      <h2>One chart, everything on it</h2>
+      <div id="bchart"></div>
+      <div class="blegend" id="blegend"></div>
+      <p class="bnote" id="bchartnote"></p>
+    </div>
+  </div>
+
+  <div class="bcard" style="margin-top:14px">
+    <h2>The identities, checked live</h2>
+    <div class="binv" id="binv"></div>
+  </div>
+
+  <div class="bcard" style="margin-top:14px">
+    <h2>Everything the model derives</h2>
+    <div class="bout"><table class="bo" id="bderived"></table></div>
+  </div>
+</div>
+<script>
+const LB = {};
+/* ===========================================================================
+ * Which edition of the Codes the tool implements.
+ *
+ * Held as a registry rather than assumed, because the Codes move and a report
+ * produced under one edition has to stay explicable after the next one lands.
+ * Every output stamps the edition it was built to, so a strategy found in a
+ * committee pack two years from now can be read against the rules that
+ * applied when it was written rather than against whatever is current.
+ *
+ * Adding an edition is a data change: give it a key, a label, the indicator
+ * set, and what it removed. The renderer reads ACTIVE and nothing else has a
+ * version baked into it.
+ * ======================================================================== */
+const CODE_EDITIONS = {
+  "2026": {
+    key:"2026",
+    label:"2026 Codes",
+    long:"CIPFA Prudential Code and Treasury Management Code, 2026 revision",
+    status:"consultation",
+    statusNote:"second consultation; expected to apply from April 2027",
+    indicators:["LB1","LB2","LB3","LB4","LB5"],
+    framework:"liability benchmark framework",
+    removed:["operational boundary","maturity structure of borrowing"],
+    derives:{authorisedLimit:"the peak of the projected liability benchmark"}
+  },
+  "2021": {
+    key:"2021",
+    label:"2021 Codes",
+    long:"CIPFA Prudential Code and Treasury Management Code, 2021 edition",
+    status:"in force",
+    statusNote:"the edition councils are writing to today",
+    indicators:["liability benchmark"],
+    framework:"single liability benchmark chart",
+    removed:[],
+    derives:{authorisedLimit:"set by the authority with headroom above the operational boundary"},
+    unsupported:true          // the tool does not produce this edition's set
+  }
+};
+const ACTIVE = CODE_EDITIONS["2026"];
+
+function codeStamp(){
+  return `${ACTIVE.label} · ${ACTIVE.indicators.join("–").replace("LB1–LB2–LB3–LB4–LB5","LB1–LB5")}`;
+}
+function codeLine(){
+  return `Built to the ${esc(ACTIVE.long)} — ${esc(ACTIVE.statusNote)}.`;
+}
+
+/* ===========================================================================
+ * Which country's law this authority is under.
+ *
+ * The tool ships 311 authorities: 261 English, 30 Scottish, 20 Welsh. Every
+ * draft used to cite the Local Government Act 2003, which does not extend to
+ * Scotland, and to call the finance officer the section 151 officer, which is
+ * an English and Welsh title. The worked example picks the first authority
+ * over £100m alphabetically — Aberdeen — so the first thing a new user saw was
+ * a Scottish council written up under English law.
+ *
+ * Scotland differs in substance, not only in citation. There is no minimum
+ * revenue provision: capital is financed through the loans fund and the 2016
+ * Regulations set out how advances are repaid. A section headed "Minimum
+ * revenue provision" is not a wording problem there, it is the wrong section.
+ *
+ * Terms are substituted into clause and draft text as [[token]] at render
+ * time, so a clause that differs only in citation is written once. Where the
+ * substance differs, the clause is gated with `nat` instead.
+ * ======================================================================== */
+const NATIONS = {
+  england: {
+    n:"England",
+    officer:"section 151 officer",
+    act:"the Local Government Act 2003",
+    regs:"the Local Authorities (Capital Finance and Accounting) (England) Regulations 2003",
+    mrp:"minimum revenue provision",
+    mrpCap:"Minimum revenue provision",
+    mrpTitle:"Minimum revenue provision",
+    mrpGuidance:"the statutory guidance on minimum revenue provision",
+    invGuidance:"the statutory guidance on local government investments issued under section 15(1)(a) of that Act"
+  },
+  wales: {
+    n:"Wales",
+    officer:"section 151 officer",
+    act:"the Local Government Act 2003",
+    regs:"the Local Authorities (Capital Finance and Accounting) (Wales) Regulations 2003",
+    mrp:"minimum revenue provision",
+    mrpCap:"Minimum revenue provision",
+    mrpTitle:"Minimum revenue provision",
+    mrpGuidance:"the statutory guidance on minimum revenue provision issued by the Welsh Government",
+    invGuidance:"the statutory guidance on local government investments issued by the Welsh Government"
+  },
+  scotland: {
+    n:"Scotland",
+    officer:"section 95 officer",
+    act:"the Local Government in Scotland Act 2003",
+    regs:"the Local Authority (Capital Finance and Accounting) (Scotland) Regulations 2016",
+    mrp:"repayment of loans fund advances",
+    mrpCap:"Repayment of loans fund advances",
+    mrpTitle:"Loans fund and the repayment of advances",
+    mrpGuidance:"the statutory repayment methods set out in those Regulations",
+    invGuidance:"the Local Government Investments (Scotland) Regulations 2010"
+  }
+};
+
+/* The GSS code carries the country in its first letter, and it is the only
+   thing about an authority we can be certain of without asking. */
+function nationOf(gss){
+  const c = String(gss||"").charAt(0).toUpperCase();
+  if(c === "S") return "scotland";
+  if(c === "W") return "wales";
+  return "england";
+}
+const NAT = () => NATIONS[S.natOverride || nationOf(S.gss)];
+function inNation(c){ return !c.nat || c.nat.indexOf(S.natOverride || nationOf(S.gss)) >= 0; }
+
+/* [[token]] is OUR substitution and always resolves; {{token}} is the
+   authority's and is meant to stay visible. Keeping them as separate
+   brackets means a term we know can never be mistaken for a gap they
+   have to fill. */
+function natText(t){
+  const N = NAT();
+  return String(t).replace(/\[\[(\w+)\]\]/g, (m,k) => N[k] != null ? N[k] : m);
+}
+
+const REPORTS = [{k:"tmss",t:"Annual treasury strategy"},{k:"mid",t:"Mid-year review"},
+                 {k:"out",t:"Annual outturn"},{k:"quart",t:"Quarterly monitoring"}];
+const COLS = [
+  {k:"cfr",   l:"Capital financing<br>requirement", s:"LB1 (a)"},
+  {k:"mrp",   l:"MRP and VRP",            s:"charged in year", natl:{scotland:"Loans fund<br>repayments"}},
+  {k:"rec",   l:"Capital receipts<br>applied", s:"set aside"},
+  {k:"capex", l:"Capital expenditure<br>financed by borrowing"},
+  {k:"obs",   l:"Other balance<br>sheet items", s:"LB1 (b)"},
+  {k:"loans", l:"Existing loan<br>commitments", s:"LB3 (d)", ours:true},
+  {k:"inv",   l:"Existing investment<br>commitments", s:"LB3 (e)"},
+  {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark"},
+  // Affordability. The Prudential Code's own indicator, and the one the tool
+  // produced no figure for at all: it computed six debt and investment limits
+  // and left the question members actually ask — what does this cost us as a
+  // share of what we raise — to prose.
+  {k:"intpay", l:"Interest<br>payable",     s:"on borrowing and leases"},
+  {k:"intinc", l:"Investment<br>income",    s:"netted off"},
+  {k:"nrs",    l:"Net revenue<br>stream",   s:"grants and local taxpayers"},
+  {k:"comminc",l:"Non-treasury<br>investment income", s:"net, if any"}
+];
+/* A column whose name changes with the country — Scotland charges loans fund
+   repayments where England and Wales make MRP. */
+function colLabel(c){
+  const n = (typeof S !== "undefined") ? (S.natOverride || nationOf(S.gss)) : "england";
+  return (c.natl && c.natl[n]) || c.l;
+}
+
+const MTFP = 5;   // years most authorities actually forecast — marked, not enforced
+
+let S = {gss:"", report:"tmss", fy0:2026, asAt:null, natOverride:null, hra:"no", fund:"gf", years:51,
+         loans:[], g:{}, text:{}, sec:"intro",
+         choices:{mrpmethod:"asset", cycle:"thrice"}, rates:[], limits:{}, portfolio:[], portfolioText:"", portfolioNote:"", logo:null};
+const blank = () => { const o={}; COLS.forEach(c=>o[c.k]=Array(S.years).fill(0)); return o; };
+S.g = {gf:blank(), hra:blank()};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const m1 = v => (Math.round(v*10)/10).toLocaleString("en-GB",{minimumFractionDigits:1,maximumFractionDigits:1});
+const fy = y => y + "/" + String((y+1)%100).padStart(2,"0");
+const num = v => { const n=parseFloat(String(v).replace(/[£,\s]/g,"")); return isFinite(n)?n:0; };
+
+/* ---- charts -------------------------------------------------------------- */
+function chart(d, spec){
+  const W=900, H=(spec.h||260)+14, P={t:18,r:18,b:32,l:70};
+  const iw=W-P.l-P.r, ih=H-P.t-P.b;
+  const keys=spec.lines.map(l=>l.k).concat((spec.fill||[]).map(f=>f.k));
+  // Zero is folded into the range only when the axis is meant to include it.
+  // Concatenating it unconditionally made `tight` compute 0 − pad and put a
+  // negative floor under a chart of interest rates.
+  const raw = d.flatMap(x=>keys.map(k=>x[k])).filter(v=>v!=null && isFinite(v));
+  const vals = spec.zero === "tight" ? raw : raw.concat([0]);
+  const hi=Math.max(...vals), lo=Math.min(...vals), pad=(hi-lo)*0.08||1;
+  // spec.zero: "always" forces the axis through zero (money, where crossing
+  // zero changes the meaning); "tight" never does (rates, where it destroys
+  // the resolution). Default keeps the old behaviour.
+  const tight = spec.zero === "tight";
+  const HI = hi+pad;
+  const LO = tight ? lo-pad : (Math.min(0,lo)-(lo<0?pad:0));
+  const X=i=>P.l+iw*i/Math.max(1,d.length-1), Y=v=>P.t+ih-ih*(v-LO)/Math.max(1e-9,HI-LO);
+  const path=k=>d.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(p[k]).toFixed(1)).join(" ");
+  const gl=[]; for(let n=0;n<=4;n++){const v=LO+(HI-LO)*n/4;
+    gl.push(`<line x1="${P.l}" y1="${Y(v).toFixed(1)}" x2="${W-P.r}" y2="${Y(v).toFixed(1)}"
+      stroke="var(--hair)" stroke-width="1"/><text x="${P.l-9}" y="${(Y(v)+3.4).toFixed(1)}"
+      text-anchor="end" font-family="var(--mono)" font-size="11.5" letter-spacing="-0.1"
+      fill="var(--ink2)">${spec.fmt ? spec.fmt(v) : m1(v)}</text>`);}
+  // A left rule and a baseline: the plot reads as a framed field rather than
+  // as lines floating on the page.
+  gl.push(`<line x1="${P.l}" y1="${P.t}" x2="${P.l}" y2="${P.t+ih}"
+    stroke="var(--line2)" stroke-width="1"/>`);
+  const zero = (LO<0 && HI>0) ? `<line x1="${P.l}" y1="${Y(0).toFixed(1)}" x2="${W-P.r}" y2="${Y(0).toFixed(1)}"
+    stroke="var(--line2)" stroke-width="1.5"/>` : "";
+  const fills=(spec.fill||[]).map(f=> f.to!=null
+    ? `<path d="${path(f.k)} ${d.slice().reverse().map((p,i)=>"L"+X(d.length-1-i).toFixed(1)+","+Y(p[f.to]).toFixed(1)).join(" ")} Z"
+        fill="${f.c}" opacity="${f.o||.1}"/>`
+    : `<path d="M${X(0).toFixed(1)},${Y(0).toFixed(1)} ${path(f.k).slice(1)}
+        L${X(d.length-1).toFixed(1)},${Y(0).toFixed(1)} Z" fill="${f.c}" opacity="${f.o||.15}"/>`).join("");
+  // Mark where the authority's own MTFP ends — a note about their data, not a
+  // boundary in ours. Nothing past it is invented.
+  const mk = (spec.mtfp !== false && d.length>MTFP) ? `<line x1="${X(MTFP).toFixed(1)}" y1="${P.t}"
+      x2="${X(MTFP).toFixed(1)}" y2="${P.t+ih}" stroke="var(--muted)"
+      stroke-dasharray="2 4" opacity=".5"/>
+    <text x="${(X(MTFP)+5).toFixed(1)}" y="${P.t+11}" font-family="var(--sans)"
+      font-size="9.5" fill="var(--faint)">beyond the MTFP</text>` : "";
+  const step=Math.max(1,Math.round(d.length/9)), tx=[];
+  for(let i=0;i<d.length;i+=step) tx.push(i);
+  const mark = `<text x="${W-P.r}" y="${P.t+11}" text-anchor="end"
+    font-family="var(--sans)" font-size="11" font-weight="600"
+    fill="var(--muted)" opacity=".42" letter-spacing="0.5">PWLBtoday</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
+    aria-label="${esc(spec.label)}">${gl.join("")}${fills}${zero}${mk}${mark}
+    ${spec.lines.map(l=>`<path d="${path(l.k)}" fill="none" stroke="${l.c}"
+      stroke-width="${l.w||2}" stroke-linejoin="round" stroke-linecap="round"${
+      l.dash?` stroke-dasharray="${l.dash}"`:""}/>`).join("")}
+    ${spec.lines.filter(l=>(l.w||2)>=2).map(l=>{
+      const last=d[d.length-1];
+      return last && last[l.k]!=null
+        ? `<circle cx="${X(d.length-1).toFixed(1)}" cy="${Y(last[l.k]).toFixed(1)}" r="2.6"
+             fill="${l.c}" stroke="var(--card)" stroke-width="1.4"/>` : "";}).join("")}
+    ${tx.map(i=>`<text x="${X(i).toFixed(1)}" y="${H-7}" text-anchor="middle"
+      font-family="var(--mono)" font-size="11.5" fill="var(--ink2)">${d[i].fy}</text>`).join("")}
+  </svg>`;
+}
+const legend = items => `<div class="legend">${items.map(x=>
+  `<span><i style="background:${x.c}"></i>${esc(x.t)}</span>`).join("")}</div>`;
+function otable(d, rows, n){
+  const cols=d.slice(0, n||10);
+  return `<div style="overflow-x:auto"><table class="otable">
+    <thead><tr><th>£m</th>${cols.map(c=>`<th>${fy(c.fy)}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map(r=>`<tr class="${r.cls||''}"><td>${esc(r.l)}</td>${
+      cols.map(c=>`<td>${m1(c[r.k])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+const IND=(n,t,b)=>`<section class="ind"><h3><span class="lbtag">${n}</span>${esc(t)}</h3>${b}</section>`;
+
+function render(){
+  const c = LB[S.gss];
+  $("doc").innerHTML =
+    `<div class="dh"><span>Draft — ${esc(c?c.n:"your authority")}</span>
+      <span>Assembled from your ledger and your commentary</span></div>`
+    + documentHTML(false);
+  if(typeof renderRail === "function"){ renderRail(); renderNav(); }
+  const pc = $("portfoliocharts");
+  if(pc) pc.innerHTML = portfolioCharts();
+  $("prefill").innerHTML = c
+    ? `<span class="t">From the published loan book</span><b>£${m1(c.o)}m</b> across <b>${c.l}</b>
+       PWLB loan${c.l===1?"":"s"}. We hold this with high confidence, but it is a starting
+       point: amend it, and add whatever else you hold. Your own projection of year-end
+       balances is what drives the benchmark.`
+    : `<span class="t">Nothing filled yet</span>Pick an authority above.`;
+}
+
+/* ===========================================================================
+ * The liability benchmark framework — CIPFA's 2026 consultation on the
+ * Prudential and Treasury Management Codes. Five indicators, LB1 to LB5.
+ *
+ * NOTHING IS EXTRAPOLATED. An earlier draft continued the final MRP rate and
+ * held other balance sheet items flat beyond the entered years. That was not
+ * merely unhelpful, it was contrary to the method. The 2021 Guidance Notes
+ * are explicit:
+ *
+ *   "The liability benchmark makes no assumption about the level of future
+ *    prudential borrowing in unknown capital budgets. This avoids making
+ *    large assumptions that may prove to be spectacularly wrong... it enables
+ *    the benchmark to be compared like for like with the existing loans
+ *    portfolio."
+ *
+ * So every year is the authority's own figure. A year left blank is zero, and
+ * the charts show what that implies — which is the honest answer, not a
+ * guess dressed as one.
+ *
+ * DEFINITIONS, from the consultation:
+ *   net treasury position  = CFR less other balance sheet items. Positive is
+ *                            net indebtedness, negative a net surplus.
+ *   treasury investment    = the liquidity allowance where net indebted; the
+ *   benchmark (TIB)          surplus where a surplus exists. Written as
+ *                            max(liquidity, −NTP) so the Code's own test
+ *                            holds — the benchmark is nil only where the
+ *                            surplus EXCEEDS the liquidity allowance.
+ *   liability benchmark    = net treasury position + TIB.
+ *   authorised limit       = the peak of the projected liability benchmark
+ *                            for the coming year and all future years.
+ *   LB4                    = liability benchmark less existing loans. Above
+ *                            zero is borrowing to arrange; below is
+ *                            above-benchmark borrowing.
+ *   LB5 investments        = existing loans + borrowing requirement, less the
+ *                            net treasury position.
+ *      strategic           = TIB less the liquidity allowance.
+ *      excess              = investments above the benchmark — overborrowing.
+ * ======================================================================== */
+/* "all" is the whole authority: the General Fund and HRA balance sheets added
+   together BEFORE the benchmark is computed, which is what a single pool of
+   debt means. It is not the same as adding two benchmarks together, because
+   the treasury investment benchmark takes a max against the liquidity
+   allowance and a max of sums is not the sum of maxes.
+
+   This mattered more than it looks. Under one pool the tool used the General
+   Fund grid for everything and ignored the HRA outright, so a stock-holding
+   authority's liability benchmark came out at the General Fund's share of it —
+   in the demonstration, 525 where the authority's own figure is 936. */
+function combinedGrid(S){
+  const a = S.g.gf, b = S.g.hra, out = {};
+  COLS.forEach(c => {
+    out[c.k] = new Array(S.years);
+    for(let i=0;i<S.years;i++) out[c.k][i] = (a[c.k][i]||0) + (b[c.k][i]||0);
+  });
+  return out;
+}
+
+function buildModel(S, fund){
+  const g = fund === "all" ? combinedGrid(S) : S.g[fund || "gf"];
+  const rows = [];
+  for (let i = 0; i < S.years; i++){
+    const cfr = g.cfr[i] || 0;
+    const obs = g.obs[i] || 0;
+    const liq = g.liq[i] || 0;
+    const el  = g.loans[i] || 0;
+    const ei  = g.inv[i] || 0;
+
+    const ntp = cfr - obs;
+    // The HRA has no liquidity allowance of its own under a two-pool
+    // approach: "As the General Fund manages liquidity on behalf of the
+    // authority, the HRA would have no need for a liquidity allowance.
+    // Therefore the HRA liability benchmark would equal the HRA net
+    // treasury position."
+    const hraTwoPool = fund === "hra" && S.hra === "two";
+    const tib = hraTwoPool ? 0 : Math.max(liq, -ntp);
+    const lb  = hraTwoPool ? ntp : ntp + tib;
+
+    // Financing costs as the Prudential Code defines them, to the extent the
+    // ledger carries them: interest payable, plus the provision made for debt
+    // repayment, less investment income. Depreciation on finance leases and
+    // gains or losses on repurchase are not in the grid, so the figure is what
+    // the authority entered and nothing is imputed for what it did not.
+    const intpay = g.intpay[i] || 0, intinc = g.intinc[i] || 0, nrs = g.nrs[i] || 0;
+    const fincost = intpay + (g.mrp[i]||0) - intinc;
+    const afford  = nrs > 0 ? (fincost / nrs) * 100 : null;
+    // Proportionality: how much of what the authority raises depends on income
+    // from investments it did not have to make. The Code asks whether services
+    // could continue without it, and that question needs a number first.
+    const comminc = g.comminc[i] || 0;
+    const commratio = nrs > 0 ? (comminc / nrs) * 100 : null;
+    rows.push({fy:S.fy0+i, i, cfr, obs, liq, el, ei, ntp, tib, lb,
+               intpay, intinc, nrs, fincost, afford, comminc, commratio,
+               mrp:g.mrp[i]||0, capex:g.capex[i]||0, rec:g.rec[i]||0,
+               br:0, need:0, over:0, inv:0, strategic:0, excess:0, al:0});
+  }
+  const al = rows.reduce((m,r)=>Math.max(m, r.lb), 0);
+  rows.forEach(r => {
+    r.al   = al;
+    r.br   = r.lb - r.el;
+    r.need = Math.max(0, r.br);
+    r.over = Math.max(0, -r.br);
+    r.inv  = Math.max(0, r.el + r.need - r.ntp);
+    r.strategic = Math.max(0, r.tib - r.liq);
+    r.excess    = Math.max(0, r.inv - r.tib);
+  });
+  return rows;
+}
+
+/* The CFR walk is a CHECK, not a derivation. The authority enters its own
+   CFR; we test whether it reconciles with the movement they also entered,
+   and say so. Deriving CFR from the walk would quietly overwrite a figure
+   that came from their balance sheet. */
+function walkCheck(S, fund){
+  // "all" is not a stored grid, so it has to be built the same way buildModel
+  // builds it. Without this the combined view threw on S.g["all"] being
+  // undefined — and because the throw happened while the checks were being
+  // rendered, the previous view's ticks stayed on screen. A check that
+  // silently keeps showing the last answer is worse than one that fails.
+  const g = fund === "all" ? combinedGrid(S) : S.g[fund || "gf"];
+  const bad = [];
+  for (let i = 1; i < S.years; i++){
+    const prev = g.cfr[i-1] || 0, cur = g.cfr[i] || 0;
+    if (!prev && !cur) continue;
+    const implied = prev + (g.capex[i]||0) - (g.mrp[i]||0) - (g.rec[i]||0);
+    if (Math.abs(implied - cur) > 0.05) bad.push({fy:S.fy0+i, implied, cur});
+  }
+  return bad;
+}
+
+/* Existing PWLB loans, year by year, straight from the published book, plus
+   anything the user has added amortised on its own stated terms. This is the
+   one column we can fill for the full horizon. */
+function loanProfile(S, LB){
+  const out = new Array(S.years).fill(0);
+  S.loans.forEach(L => {
+    for (let i = 0; i < S.years; i++){
+      if (L.pwlb){
+        const c = LB[S.gss];
+        let v = c ? (i < c.r.length ? (c.r[i] ?? 0) : 0) : 0;
+        if (c && c.o && L.amt != null) v *= (L.amt / c.o);
+        out[i] += v;
+      } else {
+        const yrs = Math.max(1, (L.mat|0) - S.fy0);
+        out[i] += L.profile === "bullet" ? (i < yrs ? L.amt : 0)
+                                         : Math.max(0, L.amt * (1 - i/yrs));
+      }
+    }
+  });
+  return out.map(v => Math.round(v*10)/10);
+}
+
+/* ===========================================================================
+ * LB test suite — the bench itself.
+ *
+ * Everything below is presentation. The arithmetic is buildModel() and
+ * combinedGrid() from the shipped model.js, and the drawing is the shipped
+ * chart(): a bench with its own copy of either would be testing the copy.
+ *
+ * Three things it exists to answer quickly:
+ *   1. what does this balance sheet produce, on one chart with nothing hidden
+ *   2. do the Code's identities still hold, said out loud rather than implied
+ *   3. what changes between no HRA, one pool and two pools
+ * ======================================================================== */
+const BCOLS = COLS;                       // exactly what the model reads
+let BFUND = "gf";                         // which fund the grid is editing
+
+/* Presets. Each is a shape worth reaching in one click, and each is a case
+   some part of the model treats specially.
+
+   The CFR is WALKED from the opening balance and the movements, never written
+   independently of them. Writing both and hoping they agree is how the first
+   version of this file opened on a red cross: the arithmetic was right and the
+   preset was wrong, which is the worst way round for a bench — it teaches you
+   to ignore the red. Round each year before the next one uses it, or four
+   rounded terms drift past the 0.05 tolerance. */
+const PRESETS = {
+  indebted: {lab:"net indebted throughout",
+    gf:{cfr0:900, mrp:i=>i?30:0, capex:i=>i&&i<5?18:0, rec:i=>i&&i<5?4:0,
+        obs:i=>300*Math.pow(.96,i), liq:40, loans:i=>820*Math.pow(.93,i),
+        inv:i=>60*Math.pow(.95,i),
+        intpay:i=>34*Math.pow(.93,i), intinc:i=>2.3*Math.pow(.95,i), nrs:500, comminc:0},
+    hra:{cfr0:420, mrp:i=>i?12:0, capex:i=>i&&i<5?6:0, rec:0,
+         obs:i=>60*Math.pow(.97,i), liq:12, loans:i=>380*Math.pow(.95,i),
+         inv:i=>15*Math.pow(.95,i),
+         intpay:i=>16*Math.pow(.95,i), intinc:0.6, nrs:160, comminc:0}},
+
+  // The distinction the Code turns on: a surplus BEYOND the allowance makes
+  // the benchmark nil; a surplus within it does not.
+  surplus: {lab:"surplus larger than the liquidity allowance — benchmark nil",
+    gf:{cfr0:200, mrp:i=>i?5:0, capex:0, rec:0,
+        obs:i=>600*Math.pow(.99,i), liq:30, loans:0, inv:i=>420-i*8,
+        intpay:0, intinc:i=>16-i*.3, nrs:500, comminc:0},
+    hra:{cfr0:0}},
+
+  within: {lab:"surplus SMALLER than the allowance — benchmark is not nil",
+    gf:{cfr0:500, mrp:0, capex:0, rec:0,
+        obs:510, liq:40, loans:0, inv:60, intpay:0, intinc:2, nrs:500, comminc:0},
+    hra:{cfr0:0}},
+
+  crossing: {lab:"loans run off faster than the benchmark — a borrowing requirement opens",
+    gf:{cfr0:950, mrp:i=>i?26:0, capex:i=>i&&i<5?18:0, rec:0,
+        obs:i=>250*Math.pow(.985,i), liq:45,
+        loans:i=>800*Math.pow(.80,i), inv:i=>50*Math.pow(.95,i),
+        intpay:i=>33*Math.pow(.80,i), intinc:2, nrs:520, comminc:0},
+    hra:{cfr0:300, mrp:i=>i?9:0, capex:0, rec:0,
+         obs:40, liq:10, loans:i=>280*Math.pow(.86,i), inv:8,
+         intpay:i=>11*Math.pow(.86,i), intinc:.3, nrs:150, comminc:0}},
+
+  over: {lab:"more debt than the benchmark — overborrowed, LB4 negative",
+    gf:{cfr0:400, mrp:i=>i?15:0, capex:0, rec:0,
+        obs:i=>120*Math.pow(.97,i), liq:25, loans:i=>700-i*5, inv:i=>300-i*4,
+        intpay:i=>29-i*.2, intinc:i=>11-i*.15, nrs:450, comminc:0},
+    hra:{cfr0:0}},
+
+  zero: {lab:"nothing entered — every indicator should be nil, and none should throw",
+    gf:{}, hra:{}}
+};
+
+function bBlank(years){
+  const g = {};
+  BCOLS.forEach(c => { g[c.k] = new Array(years).fill(0); });
+  return g;
+}
+function bApply(g, spec, years){
+  const r1 = v => Math.round(v * 10) / 10;
+  const at = (v, i) => r1(typeof v === "function" ? v(i) : (v || 0));
+  Object.keys(spec || {}).forEach(k => {
+    if(!g[k]) return;
+    for(let i=0;i<years;i++) g[k][i] = at(spec[k], i);
+  });
+  // Walk the CFR from its movements so the reconciliation check passes by
+  // construction. Round before the next year reads it — see the note above.
+  if(spec && spec.cfr0 != null){
+    let cfr = r1(spec.cfr0);
+    for(let i=0;i<years;i++){
+      if(i) cfr = r1(Math.max(0, cfr + (g.capex[i]||0) - (g.mrp[i]||0) - (g.rec[i]||0)));
+      g.cfr[i] = cfr;
+    }
+  }
+}
+function bPreset(name){
+  const P = PRESETS[name], y = S.years;
+  S.g = {gf:bBlank(y), hra:bBlank(y)};
+  bApply(S.g.gf, P.gf, y);
+  bApply(S.g.hra, P.hra, y);
+  $("bchartnote").dataset.preset = P.lab;
+  bAll();
+}
+
+/* ---- the input grid ------------------------------------------------------ */
+function bGrid(){
+  const g = S.g[BFUND], y = S.years;
+  let h = "<thead><tr><th>Year</th>" +
+    BCOLS.map(c => `<th title="${esc(c.s||"")}">${c.l.replace(/<br>/g," ")}</th>`).join("") +
+    "</tr></thead><tbody>";
+  for(let i=0;i<y;i++){
+    h += `<tr><th>${fy(S.fy0+i)}</th>` + BCOLS.map(c =>
+      `<td><input inputmode="decimal" data-k="${c.k}" data-i="${i}"
+        value="${g[c.k][i] || ""}"></td>`).join("") + "</tr>";
+  }
+  $("bgrid").innerHTML = h + "</tbody>";
+  $("bgrid").querySelectorAll("input").forEach(inp =>
+    inp.addEventListener("input", e => {
+      const t = e.target;
+      S.g[BFUND][t.dataset.k][+t.dataset.i] = num(t.value);
+      bOut();                                  // redraw outputs, leave the grid alone
+    }));
+  $("bfundlab").textContent = S.hra === "no" ? "" : `— ${BFUND === "gf" ? "General Fund" : "HRA"}`;
+  $("bfundgf").classList.toggle("on", BFUND === "gf");
+  $("bfundhra").classList.toggle("on", BFUND === "hra");
+  $("bfundhra").style.display = S.hra === "no" ? "none" : "";
+}
+
+/* ---- one chart, everything on it ----------------------------------------
+ * Nothing is hidden and nothing is chosen for the reader. In the tool these
+ * series are spread across LB1 to LB5 because a committee paper reads one
+ * question at a time; here they are together because the question is whether
+ * they are consistent with each other.
+ */
+const BSERIES = [
+  {k:"cfr", c:"var(--l-cfr)",   t:"CFR",                    w:2},
+  {k:"obs", c:"var(--l-obs)",   t:"Other balance sheet",     w:1.6, dash:"5 3"},
+  {k:"ntp", c:"var(--l-ntp)",   t:"Net treasury position",   w:2.2},
+  {k:"tib", c:"var(--l-inv)",   t:"Investment benchmark",    w:1.8},
+  {k:"lb",  c:"var(--l-lb)",    t:"Liability benchmark",     w:2.6},
+  {k:"el",  c:"var(--l-debt)",  t:"Existing loans",          w:2},
+  {k:"ei",  c:"var(--l-ei)",    t:"Existing investments",    w:1.6, dash:"3 3"},
+  {k:"al",  c:"var(--l-al)",    t:"Authorised limit",        w:1.6, dash:"7 4"},
+  {k:"inv", c:"var(--l-strat)", t:"LB5 investments",         w:1.6, dash:"2 3"}
+];
+
+function bChart(d){
+  const rows = d.map(r => {
+    const o = {fy: fy(r.fy).slice(2), i: r.i};
+    BSERIES.forEach(s => o[s.k] = r[s.k]);
+    return o;
+  });
+  $("bchart").innerHTML = `<div class="chartwrap">${chart(rows, {
+    label: "every series", h: 300, zero: "tight", mtfp: false,
+    fmt: v => m1(v),
+    lines: BSERIES.map(s => ({k:s.k, c:s.c, w:s.w, dash:s.dash}))
+  })}</div>`;
+  $("blegend").innerHTML = BSERIES.map(s =>
+    `<span><i style="background:${s.c}"></i>${esc(s.t)}</span>`).join("");
+}
+
+/* ---- the identities ------------------------------------------------------
+ * The same statements test_model.js asserts, said out loud against whatever
+ * is in the grid. A bench that only draws lets a broken definition look
+ * plausible; this makes it say so.
+ */
+function bInvariants(d, fund){
+  const twoPoolHra = fund === "hra" && S.hra === "two";
+  const near = (a,b) => Math.abs(a-b) < 0.051;
+  const all = (f) => d.every(f);
+  const first = (f) => d.find(r => !f(r));
+
+  const tests = [
+    ["NTP = CFR less other balance sheet items", "ntp = cfr − obs",
+     all(r => near(r.ntp, r.cfr - r.obs))],
+    [twoPoolHra ? "Two-pool HRA has no investment benchmark"
+                : "TIB = max(liquidity allowance, −NTP)",
+     twoPoolHra ? "tib = 0" : "tib = max(liq, −ntp)",
+     all(r => near(r.tib, twoPoolHra ? 0 : Math.max(r.liq, -r.ntp)))],
+    [twoPoolHra ? "Two-pool HRA benchmark is its net treasury position"
+                : "Liability benchmark = NTP + investment benchmark",
+     twoPoolHra ? "lb = ntp" : "lb = ntp + tib",
+     all(r => near(r.lb, twoPoolHra ? r.ntp : r.ntp + r.tib))],
+    ["The benchmark is never negative", "lb ≥ 0", all(r => r.lb >= -0.051)],
+    // The distinction the Code turns on, stated as two separate claims. The
+    // first attempt wrote it as one equivalence and fired on an all-zero sheet,
+    // where there is no surplus and no allowance and a nil benchmark is simply
+    // correct — a bench that cries wolf on the empty case is worse than one
+    // that says nothing.
+    ["A surplus BEYOND the allowance makes the benchmark nil",
+     "−ntp > liq ⇒ lb = 0",
+     all(r => twoPoolHra || !(-r.ntp > r.liq + 0.051) || near(r.lb, 0))],
+    ["A surplus WITHIN the allowance does not",
+     "0 < −ntp ≤ liq ⇒ lb = ntp + liq > 0",
+     all(r => twoPoolHra || !(r.ntp < -0.051 && -r.ntp < r.liq - 0.051)
+              || near(r.lb, r.ntp + r.liq))],
+    ["Authorised limit is the peak of the projected benchmark", "al = max(lb)",
+     near(d[0].al, d.reduce((m,r) => Math.max(m, r.lb), 0)) &&
+       all(r => near(r.al, d[0].al))],
+    ["LB4 is the benchmark less existing loans", "br = lb − el",
+     all(r => near(r.br, r.lb - r.el))],
+    ["A gap is a borrowing requirement; a surplus of debt is overborrowing",
+     "need = max(0, br), over = max(0, −br)",
+     all(r => near(r.need, Math.max(0, r.br)) && near(r.over, Math.max(0, -r.br)))],
+    ["Strategic investments are the benchmark above the allowance",
+     "strategic = max(0, tib − liq)",
+     all(r => near(r.strategic, Math.max(0, r.tib - r.liq)))],
+    ["Nothing is extrapolated past the figures entered",
+     "a blank year stays nil",
+     all(r => !(r.cfr === 0 && r.obs === 0 && r.liq === 0) || near(r.lb, 0))]
+  ];
+
+  const walk = walkCheck(S, fund);
+  tests.push(["CFR reconciles with MRP, capital spend and receipts applied",
+    "cfr = prev + capex − mrp − rec",
+    walk.length === 0,
+    walk.length ? `first disagreement ${fy(walk[0].fy)}: entered ${m1(walk[0].cur)}, `
+                + `the walk implies ${m1(walk[0].implied)}` : ""]);
+
+  $("binv").innerHTML = tests.map(([name, expr, pass, extra]) =>
+    `<div class="${pass ? "" : "bad"}">
+       <span class="tick ${pass ? "ok" : "no"}">${pass ? "✓" : "✕"}</span>
+       <span class="w"><b>${esc(name)}</b> — <code>${esc(expr)}</code>${
+         extra ? " · " + esc(extra) : ""}</span>
+     </div>`).join("");
+}
+
+/* ---- every derived figure ------------------------------------------------ */
+const BOUT = [
+  ["cfr","CFR"], ["obs","Other balance sheet"], ["ntp","Net treasury position"],
+  ["liq","Liquidity allowance"], ["tib","Investment benchmark"],
+  ["lb","Liability benchmark"], ["al","Authorised limit"],
+  ["el","Existing loans"], ["br","LB4 (benchmark − loans)"],
+  ["need","Borrowing requirement"], ["over","Overborrowing"],
+  ["ei","Existing investments"], ["inv","LB5 investments"],
+  ["strategic","of which strategic"], ["excess","of which excess"],
+  ["fincost","Financing costs"], ["afford","Financing costs / net revenue %"]
+];
+function bDerived(d){
+  const head = "<thead><tr><th></th>" +
+    d.map(r => `<th>${fy(r.fy)}</th>`).join("") + "</tr></thead><tbody>";
+  const body = BOUT.map(([k, lab]) => {
+    const hi = (k === "lb" || k === "al") ? " class=\"hi\"" : "";
+    return `<tr${hi}><th>${esc(lab)}</th>` + d.map(r => {
+      const v = r[k];
+      return `<td>${v == null ? "–" : (k === "afford" ? v.toFixed(1) + "%" : m1(v))}</td>`;
+    }).join("") + "</tr>";
+  }).join("");
+  $("bderived").innerHTML = head + body + "</tbody>";
+}
+
+/* ---- redraw --------------------------------------------------------------- */
+function bOut(){
+  const want = $("bshow").value;
+  // "Whole authority" is only meaningful when there is a second fund, and the
+  // HRA view is only meaningful when there is an HRA.
+  const fund = (S.hra === "no") ? "gf" : want;
+  const d = buildModel(S, fund);
+  bChart(d);
+  bInvariants(d, fund);
+  bDerived(d);
+  const lab = $("bchartnote").dataset.preset || "";
+  const names = {gf:"General Fund", hra:"HRA", all:"whole authority, combined before the benchmark"};
+  $("bchartnote").textContent =
+    `${names[fund]} · ${S.hra === "no" ? "no HRA" : (S.hra === "two" ? "two pool" : "one pool")}`
+    + (lab ? ` · ${lab}` : "")
+    + (fund === "all" ? " · the combined sheet is modelled once, not two benchmarks added"
+                      : "");
+}
+function bAll(){ bGrid(); bOut(); }
+
+/* ---- wiring --------------------------------------------------------------- */
+(function bench(){
+  S.gss = "";
+  S.fy0 = new Date().getMonth() >= 3 ? 2026 : 2026;   // fixed; the bench is not dated
+  S.years = 10;
+  S.hra = "no";
+  S.g = {gf:bBlank(S.years), hra:bBlank(S.years)};
+
+  $("bmode").addEventListener("change", e => {
+    S.hra = e.target.value;
+    if(S.hra === "no"){ BFUND = "gf"; $("bshow").value = "gf"; }
+    // Whole-authority and HRA views mean nothing without a second fund.
+    Array.from($("bshow").options).forEach(o => {
+      o.disabled = (S.hra === "no") && o.value !== "gf";
+    });
+    bAll();
+  });
+  $("byears").addEventListener("change", e => {
+    const y = Math.max(2, Math.min(60, +e.target.value || 10));
+    e.target.value = y;
+    ["gf","hra"].forEach(f => BCOLS.forEach(c => {
+      const col = S.g[f][c.k].slice(0, y);
+      while(col.length < y) col.push(0);
+      S.g[f][c.k] = col;
+    }));
+    S.years = y;
+    bAll();
+  });
+  $("bshow").addEventListener("change", bOut);
+  $("bfundgf").addEventListener("click", ()=>{ BFUND = "gf"; bGrid(); });
+  $("bfundhra").addEventListener("click", ()=>{ BFUND = "hra"; bGrid(); });
+  document.querySelectorAll("[data-preset]").forEach(b =>
+    b.addEventListener("click", () => {
+      document.querySelectorAll("[data-preset]").forEach(x => x.classList.remove("on"));
+      b.classList.add("on");
+      bPreset(b.dataset.preset);
+    }));
+
+  bPreset("crossing");
+  document.querySelector('[data-preset="crossing"]').classList.add("on");
+})();
+
+
+</script>

@@ -987,7 +987,12 @@ function buildModel(S, fund){
    and say so. Deriving CFR from the walk would quietly overwrite a figure
    that came from their balance sheet. */
 function walkCheck(S, fund){
-  const g = S.g[fund || "gf"];
+  // "all" is not a stored grid, so it has to be built the same way buildModel
+  // builds it. Without this the combined view threw on S.g["all"] being
+  // undefined — and because the throw happened while the checks were being
+  // rendered, the previous view's ticks stayed on screen. A check that
+  // silently keeps showing the last answer is worse than one that fails.
+  const g = fund === "all" ? combinedGrid(S) : S.g[fund || "gf"];
   const bad = [];
   for (let i = 1; i < S.years; i++){
     const prev = g.cfr[i-1] || 0, cur = g.cfr[i] || 0;
