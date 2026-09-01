@@ -517,16 +517,38 @@ svg.ctip .hits rect{cursor:crosshair}
    "not applicable" instead of "you have not filled this in". */
 td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
   transparent 4px,transparent 8px);opacity:.7}
+/* A box you can write a real paragraph in. These were four rows deep, which
+   is enough for a note and not enough for the eight hundred words a section
+   like the investment strategy actually runs to — and a box that looks small
+   gets a small answer. */
+.q textarea{min-height:340px;line-height:1.65;font-size:14px;padding:14px 16px;
+  resize:vertical}
+.secbody .q{margin-bottom:22px}
+.secbody .q label{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:7px}
+/* Contents for the draft. Screen only — the exported document gets Word's own
+   navigation, and a list of links in a printed paper is dead ink. */
+.toc{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;margin:0 0 22px;
+  padding:13px 15px;background:var(--sunken);border:1px solid var(--line);
+  border-radius:var(--r-sm)}
+.toc .tl{font-family:var(--sans);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;margin-right:4px}
+.toc a{font-family:var(--sans);font-size:12.5px;color:var(--ink2);text-decoration:none;
+  padding:3px 9px;border:1px solid var(--line2);border-radius:99px;background:var(--card);
+  white-space:nowrap}
+.toc a:hover{border-color:var(--accent);color:var(--accent)}
+.toc a b{font-family:var(--mono);font-size:11px;color:var(--muted);margin-right:6px;
+  font-weight:600}
+.toc a:hover b{color:var(--accent)}
+.dsec{scroll-margin-top:96px}
 </style>
 
 <div class="shell">
-  <!-- The masthead says what this is and gets out of the way. What it used to
-       carry — a paragraph of description and the Code edition strip — is
-       either obvious once you are looking at the tool or already stated in the
-       draft's own footer, which is where a reader needs it. -->
+  <!-- Nothing above the steps. The name is in the browser tab and on the page
+       that sent you here; repeating it over the work costs a line of screen on
+       every visit to say something the reader knew before they arrived. The
+       loan book stamp moved into step 1, beside the authority it describes,
+       which is where it is actually read. -->
   <header class="mast">
-    <h1>PWLB<b>reports</b><span class="proto">Prototype</span></h1>
-    <div class="stamp" id="stamp"></div>
     <a class="benchlink" href="lb-test-suite.html">LB test suite &rarr;</a>
   </header>
 
@@ -545,7 +567,7 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
       <span class="why">Picking your council fills the PWLB run-off, loan by loan, for every
         year to the last maturity.</span></div>
     <div class="pbody"><div class="setup">
-      <div><label for="council">Authority<span class="hint">311 in the loan book</span></label>
+      <div><label for="council">Authority<span class="hint" id="stamp"></span></label>
         <select id="council"></select></div>
       <div><label for="rtype">Report</label><select id="rtype"></select></div>
       <div><label for="fy0">First year<span class="hint">balance sheet date</span></label>
@@ -1986,6 +2008,35 @@ function rateViewNarrative(){
 
 
 
+
+/* The market in a sentence, for someone writing one.
+ *
+ * Not a dashboard: the figures a paragraph of economic commentary is built
+ * from, and nothing else. Everything here is already in the report; this is
+ * the reading, in words, so the writer does not have to take it off a chart.
+ */
+function marketFacts(){
+  const h = mktHist();
+  if(!h.length) return "No market data is loaded.";
+  const last = h[h.length - 1], first = h[0];
+  const terms = rateTerms().filter(k => last[k] != null && first[k] != null);
+  const pick = terms.filter(k => ["1Y","5Y","10Y","20Y","50Y"].indexOf(k) >= 0);
+  const use = pick.length ? pick : terms.slice(0, 4);
+  const now = use.map(k => `<b>${tenorLabel(k)} ${(last[k] - (MKT.cert_margin||0)).toFixed(2)}%</b>`).join(", ");
+  const moved = use.map(k => {
+    const d = last[k] - first[k];
+    return `${tenorLabel(k)} ${d >= 0 ? "+" : "\u2212"}${Math.abs(d).toFixed(2)}`;
+  }).join(", ");
+  const bank = (FC.implied && FC.implied.length)
+    ? `Bank Rate is <b>${FC.implied[0].toFixed(2)}%</b> and the market prices
+       <b>${FC.implied[Math.min(2, FC.implied.length-1)].toFixed(2)}%</b> three years out. `
+    : "";
+  return `${bank}PWLB certainty rates at ${esc(fcDate(effectiveAsAt()))}: ${now}.
+    Over the twelve months to that date they moved ${moved} points.
+    The certainty rate is <b>${((MKT.cert_margin||0.2)*100).toFixed(0)} basis points</b>
+    below the standard rate, and is set at a fixed margin over the equivalent gilt.`;
+}
+
 /* ===========================================================================
  * Pasting a loan book and an investment portfolio.
  *
@@ -3261,6 +3312,15 @@ const ALL = ["tmss","mid","out","quart"];
 const FWD = ["tmss"];                    // forward-looking only
 const BACK = ["out","mid","quart"];      // reports on a period that has happened
 
+/* One question to a section.
+ *
+ * Five of these carried two boxes, and a second box under a first is a box
+ * that gets skipped: the eye takes the section as answered once anything is in
+ * it. They are sections of their own now, each with the room to write a real
+ * paragraph in. The REPORT is unchanged — it still gathers rescheduling under
+ * the borrowing strategy and the adviser under governance, because that is
+ * where a reader expects them. This is about drafting, not about the paper.
+ */
 const SECTIONS = [
   {k:"intro", n:"1", t:"Introduction", kind:"yours", in:ALL,
    lead:"Why the strategy is before members, and what they are being asked to approve.",
@@ -3269,24 +3329,33 @@ const SECTIONS = [
            +"and when the strategy was considered by scrutiny."}]},
 
   {k:"context", n:"2", t:"External context", kind:"both", in:ALL,
-   lead:"The economic and market backdrop. We supply the rates; the outlook is yours or your adviser's.",
+   lead:"The economic backdrop. We supply the rates; the outlook is yours or your adviser's.",
    qs:[{k:"econ", l:"Economic commentary",
         d:DRAFT.econ, ph:"Bank Rate and the MPC's direction, inflation, growth, labour market, and what your "
-           +"treasury adviser expects. Most authorities take this from their adviser — say which."},
-       {k:"rateview", l:"Interest rate view",
+           +"treasury adviser expects. Most authorities take this from their adviser — say which."}]},
+
+  {k:"rateview", n:"2b", t:"Interest rate view", kind:"both", in:ALL,
+   lead:"The assumption you are working to, and whose it is.",
+   qs:[{k:"rateview", l:"Interest rate view",
         d:DRAFT.rateview, ph:"Your working assumption for Bank Rate and PWLB rates across the forecast, and the "
            +"source. State it as an assumption, not a forecast of your own."}]},
 
   {k:"balance", n:"3", t:"Balance sheet summary and forecast", kind:"auto", in:ALL,
    lead:"Produced from your ledger — CFR, other balance sheet items, net treasury position."},
 
+  {k:"portfolio", n:"3b", t:"Current portfolio position", kind:"auto", in:ALL,
+   lead:"Where the authority stands today, from the loan book and your ledger."},
+
   {k:"borrow", n:"4", t:"Borrowing strategy", kind:"both", in:FWD,
    lead:"LB4 gives the requirement; the strategy for meeting it is a judgement.",
    qs:[{k:"borrow_body", l:"How you intend to borrow",
         d:DRAFT.borrow_body, ph:"Sources considered — PWLB certainty rate, market loans, other authorities, "
            +"UK Infrastructure Bank. Preferred maturities and why. Timing, and your policy on "
-           +"borrowing in advance of need."},
-       {k:"resched", l:"Debt rescheduling",
+           +"borrowing in advance of need."}]},
+
+  {k:"resched", n:"4b", t:"Debt rescheduling", kind:"yours", in:FWD,
+   lead:"Whether early repayment or restructuring is on the table this year.",
+   qs:[{k:"resched", l:"Debt rescheduling",
         d:DRAFT.resched, ph:"Whether rescheduling or premature repayment is being considered, and the "
            +"circumstances in which it would be taken."}]},
 
@@ -3294,13 +3363,22 @@ const SECTIONS = [
    lead:"LB5 gives the projection; the counterparty policy is yours.",
    qs:[{k:"invest_body", l:"Investment objectives and approach",
         d:DRAFT.invest_body, ph:"Security, liquidity, yield — in that order. Instruments used, and the balance "
-           +"between internally and externally managed funds."},
-       {k:"credit", l:"Creditworthiness and counterparty policy",
+           +"between internally and externally managed funds."}]},
+
+  {k:"credit", n:"5c", t:"Creditworthiness and counterparty policy", kind:"yours", in:FWD,
+   lead:"Who you will lend to, how much, and for how long.",
+   qs:[{k:"credit", l:"Creditworthiness and counterparty policy",
         d:DRAFT.credit, ph:"Minimum credit criteria, the rating agencies used, monetary and time limits by "
            +"counterparty type, and what happens on a downgrade."}]},
 
+  {k:"corefunds", n:"5b", t:"Core funds and expected investment balances", kind:"both", in:FWD,
+   lead:"The balances available to invest, which drive LB5.",
+   qs:[{k:"corefunds_body", l:"Core funds and cash flow",
+        d:DRAFT.corefunds_body, ph:"Reserves, balances and provisions held; the extent to which they are used for "
+           +"internal borrowing; and the expected pattern of cash flow across the year."}]},
+
   {k:"mrp", n:"6", t:"[[mrpTitle]]", kind:"both", in:FWD,
-   lead:"The MRP statement members approve. Your ledger carries the charge; the policy is yours.",
+   lead:"The statement members approve. Your ledger carries the charge; the policy is yours.",
    qs:[{k:"mrp_body", l:"[[mrpTitle]] policy statement",
         d:DRAFT.mrp_body, ph:"Method for each class of expenditure — asset life, annuity, or equal instalment. "
            +"Any voluntary provision. Whether the policy has changed, and the effect if so."}]},
@@ -3308,39 +3386,24 @@ const SECTIONS = [
   {k:"indicators", n:"7", t:"Treasury management prudential indicators", kind:"auto", in:ALL,
    lead:"LB1 to LB5 and the authorised limit, produced from your ledger."},
 
-  {k:"activity", n:"8", t:"Borrowing and investment activity", kind:"yours", in:BACK,
-   lead:"For an outturn or mid-year report: what actually happened.",
-   qs:[{k:"activity_body", l:"Borrowing and investment activity",
-        d:DRAFT.activity_body, ph:"New loans taken — amount, rate, maturity, lender. Repayments and rescheduling. "
-           +"Investment activity and average balances."},
-       {k:"deals", l:"Individual transactions (optional)",
-        d:DRAFT.deals, ph:"Some authorities list every deal; others summarise. If you list them, one line "
-           +"each: date, counterparty, amount, rate, maturity."}]},
-
-  {k:"portfolio", n:"3b", t:"Current portfolio position", kind:"auto", in:ALL,
-   lead:"Where the authority stands today — written by 21% of strategies as its own section, "
-       +"and produced here from the loan book and your ledger."},
-
-  {k:"corefunds", n:"5b", t:"Core funds and expected investment balances", kind:"both", in:FWD,
-   lead:"The balances available to invest, which drive LB5. Written by 15% of strategies.",
-   qs:[{k:"corefunds_body", l:"Core funds and cash flow",
-        d:DRAFT.corefunds_body, ph:"Reserves, balances and provisions held; the extent to which they are used for "
-           +"internal borrowing; and the expected pattern of cash flow across the year."}]},
-
   {k:"compliance", n:"7b", t:"Compliance with treasury and prudential limits", kind:"both",
    in:BACK,
-   lead:"Did the authority stay within the limits it set? Written by a tenth of outturns and "
-       +"mid-year reports, and by none of the strategies — it can only be answered backwards.",
+   lead:"Did the authority stay within the limits it set? It can only be answered backwards.",
    qs:[{k:"compliance_body", l:"Commentary on any breach",
         d:DRAFT.compliance_body, ph:"If a limit was exceeded, when, by how much, why, and what was done. If none were, "
            +"say so plainly — members are entitled to a clear statement either way."}]},
 
-  {k:"training", n:"10b", t:"Knowledge, skills and training", kind:"both", in:ALL,
-   lead:"Its own section in 31% of strategies. The Code requires the authority to address the "
-       +"knowledge and skills of officers and of the members who scrutinise them.",
-   qs:[{k:"training_body", l:"Training provided and how it is assessed",
-        d:DRAFT.training_body, ph:"What training officers and members received, when, from whom, and how the "
-           +"authority satisfies itself that it was adequate."}]},
+  {k:"activity", n:"8", t:"Borrowing and investment activity", kind:"yours", in:BACK,
+   lead:"For an outturn or mid-year report: what actually happened.",
+   qs:[{k:"activity_body", l:"Borrowing and investment activity",
+        d:DRAFT.activity_body, ph:"New loans taken — amount, rate, maturity, lender. Repayments and rescheduling. "
+           +"Investment activity and average balances."}]},
+
+  {k:"deals", n:"8b", t:"Individual transactions", kind:"yours", in:BACK,
+   lead:"Deal by deal, or summarised — whichever your practice is.",
+   qs:[{k:"deals", l:"Individual transactions (optional)",
+        d:DRAFT.deals, ph:"Some authorities list every deal; others summarise. If you list them, one line "
+           +"each: date, counterparty, amount, rate, maturity."}]},
 
   {k:"nontreasury", n:"9", t:"Non-treasury investments and commercial activity", kind:"yours", in:ALL,
    lead:"Required where the authority holds investments that are not for treasury purposes.",
@@ -3353,12 +3416,22 @@ const SECTIONS = [
    lead:"Who decides, who is told, and how often.",
    qs:[{k:"gov_body", l:"Governance and reporting cycle",
         d:DRAFT.gov_body, ph:"Scheme of delegation, the [[officer]]'s role, which committee receives what and "
-           +"when. Member and officer training — the Code requires you to address knowledge "
-           +"and skills."},
-       {k:"advisers", l:"Treasury advisers",
+           +"when."}]},
+
+  {k:"training", n:"10b", t:"Knowledge, skills and training", kind:"both", in:ALL,
+   lead:"The Code requires the authority to address the knowledge and skills of officers and "
+       +"of the members who scrutinise them.",
+   qs:[{k:"training_body", l:"Training provided and how it is assessed",
+        d:DRAFT.training_body, ph:"What training officers and members received, when, from whom, and how the "
+           +"authority satisfies itself that it was adequate."}]},
+
+  {k:"advisers", n:"10c", t:"Treasury advisers", kind:"yours", in:ALL,
+   lead:"Who advises you, and how their advice is evaluated.",
+   qs:[{k:"advisers", l:"Treasury advisers",
         d:DRAFT.advisers, ph:"Who advises you, the scope of the contract, and how their advice is evaluated. "
            +"The Code requires you to state that responsibility remains with the authority."}]}
 ];
+
 
 
 /* The same question needs different words in a forward-looking strategy and a
@@ -3469,10 +3542,19 @@ function autoNote(k){
       <b>£${m1(d[0].al)}m</b>, the peak of your projected liability benchmark. Under the 2026
       proposals the operational boundary and the maturity structure of borrowing are no longer
       formal indicators.`);
+  // WHAT A WRITER NEEDS HERE IS THE FIGURES, NOT THE CHARTS.
+  //
+  // This used to render marketBlock() in full — the curve table, two rate
+  // charts, the curve over time, the Bank Rate boxes and the range table —
+  // underneath a box asking for one paragraph of commentary. All of it goes
+  // into the report anyway, so it was shown twice, and the second time it was
+  // between the writer and the thing they were writing.
+  //
+  // What survives is the handful of numbers a sentence actually needs.
   if(k==="context")
-    return box("We supply the rates", `The tables and chart below go into your report as they
-      are. The economic narrative above stays yours — an authority's view of rates is a
-      judgement, and attributing ours to you would be wrong.`) + marketBlock();
+    return box("The figures, for your paragraph", marketFacts())
+      + `<p class="note">The rate tables and charts go into the report in full — you do not
+         need them here to write this.</p>`;
   if(k==="borrow"){
     const peak=d.reduce((a,b)=>b.need>a.need?b:a,d[0]);
     return box("From your ledger", peak.need>0.05
@@ -3832,7 +3914,7 @@ function documentHTML(forExport){
   // alone, which the consultation does not split either way.
   const all = hasHRA ? buildModel(S,"all") : d;
   const body = secs.map(s=>`
-    <section class="dsec"><h3><span class="secn">${s.n}</span>${esc(natText(s.t))}</h3>${s.b}
+    <section class="dsec" id="ds-${s.k}"><h3><span class="secn">${s.n}</span>${esc(natText(s.t))}</h3>${s.b}
     ${s.indicators ? indicatorSplit(d, hra, all, hasHRA, twoPool, forExport) : ""}</section>`).join("");
   const outstanding = secs.filter(s=>/class="gap"/.test(s.b)).length;
   const head = (S.logo ? `<img class="doclogo" src="${S.logo}" alt="">` : "")
@@ -3841,7 +3923,22 @@ function documentHTML(forExport){
   const warn = outstanding && !forExport
     ? `<div class="warn">${outstanding} section${outstanding===1?"":"s"} still to be written —
        shown in the draft as gaps so nothing reads as finished when it is not.</div>` : "";
-  if(!forExport) return head + warn + body + caveat();
+  /* A contents, not a set of tabs.
+   *
+   * This is a document. It will be exported to Word and read start to finish
+   * by people who did not write it, and the argument runs in order — the
+   * balance sheet, then what it implies, then what the authority intends to do
+   * about it. Splitting it into tabs would make the thing whose job is to read
+   * as one paper impossible to read as one paper, and would hide from the
+   * author how long it actually is.
+   *
+   * So: jump links, screen only. The document stays whole and becomes
+   * navigable, which is the part that was missing. */
+  const toc = secs.length > 3 ? `<nav class="toc no-print">
+      <span class="tl">Contents</span>
+      ${secs.map(x=>`<a href="#ds-${x.k}"><b>${x.n}</b>${esc(natText(x.t))}</a>`).join("")}
+    </nav>` : "";
+  if(!forExport) return head + warn + toc + body + caveat();
   // Charts are drawn with CSS custom properties, which resolve only inside
   // this page. Exported to Word they would be undefined and every line would
   // vanish — a chart that silently loses its data is the worst thing we could
@@ -4838,7 +4935,7 @@ function stampSaved(word){
     const b=e.target.closest("button"); if(!b) return;
     S.sec=b.dataset.s; renderSections(); });
 
-  $("stamp").innerHTML=`PWLB loan book <b>3 Aug 2026</b><br>${keys.length} authorities`;
+  $("stamp").textContent = `${keys.length} authorities · loan book 3 Aug 2026`;
   fundTabs(); buildLedger(); loanRows(); renderSections(); render();
   wireSteps();
 })();
