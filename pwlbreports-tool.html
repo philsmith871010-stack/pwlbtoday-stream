@@ -542,15 +542,18 @@ svg.ctip .hits rect{cursor:crosshair}
 
       <h3 class="sub">Debt</h3>
       <table class="loans"><thead><tr>
-        <th style="width:34%">Source</th><th style="width:22%">Amount £m</th>
-        <th style="width:26%">Final maturity</th><th style="width:14%">Profile</th><th></th>
+        <th style="width:28%">Source</th><th style="width:18%">Amount £m</th>
+        <th style="width:22%">Final maturity</th><th style="width:14%">Profile</th>
+        <th style="width:12%">Rate</th><th></th>
       </tr></thead><tbody id="loanrows"></tbody></table>
       <div class="ltools"><button type="button" id="addloan">Add a debt source</button>
+        <button type="button" class="primary" id="demoport">Fill a demonstration portfolio</button>
         <button type="button" id="pasteloans">Paste your loans</button>
         <button type="button" class="ghost" id="tmplloans">Template .csv</button>
         <button type="button" class="ghost" id="showloans">Show the PWLB advances</button>
         <span class="hintline">PWLB is filled from the published book. Everything here is
           yours to amend.</span></div>
+      <div id="debtcost"></div>
       <div class="pastebox" id="pwlbloans" hidden>
         <div id="pwlbloanbody"></div>
       </div>
@@ -824,16 +827,16 @@ const COLS = [
   {k:"capex", l:"Capital expenditure<br>financed by borrowing"},
   {k:"obs",   l:"Other balance<br>sheet items", s:"LB1 (b)"},
   {k:"loans", l:"Existing loan<br>commitments", s:"LB3 (d)", ours:true},
-  {k:"inv",   l:"Existing investment<br>commitments", s:"LB3 (e)"},
-  {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark"},
+  {k:"inv",   l:"Existing investment<br>commitments", s:"LB3 (e)", gf:true},
+  {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark", gf:true},
   // Affordability. The Prudential Code's own indicator, and the one the tool
   // produced no figure for at all: it computed six debt and investment limits
   // and left the question members actually ask — what does this cost us as a
   // share of what we raise — to prose.
   {k:"intpay", l:"Interest<br>payable",     s:"on borrowing and leases"},
-  {k:"intinc", l:"Investment<br>income",    s:"netted off"},
+  {k:"intinc", l:"Investment<br>income",    s:"netted off", gf:true},
   {k:"nrs",    l:"Net revenue<br>stream",   s:"grants and local taxpayers"},
-  {k:"comminc",l:"Non-treasury<br>investment income", s:"net, if any"}
+  {k:"comminc",l:"Non-treasury<br>investment income", s:"net, if any", gf:true}
 ];
 /* A column whose name changes with the country — Scotland charges loans fund
    repayments where England and Wales make MRP. */
@@ -841,6 +844,22 @@ function colLabel(c){
   const n = (typeof S !== "undefined") ? (S.natOverride || nationOf(S.gss)) : "england";
   return (c.natl && c.natl[n]) || c.l;
 }
+
+/* WHAT AN HRA DOES NOT HAVE.
+ *
+ * The General Fund manages treasury for the authority. The HRA has a capital
+ * financing requirement and debt against it, but it does not hold an
+ * investment portfolio, does not earn investment income, does not set its own
+ * minimum liquidity balance, and does not make non-treasury investments —
+ * those are the authority's, and the authority means the General Fund.
+ *
+ * So those four columns are not shown on the HRA at all, rather than shown and
+ * left at nil. A column you can type into is a question, and asking an HRA for
+ * its investment balances invites a figure that belongs to the other fund and
+ * would then be counted twice in the combined sheet.
+ */
+const GF_ONLY = COLS.filter(c => c.gf).map(c => c.k);
+const colsFor = fund => COLS.filter(c => !(c.gf && fund === "hra"));
 
 const MTFP = 5;   // years most authorities actually forecast — marked, not enforced
 
@@ -1020,6 +1039,8 @@ function render(){
       <span>Assembled from your ledger and your commentary</span></div>`
     + documentHTML(false);
   if(typeof renderRail === "function"){ renderRail(); renderNav(); }
+  const dc = $("debtcost");
+  if(dc) dc.innerHTML = (typeof debtCostNote === "function") ? debtCostNote() : "";
   const pc = $("portfoliocharts");
   if(pc) pc.innerHTML = portfolioCharts();
   $("prefill").innerHTML = c
@@ -2457,6 +2478,43 @@ function pwlbLoanTable(){
       <thead><tr><th>Loan</th><th>Method</th><th>Maturity</th><th class="num">£m</th>
         <th class="num">Rate</th></tr></thead>
       <tbody>${rows}</tbody></table></div>`;
+}
+
+
+/* What the debt costs, blended.
+ *
+ * Rates were being read off a pasted loan list and then dropped: there was
+ * nowhere to put them. A treasurer comparing a new PWLB rate against what
+ * they already pay needs the blended figure, and it is the one number that
+ * makes the whole debt table worth entering rather than just its total.
+ * Loans with no rate given are counted in the total and left out of the
+ * average, and the average says how much it covers.
+ */
+function debtCost(){
+  const rows = [];
+  const p = pwlbSummary();
+  if(p) rows.push({name:"PWLB", amt:p.tot, rate:p.wavg});
+  (S.loans||[]).forEach(L => { if(!L.pwlb && L.amt) rows.push(
+    {name:L.name || "Other debt", amt:L.amt, rate:(L.rate==null?null:+L.rate)}); });
+  const tot = rows.reduce((a,b)=>a+b.amt, 0);
+  const rated = rows.filter(r => r.rate != null && isFinite(r.rate));
+  const cov = rated.reduce((a,b)=>a+b.amt, 0);
+  return {rows, tot, cov,
+          wavg: cov ? rated.reduce((a,b)=>a+b.rate*b.amt, 0) / cov : null};
+}
+
+function debtCostNote(){
+  const d = debtCost();
+  if(!d.tot) return "";
+  if(d.wavg == null)
+    return `<p class="note">Total debt <b>£${m1(d.tot)}m</b>. No rates entered, so no blended
+      cost can be shown — add a rate against each source and it appears here.</p>`;
+  const part = d.cov < d.tot - 0.05
+    ? ` across the <b>£${m1(d.cov)}m</b> carrying a rate; the remaining
+        <b>£${m1(d.tot-d.cov)}m</b> has none entered`
+    : "";
+  return `<p class="note">Total debt <b>£${m1(d.tot)}m</b> at a blended
+    <b>${d.wavg.toFixed(2)}%</b>${part}.</p>`;
 }
 
 /* ===========================================================================
@@ -4119,11 +4177,12 @@ function wireSteps(){
 let SEL = null;                                   // last focused cell, for fill-down
 
 function buildLedger(){
-  let h = `<thead><tr><th class="yr">Year end</th>` + COLS.map(c=>
+  const CS = colsFor(S.fund);
+  let h = `<thead><tr><th class="yr">Year end</th>` + CS.map(c=>
     `<th>${colLabel(c)}${c.s?`<small>${esc(c.s)}</small>`:""}</th>`).join("") + `</tr></thead><tbody>`;
   for(let i=0;i<S.years;i++){
     h += `<tr class="${i<MTFP?"mtfp":"beyond"}"><th class="yr">${fy(S.fy0+i)}</th>` +
-      COLS.map(c=>`<td class="${c.ours?"ours":""}">
+      CS.map(c=>`<td class="${c.ours?"ours":""}">
         <input type="text" inputmode="decimal" data-k="${c.k}" data-i="${i}" value="0.0"
           aria-label="${esc(c.l.replace(/<br>/g," "))} ${fy(S.fy0+i)}"></td>`).join("") + `</tr>`;
   }
@@ -4141,7 +4200,7 @@ function buildLedger(){
     box.dataset.xl = "1";
     box.style.position = "relative";
     excelGrid(box, {
-      cols: COLS.map(c => c.k),
+      cols: colsFor(S.fund).map(c => c.k),
       rows: () => S.years,
       get: (k,i) => S.g[S.fund][k][i],
       set: (k,i,v) => { S.g[S.fund][k][i] = v; },
@@ -4155,6 +4214,10 @@ function buildLedger(){
   syncLedger();
 }
 function syncLedger(force){
+  // Enforced rather than assumed: a figure left in an HRA investment column by
+  // a fund switch, or restored from a save written before this rule, would be
+  // added into the combined sheet and counted twice.
+  GF_ONLY.forEach(k => { if(S.g.hra && S.g.hra[k]) S.g.hra[k] = S.g.hra[k].map(()=>0); });
   const g=S.g[S.fund];
   $("ledger").querySelectorAll("input").forEach(inp=>{
     const v=g[inp.dataset.k][+inp.dataset.i];
@@ -4216,12 +4279,20 @@ function loanRows(){
       :`<select data-f="profile" data-i="${ix}" aria-label="Profile">
          <option value="amort"${L.profile==="amort"?" selected":""}>Amortising</option>
          <option value="bullet"${L.profile==="bullet"?" selected":""}>Bullet</option></select>`}</td>
+    <td class="num">${L.pwlb
+      ? `<span class="qt">${(() => { const s = pwlbSummary();
+           return s ? s.wavg.toFixed(2) + "%" : "–"; })()}</span>`
+      : `<input type="text" inputmode="decimal" data-f="rate" data-i="${ix}"
+           value="${L.rate == null ? "" : L.rate}" placeholder="—" aria-label="Rate">`}</td>
     <td>${L.pwlb?"":`<button type="button" class="rm" data-rm="${ix}" aria-label="Remove">×</button>`}</td>
   </tr>`).join("");
   $("loanrows").querySelectorAll("input,select").forEach(el=>
     el.addEventListener("input", e=>{
       const L=S.loans[+e.target.dataset.i], f=e.target.dataset.f;
-      L[f]= f==="amt"?num(e.target.value): f==="mat"?(parseInt(e.target.value)||S.fy0+10):e.target.value;
+      L[f]= f==="amt" ? num(e.target.value)
+          : f==="mat"  ? (parseInt(e.target.value)||S.fy0+10)
+          : f==="rate" ? (e.target.value.trim()==="" ? null : num(e.target.value))
+          : e.target.value;
       applyLoans(); }));
   $("loanrows").querySelectorAll("[data-rm]").forEach(b=>
     b.addEventListener("click", e=>{ S.loans.splice(+e.target.dataset.rm,1); loanRows(); applyLoans(); }));
@@ -4433,6 +4504,40 @@ function stampSaved(word){
       $("saved").textContent="Logo added. It travels inside the exported file."; };
     rd.readAsDataURL(f);
   });
+  /* A demonstration portfolio.
+   *
+   * Filling this by hand to see what the tables and charts do is ten minutes
+   * of typing before anything happens. The spread is deliberately mixed —
+   * LOBOs, market debt, a loan from another authority, and investments across
+   * five instrument types — because the point is to show what the tool does
+   * with variety, and every line carries a rate so the blended cost has
+   * something to work with.
+   */
+  $("demoport").addEventListener("click", ()=>{
+    if(!S.gss){ flash("Pick an authority first — the PWLB book fills from it."); return; }
+    const base = LB[S.gss].o, r1 = v => Math.round(v*10)/10;
+    S.loans = [{pwlb:true, name:"PWLB", amt:base, profile:"actual"},
+      {name:"Barclays",              type:"LOBO",             amt:r1(base*0.09), mat:S.fy0+28, rate:4.55, profile:"bullet"},
+      {name:"Dexia",                 type:"LOBO",             amt:r1(base*0.04), mat:S.fy0+31, rate:4.80, profile:"bullet"},
+      {name:"Market loan",           type:"Market",           amt:r1(base*0.05), mat:S.fy0+9,  rate:4.10, profile:"bullet"},
+      {name:"Kent County Council",   type:"Local authority",  amt:r1(base*0.03), mat:S.fy0+2,  rate:4.35, profile:"bullet"},
+      {name:"Salix (interest free)", type:"Government",       amt:r1(base*0.01), mat:S.fy0+6,  rate:0.00, profile:"amort"}];
+    const pot = Math.max(6, base*0.06);
+    S.portfolio = [
+      {name:"Debt Management Office",   type:"DMADF",           amt:r1(pot*0.22), rate:3.95, mat:S.fy0+1},
+      {name:"Money market funds",       type:"MMF",             amt:r1(pot*0.28), rate:3.88, mat:null},
+      {name:"Other local authorities",  type:"Local authority", amt:r1(pot*0.20), rate:4.05, mat:S.fy0+2},
+      {name:"Call accounts",            type:"Call account",    amt:r1(pot*0.12), rate:3.60, mat:null},
+      {name:"Covered bonds",            type:"Covered bond",    amt:r1(pot*0.10), rate:4.20, mat:S.fy0+4},
+      {name:"Pooled property fund",     type:"Pooled fund",     amt:r1(pot*0.08), rate:4.40, mat:null}];
+    S.portfolioNote = `6 holdings, £${m1(pot)}m in total, grouped by type.`;
+    if(S.g.gf && S.g.gf.inv) S.g.gf.inv[0] = r1(pot);
+    loanRows(); syncLedger(true); renderSections(); render();
+    $("invsummary").textContent = S.portfolioNote;
+    $("saved").textContent = "Demonstration portfolio filled — six debt sources and six "
+      + "holdings, every one with a rate. Change anything.";
+  });
+
   $("showloans").addEventListener("click", ()=>{
     const b = $("pwlbloans");
     b.hidden = !b.hidden;
@@ -4555,13 +4660,13 @@ function stampSaved(word){
       g.cfr[i]=cfr; g.capex[i]=capex; g.mrp[i]=mrp; g.rec[i]=rec;
       g.obs[i]=r1(base*k.obs*Math.pow(0.97,i));
       g.liq[i]=k.liq==null ? 0 : r1(Math.max(2, base*k.liq));
-      g.inv[i]=r1(Math.max(2, base*k.inv)*Math.pow(0.95,i));
+      g.inv[i]=k.inv==null ? 0 : r1(Math.max(2, base*k.inv)*Math.pow(0.95,i));
       g.loans[i]=r1((LB[S.gss] && LB[S.gss].r[i]!=null ? LB[S.gss].r[i] : base) * k.share);
       // Interest is charged on the loans actually outstanding rather than on
       // the CFR, so affordability moves as debt runs off — which is the whole
       // point of the indicator.
       g.intpay[i]=r1(g.loans[i]*0.042);
-      g.intinc[i]=r1(g.inv[i]*0.038);
+      g.intinc[i]=k.inv==null ? 0 : r1(g.inv[i]*0.038);
       g.nrs[i]=k.nrs ? r1(base*k.nrs*Math.pow(1.02,Math.min(i,MTFP))) : 0;
       g.comminc[i]=k.comminc ? r1(base*k.comminc) : 0;
     }
@@ -4577,16 +4682,16 @@ function stampSaved(word){
       // The HRA carries its own CFR and its own debt. Under one pool it still
       // holds a liquidity allowance, because the funds are not separated for
       // treasury purposes.
-      hraK:{cfr0:0.55, capex:0.03, mrp:0.025, rec:0.002, obs:0.06, liq:0.012, inv:0.015,
-            share:0.35, nrs:0.18, comminc:0}},
+      // No liquidity allowance, no investments, no investment income and no
+      // non-treasury income: the General Fund holds all of those for the
+      // authority. Filling them here would double-count in the combined sheet.
+      hraK:{cfr0:0.55, capex:0.03, mrp:0.025, rec:0.002, obs:0.06,
+            share:0.35, nrs:0.18}},
     two:  {mode:"two", label:"two pool",
       gf:{cfr0:0.90, capex:0.05, mrp:0.04, rec:0.004, obs:0.30, liq:0.05, inv:0.06,
           share:0.65, nrs:0.55, comminc:0},
-      // Under two pools the General Fund manages liquidity on behalf of the
-      // authority, so the HRA has no liquidity allowance of its own — nil, not
-      // a small number.
-      hraK:{cfr0:0.55, capex:0.03, mrp:0.025, rec:0.002, obs:0.06, liq:null, inv:0.015,
-            share:0.35, nrs:0.18, comminc:0}}
+      hraK:{cfr0:0.55, capex:0.03, mrp:0.025, rec:0.002, obs:0.06,
+            share:0.35, nrs:0.18}}
   };
 
   function fillDemo(which){

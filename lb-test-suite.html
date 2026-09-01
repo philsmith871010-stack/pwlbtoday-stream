@@ -405,16 +405,16 @@ const COLS = [
   {k:"capex", l:"Capital expenditure<br>financed by borrowing"},
   {k:"obs",   l:"Other balance<br>sheet items", s:"LB1 (b)"},
   {k:"loans", l:"Existing loan<br>commitments", s:"LB3 (d)", ours:true},
-  {k:"inv",   l:"Existing investment<br>commitments", s:"LB3 (e)"},
-  {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark"},
+  {k:"inv",   l:"Existing investment<br>commitments", s:"LB3 (e)", gf:true},
+  {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark", gf:true},
   // Affordability. The Prudential Code's own indicator, and the one the tool
   // produced no figure for at all: it computed six debt and investment limits
   // and left the question members actually ask — what does this cost us as a
   // share of what we raise — to prose.
   {k:"intpay", l:"Interest<br>payable",     s:"on borrowing and leases"},
-  {k:"intinc", l:"Investment<br>income",    s:"netted off"},
+  {k:"intinc", l:"Investment<br>income",    s:"netted off", gf:true},
   {k:"nrs",    l:"Net revenue<br>stream",   s:"grants and local taxpayers"},
-  {k:"comminc",l:"Non-treasury<br>investment income", s:"net, if any"}
+  {k:"comminc",l:"Non-treasury<br>investment income", s:"net, if any", gf:true}
 ];
 /* A column whose name changes with the country — Scotland charges loans fund
    repayments where England and Wales make MRP. */
@@ -422,6 +422,22 @@ function colLabel(c){
   const n = (typeof S !== "undefined") ? (S.natOverride || nationOf(S.gss)) : "england";
   return (c.natl && c.natl[n]) || c.l;
 }
+
+/* WHAT AN HRA DOES NOT HAVE.
+ *
+ * The General Fund manages treasury for the authority. The HRA has a capital
+ * financing requirement and debt against it, but it does not hold an
+ * investment portfolio, does not earn investment income, does not set its own
+ * minimum liquidity balance, and does not make non-treasury investments —
+ * those are the authority's, and the authority means the General Fund.
+ *
+ * So those four columns are not shown on the HRA at all, rather than shown and
+ * left at nil. A column you can type into is a question, and asking an HRA for
+ * its investment balances invites a figure that belongs to the other fund and
+ * would then be counted twice in the combined sheet.
+ */
+const GF_ONLY = COLS.filter(c => c.gf).map(c => c.k);
+const colsFor = fund => COLS.filter(c => !(c.gf && fund === "hra"));
 
 const MTFP = 5;   // years most authorities actually forecast — marked, not enforced
 
@@ -601,6 +617,8 @@ function render(){
       <span>Assembled from your ledger and your commentary</span></div>`
     + documentHTML(false);
   if(typeof renderRail === "function"){ renderRail(); renderNav(); }
+  const dc = $("debtcost");
+  if(dc) dc.innerHTML = (typeof debtCostNote === "function") ? debtCostNote() : "";
   const pc = $("portfoliocharts");
   if(pc) pc.innerHTML = portfolioCharts();
   $("prefill").innerHTML = c
@@ -1160,8 +1178,7 @@ const PRESETS = {
         obs:i=>200*Math.pow(.98,i), liq:40, loans:i=>700*Math.pow(.94,i), inv:50,
         intpay:i=>29*Math.pow(.94,i), intinc:2, nrs:500, comminc:0},
     hra:{cfr0:120, mrp:i=>i?4:0, capex:0, rec:0,
-         obs:i=>460*Math.pow(.995,i), liq:0, loans:0, inv:i=>340-i*4,
-         intpay:0, intinc:13, nrs:150, comminc:0}},
+         obs:i=>460*Math.pow(.995,i), loans:0, intpay:0, nrs:150}},
 
   zero: {lab:"nothing entered — every indicator should be nil, and none should throw",
     gf:{}, hra:{}}
@@ -1192,6 +1209,7 @@ function bApply(g, spec, years){
 /* Write the model's numbers back into the boxes without disturbing the one
    being typed in. */
 function bSync(){
+  GF_ONLY.forEach(k => { if(S.g.hra && S.g.hra[k]) S.g.hra[k] = S.g.hra[k].map(()=>0); });
   const g = S.g[BFUND];
   $("bgrid").querySelectorAll("input").forEach(inp => {
     if(document.activeElement === inp) return;
@@ -1211,12 +1229,12 @@ function bPreset(name){
 
 /* ---- the input grid ------------------------------------------------------ */
 function bGrid(){
-  const g = S.g[BFUND], y = S.years;
+  const g = S.g[BFUND], y = S.years, CS = colsFor(BFUND);
   let h = "<thead><tr><th>Year</th>" +
-    BCOLS.map(c => `<th title="${esc(c.s||"")}">${c.l.replace(/<br>/g," ")}</th>`).join("") +
+    CS.map(c => `<th title="${esc(c.s||"")}">${c.l.replace(/<br>/g," ")}</th>`).join("") +
     "</tr></thead><tbody>";
   for(let i=0;i<y;i++){
-    h += `<tr><th>${fy(S.fy0+i)}</th>` + BCOLS.map(c =>
+    h += `<tr><th>${fy(S.fy0+i)}</th>` + CS.map(c =>
       `<td><input inputmode="decimal" data-k="${c.k}" data-i="${i}"
         value="${g[c.k][i] || ""}"></td>`).join("") + "</tr>";
   }
@@ -1449,7 +1467,7 @@ function bAll(){ bGrid(); bOut(); }
   const box = $("bgrid").closest(".bscroll");
   box.style.position = "relative";
   excelGrid(box, {
-    cols: BCOLS.map(c => c.k),
+    cols: colsFor(BFUND).map(c => c.k),
     rows: () => S.years,
     get: (k,i) => S.g[BFUND][k][i],
     set: (k,i,v) => { S.g[BFUND][k][i] = v; },
