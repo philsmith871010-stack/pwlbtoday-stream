@@ -473,6 +473,11 @@ svg.ctip .hits rect{cursor:crosshair}
 .picker .pnote{flex:1 1 100%;font-family:var(--sans);font-size:11.5px;color:var(--muted);
   margin-top:2px}
 @media print{.no-print{display:none}}
+.benchlink{display:block;font-family:var(--sans);font-size:12.5px;font-weight:600;
+  color:var(--ink2);text-decoration:none;padding:8px 11px;border:1px dashed var(--line2);
+  border-radius:var(--r-sm);align-self:start}
+.benchlink:hover{border-color:var(--accent);color:var(--accent)}
+.benchlink span{display:block;font-weight:400;font-size:11px;color:var(--muted);margin-top:2px}
 </style>
 
 <div class="shell">
@@ -485,6 +490,8 @@ svg.ctip .hits rect{cursor:crosshair}
         five indicators. Nothing is extrapolated.</div>
     </div>
     <div class="stamp" id="stamp"></div>
+    <a class="benchlink" href="lb-test-suite.html">LB test suite &rarr;<span>internal — try a
+      balance sheet against the full output</span></a>
     <div class="codebadge" id="codebadge"></div>
   </header>
 
@@ -1752,7 +1759,7 @@ function forecastChart(){
   if(!FC.implied) return "";
   const d = impliedPath(Math.min(S.years, 21)).map(r=>Object.assign({}, r,
     {implied: r.implied==null?0:r.implied, own: r.own==null?null:r.own}));
-  const lines=[{k:"implied",c:"var(--l-cfr)",w:2.2}];
+  const lines=[{k:"implied",c:"var(--l-cfr)",w:2.2,t:"Bank Rate, market implied"}];
   if(d.some(r=>r.own!=null)){
     d.forEach(r=>{ if(r.own==null) r.own = r.implied; });   // no gaps in the path
     lines.push({k:"own",c:"var(--l-nlr,var(--orange))",w:2,dash:"5 3"});
@@ -1765,6 +1772,16 @@ function forecastChart(){
 function forecastBlock(){
   if(!FC.implied) return "";
   return `<h4>Rate assumptions</h4>${forecastChart()}${forecastTable()}`;
+}
+
+/* A tenor as words. The series key is "10Y" because that is what the data
+   calls it; a hover readout has room to say what it means. */
+function tenorLabel(k){
+  const m = String(k).match(/^(\d+(?:\.\d+)?)([DWMY])$/);
+  if(!m) return String(k);
+  const n = parseFloat(m[1]);
+  const unit = {D:"day", W:"week", M:"month", Y:"year"}[m[2]];
+  return `${n} ${unit}${n === 1 ? "" : "s"}`;
 }
 
 /* ===========================================================================
@@ -1810,7 +1827,7 @@ function rateLevelChart(){
   const d = h.map((r,i)=>Object.assign({fy:r.d.slice(2,7), i}, r));
   return `<div class="chartwrap">${chart(d,{label:"PWLB certainty rates, 12 months",
       h:250, zero:"tight", fmt:v=>v.toFixed(2)+"%", mtfp:false,
-      lines:on.map((k,ix)=>({k, c:seqFor(ix,on.length), w:1.9}))})}
+      lines:on.map((k,ix)=>({k, c:seqFor(ix,on.length), w:1.9, t:tenorLabel(k)}))})}
     ${legend(on.map((k,ix)=>({c:seqFor(ix,on.length), t:k})))}</div>`;
 }
 
@@ -1828,7 +1845,7 @@ function rateChangeChart(){
   });
   return `<div class="chartwrap">${chart(d,{label:"Change over 12 months",
       h:200, fmt:v=>(v>0?"+":"")+v.toFixed(2), mtfp:false,
-      lines:on.map((k,ix)=>({k, c:seqFor(ix,on.length), w:1.9}))})}
+      lines:on.map((k,ix)=>({k, c:seqFor(ix,on.length), w:1.9, t:tenorLabel(k)}))})}
     ${legend(on.map((k,ix)=>({c:seqFor(ix,on.length), t:k})))}
     <p class="note" style="padding:0 4px 6px">Percentage points since
       ${esc(h[0].d)}. Above the line the term has risen; below, it has fallen.</p></div>`;
@@ -1850,6 +1867,7 @@ function curveChart(){
   return `<div class="chartwrap">${chart(d,{label:"The certainty curve over time",
       h:230, zero:"tight", fmt:v=>v.toFixed(2)+"%", mtfp:false,
       lines:snaps.map((s,ix)=>({k:"s"+ix, c:C[ix]||"var(--muted)", w:ix?1.7:2.4,
+        t:s.label || ("The curve as at " + fcDate(s.date || "")),
                                 dash: ix?"4 3":""}))})}
     ${legend(snaps.map((s,ix)=>({c:C[ix]||"var(--muted)", t:s.label})))}
     <p class="note" style="padding:0 4px 6px">Maturity along the bottom, not time —
@@ -1965,7 +1983,7 @@ function giltChart(){
   if(d.length < 3) return "";
   return `<div class="chartwrap">${chart(d,{label:"Gilt yields, 12 months",
       h:210, zero:"tight", mtfp:false, fmt:v=>v.toFixed(2)+"%",
-      lines:use.map((k,ix)=>({k, c:seqFor(ix,use.length), w:1.8}))})}
+      lines:use.map((k,ix)=>({k, c:seqFor(ix,use.length), w:1.8, t:tenorLabel(k)}))})}
     ${legend(use.map((k,ix)=>({c:seqFor(ix,use.length), t:k})))}
     <p class="note" style="padding:0 4px 6px">Benchmark yields, taken as the
       conventional gilt nearest each maturity on the day. PWLB standard rates are set
@@ -1984,7 +2002,7 @@ function soniaChart(){
   if(d.length < 3) return "";
   return `<div class="chartwrap">${chart(d,{label:"Overnight rate, 12 months",
       h:200, zero:"tight", mtfp:false, fmt:v=>v.toFixed(2)+"%",
-      lines:use.map((k,ix)=>({k, c:seqFor(ix,use.length), w:1.8}))})}
+      lines:use.map((k,ix)=>({k, c:seqFor(ix,use.length), w:1.8, t:tenorLabel(k)}))})}
     ${legend(use.map((k,ix)=>({c:seqFor(ix,use.length), t:k})))}
     <p class="note" style="padding:0 4px 6px">The money market the authority invests in,
       and the curve the implied Bank Rate path is taken from.</p></div>`;
@@ -3648,7 +3666,7 @@ function affordBlock(d){
            stream has been entered` : ""}.</p>`
     + `<div class="chartwrap">${chart(have.map(r=>({fy:fy(r.fy).slice(2), i:r.i, afford:r.afford})),
         {label:"Financing costs as a share of net revenue stream", h:210, zero:"tight",
-         fmt:v=>v.toFixed(1)+"%", lines:[{k:"afford",t:"Financing costs %", c:"var(--l-lb)", w:2.2}]})}</div>`
+         fmt:v=>v.toFixed(1)+"%", lines:[{k:"afford",t:"Financing costs as a share of net revenue", c:"var(--l-lb)", w:2.2}]})}</div>`
     + otable(have,[{l:"Interest payable",k:"intpay"},
                    {l:NAT().mrpCap+" charged",k:"mrp"},
                    {l:"Investment income",k:"intinc"},
@@ -3863,46 +3881,46 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
   // from Housing Revenue Account." A separate chart was my first reading and
   // it was wrong — it belongs on every one of them.
   const D = hraSet ? crossFund(d, hraSet) : d;
-  const XF = hraSet ? [{k:"cross",t:"GF lending to the HRA", c:"var(--l-strat)", w:1.6, dash:"2 3"}] : [];
+  const XF = hraSet ? [{k:"cross",t:"General Fund lending to the HRA", c:"var(--l-strat)", w:1.6, dash:"2 3"}] : [];
   const XL = hraSet ? [{c:"var(--l-strat)", t:"GF lending to / borrowing from the HRA"}] : [];
   return `
    ${!want("LB1") ? "" : IND("LB1","Net treasury position",
      `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB1",lines:[
-       {k:"cfr",t:"CFR",c:"var(--l-cfr)",w:2},{k:"obs",t:"Other balance sheet",c:"var(--l-obs)",w:1.8,dash:"5 3"},
-       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:2.4}].concat(XF)})}${L([{c:"var(--l-cfr)",t:"CFR"},
+       {k:"cfr",t:"Capital financing requirement",c:"var(--l-cfr)",w:2},{k:"obs",t:"Other balance sheet items",c:"var(--l-obs)",w:1.8,dash:"5 3"},
+       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:2.4}].concat(XF)})}${L([{c:"var(--l-cfr)",t:"Capital financing requirement"},
        {c:"var(--l-obs)",t:"Other balance sheet items"},{c:"var(--l-ntp)",t:"Net treasury position"}].concat(XL))}</div>
       ${readoutHTML("LB1", d, fundLabel)}`)}
    ${!want("LB2") ? "" : IND("LB2","Treasury benchmarks"+tag,
      `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB2",lines:[
-       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:1.8},{k:"tib",t:"Investment benchmark",c:"var(--l-inv)",w:1.8},
-       {k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.4},{k:"al",t:"Authorised limit",c:"var(--l-al)",w:1.6,dash:"7 4"}].concat(XF)})}
-       ${L([{c:"var(--l-ntp)",t:"Net treasury position"},{c:"var(--l-inv)",t:"Investment benchmark"},
-            {c:"var(--l-lb)",t:"Liability benchmark"},{c:"var(--l-al)",t:"Authorised limit"}].concat(XL))}</div>
+       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:1.8},{k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:1.8},
+       {k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.4},{k:"al",t:"Authorised limit for external debt",c:"var(--l-al)",w:1.6,dash:"7 4"}].concat(XF)})}
+       ${L([{c:"var(--l-ntp)",t:"Net treasury position"},{c:"var(--l-inv)",t:"Treasury investment benchmark"},
+            {c:"var(--l-lb)",t:"Liability benchmark"},{c:"var(--l-al)",t:"Authorised limit for external debt"}].concat(XL))}</div>
       ${otable(d,[{l:"Net treasury position",k:"ntp"},{l:"Treasury investment benchmark",k:"tib"},
                   {l:"Liability benchmark",k:"lb",cls:"lb"},{l:"Authorised limit",k:"al",cls:"key"}])}
       ${readoutHTML("LB2", d, fundLabel)}`)}
    ${!want("LB3") ? "" : IND("LB3","Treasury commitments against the benchmarks"+tag,
      `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB3",h:280,fill:[{k:"lb",to:"el",c:"var(--l-lb)",o:.09}],
-       lines:[{k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.4},{k:"el",t:"Existing loans",c:"var(--l-debt)",w:2.2},
-              {k:"ei",t:"Existing investments",c:"var(--l-ei)",w:1.8,dash:"3 3"},{k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:1.6},
-              {k:"tib",t:"Investment benchmark",c:"var(--l-inv)",w:1.6,dash:"4 3"}].concat(XF)})}
-       ${L([{c:"var(--l-lb)",t:"Liability benchmark"},{c:"var(--l-debt)",t:"Existing loans"},
-            {c:"var(--l-ei)",t:"Existing investments"}].concat(XL))}</div>
+       lines:[{k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.4},{k:"el",t:"Existing loan commitments",c:"var(--l-debt)",w:2.2},
+              {k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:1.8,dash:"3 3"},{k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:1.6},
+              {k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:1.6,dash:"4 3"}].concat(XF)})}
+       ${L([{c:"var(--l-lb)",t:"Liability benchmark"},{c:"var(--l-debt)",t:"Existing loan commitments"},
+            {c:"var(--l-ei)",t:"Existing investment commitments"}].concat(XL))}</div>
       ${otable(d,[{l:"Existing loan commitments",k:"el"},{l:"Liability benchmark",k:"lb",cls:"lb"},
                   {l:"Existing investment commitments",k:"ei"}])}
       ${readoutHTML("LB3", d, fundLabel)}`)}
    ${!want("LB4") ? "" : IND("LB4","Borrowing requirement / overborrowing"+tag,
-     `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB4",h:220,fill:[{k:"br",c:"var(--l-lb)",o:.14}],
-       lines:[{k:"br",c:"var(--l-lb)",w:2.4}].concat(XF)})}</div>
+     `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB4",h:220,fill:[{k:"br",t:"Borrowing requirement",c:"var(--l-lb)",o:.14}],
+       lines:[{k:"br",t:"Borrowing requirement",c:"var(--l-lb)",w:2.4}].concat(XF)})}</div>
       ${otable(d,[{l:"Borrowing requirement",k:"need"},{l:"Above-benchmark borrowing",k:"over"}])}
       ${readoutHTML("LB4", d, fundLabel)}`)}
    ${(skipLB5 || !want("LB5")) ? "" : IND("LB5","Treasury investment projection",
-     `<div class="chartwrap">${chart(d,{label:"LB5",h:240,fill:[{k:"liq",c:"var(--l-inv)",o:.16}],
-       lines:[{k:"tib",t:"Investment benchmark",c:"var(--l-inv)",w:2.4},{k:"ei",t:"Existing investments",c:"var(--l-ei)",w:1.8,dash:"3 3"},
-              {k:"liq",c:"var(--muted)",w:1.6},{k:"strategic",t:"Strategic",c:"var(--l-strat)",w:1.8},
-              {k:"excess",t:"Excess",c:"var(--l-exc)",w:1.8}]})}
-       ${L([{c:"var(--l-inv)",t:"Investment benchmark"},{c:"var(--muted)",t:"Liquidity allowance"},
-            {c:"var(--l-strat)",t:"Strategic"},{c:"var(--l-exc)",t:"Excess"}])}</div>
+     `<div class="chartwrap">${chart(d,{label:"LB5",h:240,fill:[{k:"liq",t:"Liquidity allowance",c:"var(--l-inv)",o:.16}],
+       lines:[{k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:2.4},{k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:1.8,dash:"3 3"},
+              {k:"liq",t:"Liquidity allowance",c:"var(--muted)",w:1.6},{k:"strategic",t:"Strategic investments",c:"var(--l-strat)",w:1.8},
+              {k:"excess",t:"Excess investments",c:"var(--l-exc)",w:1.8}]})}
+       ${L([{c:"var(--l-inv)",t:"Treasury investment benchmark"},{c:"var(--muted)",t:"Liquidity allowance"},
+            {c:"var(--l-strat)",t:"Strategic investments"},{c:"var(--l-exc)",t:"Excess investments"}])}</div>
       ${otable(d,[{l:"Treasury investment benchmark",k:"tib",cls:"inv"},{l:"Liquidity allowance",k:"liq"},
                   {l:"Strategic treasury investments",k:"strategic"},
                   {l:"Excess treasury investments",k:"excess"}])}

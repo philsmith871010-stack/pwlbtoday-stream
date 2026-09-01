@@ -1239,16 +1239,19 @@ function bGrid(){
  * question at a time; here they are together because the question is whether
  * they are consistent with each other.
  */
+/* Written out in full. An acronym in a legend is a reminder for someone who
+   already knows the framework; in a readout it is a question. "cfr" and even
+   "CFR" both make the reader do work the label should have done. */
 const BSERIES = [
-  {k:"cfr", c:"var(--l-cfr)",   t:"CFR",                    w:2},
-  {k:"obs", c:"var(--l-obs)",   t:"Other balance sheet",     w:1.6, dash:"5 3"},
-  {k:"ntp", c:"var(--l-ntp)",   t:"Net treasury position",   w:2.2},
-  {k:"tib", c:"var(--l-inv)",   t:"Investment benchmark",    w:1.8},
-  {k:"lb",  c:"var(--l-lb)",    t:"Liability benchmark",     w:2.6},
-  {k:"el",  c:"var(--l-debt)",  t:"Existing loans",          w:2},
-  {k:"ei",  c:"var(--l-ei)",    t:"Existing investments",    w:1.6, dash:"3 3"},
-  {k:"al",  c:"var(--l-al)",    t:"Authorised limit",        w:1.6, dash:"7 4"},
-  {k:"inv", c:"var(--l-strat)", t:"LB5 investments",         w:1.6, dash:"2 3"}
+  {k:"cfr", c:"var(--l-cfr)",   t:"Capital financing requirement",     w:2},
+  {k:"obs", c:"var(--l-obs)",   t:"Other balance sheet items",          w:1.6, dash:"5 3"},
+  {k:"ntp", c:"var(--l-ntp)",   t:"Net treasury position",              w:2.2},
+  {k:"tib", c:"var(--l-inv)",   t:"Treasury investment benchmark",      w:1.8},
+  {k:"lb",  c:"var(--l-lb)",    t:"Liability benchmark",                w:2.6},
+  {k:"el",  c:"var(--l-debt)",  t:"Existing loan commitments",          w:2},
+  {k:"ei",  c:"var(--l-ei)",    t:"Existing investment commitments",    w:1.6, dash:"3 3"},
+  {k:"al",  c:"var(--l-al)",    t:"Authorised limit for external debt", w:1.6, dash:"7 4"},
+  {k:"inv", c:"var(--l-strat)", t:"Treasury investments projected (LB5)", w:1.6, dash:"2 3"}
 ];
 
 function bChart(d){
@@ -1260,7 +1263,9 @@ function bChart(d){
   $("bchart").innerHTML = `<div class="chartwrap">${chart(rows, {
     label: "every series", h: 300, zero: "tight", mtfp: false,
     fmt: v => m1(v),
-    lines: BSERIES.map(s => ({k:s.k, c:s.c, w:s.w, dash:s.dash}))
+    // t carries into the hover readout. Dropping it here was why the bench
+    // showed "cfr" and "obs" where it should have said what they are.
+    lines: BSERIES.map(s => ({k:s.k, c:s.c, w:s.w, dash:s.dash, t:s.t}))
   })}</div>`;
   $("blegend").innerHTML = BSERIES.map(s =>
     `<span><i style="background:${s.c}"></i>${esc(s.t)}</span>`).join("");
