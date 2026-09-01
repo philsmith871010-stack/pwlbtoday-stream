@@ -27,6 +27,7 @@
   --seq1:#a8c8e8; --seq2:#7fb0dd; --seq3:#5695d1; --seq4:#2f6fb0;
   --seq5:#1d4f86; --seq6:#0f3059;
   --cell:#ffffff; --cell-ours:#eef7f2; --cell-derived:#f2f0fa;
+  --cell-alt:#f4f7fa; --cell-ours-alt:#e5f1ea;
   --r:9px; --r-sm:5px;
   --sp:4px;                     /* the spacing unit everything is a multiple of */
   --sans:"IBM Plex Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -52,6 +53,7 @@
     --seq1:#2b4566; --seq2:#33587f; --seq3:#4a7bab; --seq4:#6fa4d8;
     --seq5:#9cc4e8; --seq6:#c8dcf0;
     --cell:#182430; --cell-ours:#162a24; --cell-derived:#221f33;
+    --cell-alt:#1e2b39; --cell-ours-alt:#1a3129;
     --sh:0 0 0 1px rgba(0,0,0,.28), 0 1px 2px rgba(0,0,0,.30),
        0 6px 18px -8px rgba(0,0,0,.55);
   }
@@ -69,6 +71,7 @@
   --seq1:#2b4566; --seq2:#33587f; --seq3:#4a7bab; --seq4:#6fa4d8;
   --seq5:#9cc4e8; --seq6:#c8dcf0;
   --cell:#182430; --cell-ours:#162a24; --cell-derived:#221f33;
+    --cell-alt:#1e2b39; --cell-ours-alt:#1a3129;
   --sh:0 0 0 1px rgba(0,0,0,.28), 0 1px 2px rgba(0,0,0,.30),
        0 6px 18px -8px rgba(0,0,0,.55);
 }
@@ -176,14 +179,45 @@ table.ledger thead th.yr{z-index:3;background:var(--sunken);font-family:var(--sa
    floor was measured against ONE font on ONE platform, and a fallback face
    with taller digits would clip every figure in the grid. 26px rows became
    17px, so half again as many years fit on screen. */
-table.ledger td input{width:100%;border:0;background:var(--cell);padding:0 9px;text-align:right;
+table.ledger td input{width:100%;border:0;background:transparent;padding:0 9px;text-align:right;
   font-family:var(--mono);font-size:12px;line-height:1.35;border-radius:0}
-table.ledger td input:focus{background:var(--accent-soft);outline-offset:-2px}
-td.ours input{background:var(--cell-ours);color:var(--ink2)}
+td.ours input{color:var(--ink2)}
 tr.mtfp th.yr{border-left:3px solid var(--accent)}
 tr.beyond th.yr{color:var(--faint)}
-tr:hover td input{background:var(--sunken)}
-tr:hover td.ours input{background:var(--cell-ours)}
+
+/* ---- reading across fifty-one rows ---------------------------------------
+ * Alternating rows, so the eye can carry a year across twelve columns without
+ * losing the line. The colour is on the CELL and the input is transparent,
+ * which matters: the input used to paint its own background and would have
+ * covered any stripe underneath it.
+ *
+ * Four other states share these cells, and the order below is what keeps them
+ * from cancelling each other out — this is a cascade collision waiting to
+ * happen, not decoration:
+ *   .nask   the hatched "not asked for" cells keep their hatch, so BOTH the
+ *           base and the stripe exclude them rather than layering under the
+ *           gaps in the hatch
+ *   base    the cell now has to state its own colour: the input used to do it,
+ *           and a transparent input over an unpainted cell shows --card, which
+ *           is a different colour from --cell in dark mode
+ *   .ours   the tint marking a figure seeded from the PWLB book survives on
+ *           both stripes, in its own two shades
+ *   :hover  and :focus paint the INPUT, over whatever the cell is, and are
+ *           written at matching specificity so neither loses to the stripe
+ * Change any selector here and check all six combinations, not just one.
+ */
+table.ledger td:not(.nask){background:var(--cell)}
+/* The sticky year column joins its row rather than staying --card. In light
+   those are the same white and nothing showed; in dark --card is two shades
+   off --cell, so an unstriped row read as year-column-plus-cells instead of
+   one band. thead keeps its own --sunken. */
+table.ledger tbody th.yr{background:var(--cell)}
+table.ledger tbody tr:nth-child(even) td:not(.nask){background:var(--cell-alt)}
+table.ledger tbody tr:nth-child(even) th.yr{background:var(--cell-alt)}
+table.ledger tbody tr:nth-child(even) td.ours{background:var(--cell-ours-alt)}
+table.ledger tbody tr:nth-child(odd) td.ours{background:var(--cell-ours)}
+table.ledger tbody tr:hover td input{background:var(--sunken)}
+table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offset:-2px}
 .chk{font-family:var(--sans);font-size:11px;padding:4px 9px}
 .saved{font-size:11.5px;color:var(--muted);font-family:var(--sans)}
 .saved b{color:var(--good)}
