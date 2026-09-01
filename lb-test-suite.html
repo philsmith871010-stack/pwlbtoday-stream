@@ -415,7 +415,7 @@ const COLS = [
   {k:"mrp",   l:"MRP",                          s:"charged in year"},
   {k:"rec",   l:"Capital receipts<br>applied",  s:"set aside"},
   {k:"obs",   l:"Other balance<br>sheet items", s:"LB1 (b)"},
-  {k:"loans", l:"Existing loan<br>commitments", s:"LB3 (d)", ours:true},
+  {k:"loans", l:"Existing loan<br>commitments", s:"LB3 (d)", ours:true, pooled:true},
   {k:"inv",   l:"Existing investment<br>commitments", s:"LB3 (e)", gf:true},
   {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark", gf:true, scalar:true},
   {k:"capex", l:"Capital expenditure<br>financed by borrowing", mtfp:true},
@@ -449,9 +449,24 @@ function colLabel(c){
  * would then be counted twice in the combined sheet.
  */
 const GF_ONLY = COLS.filter(c => c.gf).map(c => c.k);
+/* Under a SINGLE pool there is one debt portfolio for the authority, and the
+   General Fund grid is where it is entered — the whole authority's loans, not
+   the General Fund's share of them. So the HRA is not asked for loans at all
+   in that case: a figure there would be part of the same portfolio entered a
+   second time, and `combinedGrid` adds the two funds before computing the
+   benchmark, so it would land in the answer twice.
+
+   Under two pools the HRA has a debt portfolio of its own and the column is
+   its own question, which is why this is conditional and not another `gf`. */
+const POOLED = COLS.filter(c => c.pooled).map(c => c.k);
+const hiddenFor = (fund, pool) =>
+  fund === "hra" ? GF_ONLY.concat(pool === "one" ? POOLED : []) : [];
 /* Which columns the grid shows. A scalar is asked for once, above the grid,
    rather than fifty-one times inside it. */
-const colsFor = fund => COLS.filter(c => !c.scalar && !(c.gf && fund === "hra"));
+const colsFor = (fund, pool) => {
+  const hide = new Set(hiddenFor(fund, pool));
+  return COLS.filter(c => !c.scalar && !hide.has(c.k));
+};
 /* And which YEARS a column is asked for. The budget lines are forecast across
    the MTFP; beyond it they are neither nil nor known, and an empty cell that
    could mean either is worse than no cell. */
@@ -1250,7 +1265,8 @@ function bApply(g, spec, years){
 /* Write the model's numbers back into the boxes without disturbing the one
    being typed in. */
 function bSync(){
-  GF_ONLY.forEach(k => { if(S.g.hra && S.g.hra[k]) S.g.hra[k] = S.g.hra[k].map(()=>0); });
+  hiddenFor("hra", S.hra).forEach(k => {
+    if(S.g.hra && S.g.hra[k]) S.g.hra[k] = S.g.hra[k].map(()=>0); });
   const g = S.g[BFUND];
   $("bgrid").querySelectorAll("input").forEach(inp => {
     if(document.activeElement === inp) return;
@@ -1270,7 +1286,7 @@ function bPreset(name){
 
 /* ---- the input grid ------------------------------------------------------ */
 function bGrid(){
-  const g = S.g[BFUND], y = S.years, CS = colsFor(BFUND);
+  const g = S.g[BFUND], y = S.years, CS = colsFor(BFUND, S.hra);
   let h = "<thead><tr><th>Year</th>" +
     CS.map(c => `<th title="${esc(c.s||"")}">${c.l.replace(/<br>/g," ")}</th>`).join("") +
     "</tr></thead><tbody>";
@@ -1509,7 +1525,7 @@ function bAll(){ bGrid(); bOut(); }
   const box = $("bgrid").closest(".bscroll");
   box.style.position = "relative";
   excelGrid(box, {
-    cols: colsFor(BFUND).map(c => c.k),
+    cols: colsFor(BFUND, S.hra).map(c => c.k),
     rows: () => S.years,
     get: (k,i) => S.g[BFUND][k][i],
     set: (k,i,v) => {
