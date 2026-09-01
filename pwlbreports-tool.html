@@ -163,11 +163,21 @@ table.ledger thead th{background:var(--sunken);font-family:var(--sans);font-size
   vertical-align:bottom}
 table.ledger thead th small{display:block;font-weight:400;color:var(--faint);font-size:9.5px}
 table.ledger th.yr{position:sticky;left:0;background:var(--card);z-index:1;text-align:left;
-  font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--ink2);padding:5px 11px;
-  min-width:82px}
+  font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--ink2);padding:0 11px;
+  line-height:1.35;min-width:82px}
 table.ledger thead th.yr{z-index:3;background:var(--sunken);font-family:var(--sans);text-align:left}
-table.ledger td input{width:100%;border:0;background:var(--cell);padding:5px 9px;text-align:right;
-  font-family:var(--mono);font-size:12px;border-radius:0}
+/* The rows are deliberately tight. Fifty-one years of twelve columns is a lot
+   of scrolling, and every pixel of row height is a year you cannot see at
+   once. line-height carries the box rather than padding, so a row is as short
+   as the glyphs allow.
+   Measured rather than guessed: at 12px mono the input starts clipping its
+   digits at line-height 1.25, and 1.3 is the last value that does not. This
+   sits at 1.35 — one step above the cliff, 0.6px dearer per row — because the
+   floor was measured against ONE font on ONE platform, and a fallback face
+   with taller digits would clip every figure in the grid. 26px rows became
+   17px, so half again as many years fit on screen. */
+table.ledger td input{width:100%;border:0;background:var(--cell);padding:0 9px;text-align:right;
+  font-family:var(--mono);font-size:12px;line-height:1.35;border-radius:0}
 table.ledger td input:focus{background:var(--accent-soft);outline-offset:-2px}
 td.ours input{background:var(--cell-ours);color:var(--ink2)}
 tr.mtfp th.yr{border-left:3px solid var(--accent)}
