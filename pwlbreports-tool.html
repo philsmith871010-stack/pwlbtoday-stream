@@ -478,6 +478,15 @@ svg.ctip .hits rect{cursor:crosshair}
   border-radius:var(--r-sm);align-self:start}
 .benchlink:hover{border-color:var(--accent);color:var(--accent)}
 .benchlink span{display:block;font-weight:400;font-size:11px;color:var(--muted);margin-top:2px}
+/* A message you cannot miss. The step you are on decides which notes are on
+   screen, so anything worth saying goes here as well. */
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:120;
+  background:var(--ink);color:var(--paper);font-family:var(--sans);font-size:13.5px;
+  font-weight:500;line-height:1.5;padding:11px 18px;border-radius:var(--r);
+  box-shadow:0 10px 34px rgba(15,26,36,.28);max-width:min(560px,88vw);
+  opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
 </style>
 
 <div class="shell">
@@ -547,7 +556,7 @@ svg.ctip .hits rect{cursor:crosshair}
         <th style="width:12%">Rate</th><th></th>
       </tr></thead><tbody id="loanrows"></tbody></table>
       <div class="ltools"><button type="button" id="addloan">Add a debt source</button>
-        <button type="button" class="primary" id="demoport">Fill a demonstration portfolio</button>
+        <button type="button" class="primary" id="demoport">Fill demo debt <b>and</b> investments</button>
         <button type="button" id="pasteloans">Paste your loans</button>
         <button type="button" class="ghost" id="tmplloans">Template .csv</button>
         <button type="button" class="ghost" id="showloans">Show the PWLB advances</button>
@@ -1041,6 +1050,8 @@ function render(){
   if(typeof renderRail === "function"){ renderRail(); renderNav(); }
   const dc = $("debtcost");
   if(dc) dc.innerHTML = (typeof debtCostNote === "function") ? debtCostNote() : "";
+  const iv = $("invsummary");
+  if(iv && typeof portfolioNote === "function") iv.textContent = portfolioNote();
   const pc = $("portfoliocharts");
   if(pc) pc.innerHTML = portfolioCharts();
   $("prefill").innerHTML = c
@@ -2501,6 +2512,31 @@ function debtCost(){
   const cov = rated.reduce((a,b)=>a+b.amt, 0);
   return {rows, tot, cov,
           wavg: cov ? rated.reduce((a,b)=>a+b.rate*b.amt, 0) / cov : null};
+}
+
+/* The other side of the same question. A blended cost of debt on its own
+   invites "compared with what?" — and the answer is what the cash earns, and
+   the gap between the two, which is the carry on every pound borrowed before
+   it was needed. */
+function investYield(){
+  const inv = (S.portfolio || []).filter(x => x.amt);
+  const tot = inv.reduce((a,b)=>a+b.amt, 0);
+  const rated = inv.filter(x => x.rate != null && isFinite(x.rate));
+  const cov = rated.reduce((a,b)=>a+b.amt, 0);
+  return {tot, cov, n: inv.length,
+          wavg: cov ? rated.reduce((a,b)=>a+b.rate*b.amt, 0) / cov : null};
+}
+
+function portfolioNote(){
+  const v = investYield();
+  if(!v.n) return "Nothing pasted yet.";
+  const d = debtCost();
+  const spread = (v.wavg != null && d.wavg != null)
+    ? ` Debt costs ${d.wavg.toFixed(2)}%, so the carry is `
+      + `${(d.wavg - v.wavg).toFixed(2)} points.` : "";
+  return `${v.n} holding${v.n===1?"":"s"}, £${m1(v.tot)}m`
+    + (v.wavg != null ? ` at a blended ${v.wavg.toFixed(2)}%` : "")
+    + "." + spread;
 }
 
 function debtCostNote(){
@@ -4234,12 +4270,28 @@ function syncLedger(force){
 }
 function refresh(){ syncLedger(); render(); }
 
-/* Say what happened, or what did not. An action that refuses silently — the
-   book that cannot be split between pools, the liquidity figure that was not
-   a number — reads as a broken button. */
+/* Say what happened, or what did not.
+ *
+ * This used to write into #projnote, which lives in step 3. Pressed from step
+ * 2 the message went into an element with no offsetParent — invisible — so the
+ * demonstration button refused and said so to nobody, and read as dead. A
+ * message that might be off-screen is not a message, so it goes to a toast
+ * that is always in view, and to the step's own note as well when that note
+ * happens to be showing.
+ */
+let _toast = null, _toastT = null;
 function flash(msg){
-  const el = $("projnote") || $("saved");
-  if(el) el.textContent = msg;
+  const el = $("projnote");
+  if(el && el.offsetParent) el.textContent = msg;
+  if(!_toast){
+    _toast = document.createElement("div");
+    _toast.className = "toast";
+    document.body.appendChild(_toast);
+  }
+  _toast.textContent = msg;
+  _toast.classList.add("on");
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => _toast.classList.remove("on"), 4200);
 }
 
 /* Seed the existing-loans row from the PWLB book.
@@ -4514,7 +4566,14 @@ function stampSaved(word){
    * something to work with.
    */
   $("demoport").addEventListener("click", ()=>{
-    if(!S.gss){ flash("Pick an authority first — the PWLB book fills from it."); return; }
+    // Refusing because no authority is chosen made the button do nothing at
+    // all on a fresh page, which is where it is most likely to be pressed.
+    // It picks one, exactly as the worked example does, and says which.
+    if(!S.gss){
+      S.gss = keys.find(k => LB[k].o > 100) || keys[0];
+      $("council").value = S.gss;
+      loanRows();
+    }
     const base = LB[S.gss].o, r1 = v => Math.round(v*10)/10;
     S.loans = [{pwlb:true, name:"PWLB", amt:base, profile:"actual"},
       {name:"Barclays",              type:"LOBO",             amt:r1(base*0.09), mat:S.fy0+28, rate:4.55, profile:"bullet"},
@@ -4533,9 +4592,8 @@ function stampSaved(word){
     S.portfolioNote = `6 holdings, £${m1(pot)}m in total, grouped by type.`;
     if(S.g.gf && S.g.gf.inv) S.g.gf.inv[0] = r1(pot);
     loanRows(); syncLedger(true); renderSections(); render();
-    $("invsummary").textContent = S.portfolioNote;
-    $("saved").textContent = "Demonstration portfolio filled — six debt sources and six "
-      + "holdings, every one with a rate. Change anything.";
+    flash(`Demonstration filled for ${LB[S.gss].n} — six debt sources and six investment `
+        + `holdings, every one with a rate. Change anything.`);
   });
 
   $("showloans").addEventListener("click", ()=>{
@@ -4570,7 +4628,6 @@ function stampSaved(word){
     // existing-investments column and nothing beyond it. What the balance does
     // in later years is a projection, and that is theirs.
     if(r.total!=null && S.g[S.fund].inv) S.g[S.fund].inv[0]=Math.round(r.total*10)/10;
-    $("invsummary").textContent = r.note;
     $("invpaste").hidden=true;
     syncLedger(true); renderSections(); render();
   });
