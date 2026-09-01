@@ -186,6 +186,20 @@ table.bo tr.hi td,table.bo tr.hi th{background:var(--accent-soft)}
   z-index:6}
 .xdragging{cursor:crosshair;user-select:none}
 .xdragging input{cursor:crosshair}
+
+/* The hover readout. Fixed rather than absolute so it is never clipped by a
+   chart sitting inside a scrolling panel. */
+.charttip{position:fixed;z-index:90;display:none;pointer-events:none;
+  background:var(--card);border:1px solid var(--line2);border-radius:var(--r-sm);
+  box-shadow:0 8px 28px rgba(15,26,36,.16);padding:9px 11px;min-width:186px}
+.charttip b{display:block;font-family:var(--mono);font-size:12px;color:var(--ink);
+  font-weight:600;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--hair)}
+.charttip span{display:flex;align-items:center;gap:7px;font-family:var(--sans);
+  font-size:12px;color:var(--ink2);line-height:1.7;white-space:nowrap}
+.charttip i{width:9px;height:9px;border-radius:2px;flex:0 0 auto}
+.charttip em{margin-left:auto;font-style:normal;font-family:var(--mono);
+  font-weight:600;color:var(--ink);padding-left:14px}
+svg.ctip .hits rect{cursor:crosshair}
 </style>
 
 <div class="bwrap">
@@ -411,7 +425,8 @@ function colLabel(c){
 
 const MTFP = 5;   // years most authorities actually forecast — marked, not enforced
 
-let S = {gss:"", report:"tmss", fy0:2026, asAt:null, natOverride:null, hra:"no", fund:"gf", years:51,
+let S = {gss:"", report:"tmss", fy0:2026, asAt:null, natOverride:null,
+         view:{ind:"all", fund:"all"}, hra:"no", fund:"gf", years:51,
          loans:[], g:{}, text:{}, sec:"intro",
          choices:{mrpmethod:"asset", cycle:"thrice"}, rates:[], limits:{}, portfolio:[], portfolioText:"", portfolioNote:"", logo:null};
 const blank = () => { const o={}; COLS.forEach(c=>o[c.k]=Array(S.years).fill(0)); return o; };
@@ -468,10 +483,45 @@ function chart(d, spec){
       font-size="9.5" fill="var(--faint)">beyond the MTFP</text>` : "";
   const step=Math.max(1,Math.round(d.length/9)), tx=[];
   for(let i=0;i<d.length;i+=step) tx.push(i);
+  /* THE NUMBERS, CARRIED WITH THE PICTURE.
+   *
+   * A line chart says shape and hides value. Everything here is money to one
+   * decimal place and somebody is going to want to know what it was in
+   * 2033/34 — and reading it off a table twenty rows down is not the same as
+   * pointing at the line. So each chart carries its own formatted values, and
+   * one delegated handler turns a hover into a readout.
+   *
+   * Formatted at render time rather than at hover: spec.fmt is a function and
+   * cannot be put in an attribute, and the chart already knows how it wants
+   * its own numbers written. */
+  const fmt = spec.fmt || m1;
+  // The x label. The indicator charts carry a bare year while every table
+  // beside them says 2031/32; passing a formatter lets both agree without the
+  // model having to change the field every consumer reads.
+  const xlab = spec.xlab || (v => v);
+  const tip = {
+    x0: P.l, dx: iw / Math.max(1, d.length - 1), n: d.length,
+    top: P.t, bot: P.t + ih,
+    rows: d.map((p, i) => ({
+      fy: xlab(p.fy),
+      v: spec.lines.map(l => ({
+        t: l.t || l.k, c: l.c,
+        s: p[l.k] == null ? null : fmt(p[l.k]),
+        y: p[l.k] == null ? null : +Y(p[l.k]).toFixed(1)
+      })).filter(x => x.s !== null)
+    }))
+  };
+  const hit = `<g class="hits">${d.map((p,i)=>
+    `<rect x="${(X(i)-tip.dx/2).toFixed(1)}" y="${P.t}" width="${Math.max(2,tip.dx).toFixed(1)}"
+       height="${ih.toFixed(1)}" fill="transparent" data-i="${i}"/>`).join("")}</g>
+    <line class="xhair" x1="0" y1="${P.t}" x2="0" y2="${P.t+ih}" stroke="var(--ink2)"
+      stroke-width="1" stroke-dasharray="3 3" opacity="0"/>
+    <g class="xdots"></g>`;
   const mark = `<text x="${W-P.r}" y="${P.t+11}" text-anchor="end"
     font-family="var(--sans)" font-size="11" font-weight="600"
     fill="var(--muted)" opacity=".42" letter-spacing="0.5">PWLBtoday</text>`;
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
+    class="ctip" data-tip="${esc(JSON.stringify(tip))}"
     aria-label="${esc(spec.label)}">${gl.join("")}${fills}${zero}${mk}${mark}
     ${spec.lines.map(l=>`<path d="${path(l.k)}" fill="none" stroke="${l.c}"
       stroke-width="${l.w||2}" stroke-linejoin="round" stroke-linecap="round"${
@@ -482,9 +532,57 @@ function chart(d, spec){
         ? `<circle cx="${X(d.length-1).toFixed(1)}" cy="${Y(last[l.k]).toFixed(1)}" r="2.6"
              fill="${l.c}" stroke="var(--card)" stroke-width="1.4"/>` : "";}).join("")}
     ${tx.map(i=>`<text x="${X(i).toFixed(1)}" y="${H-7}" text-anchor="middle"
-      font-family="var(--mono)" font-size="11.5" fill="var(--ink2)">${d[i].fy}</text>`).join("")}
+      font-family="var(--mono)" font-size="11.5" fill="var(--ink2)">${esc(xlab(d[i].fy))}</text>`).join("")}
+    ${hit}
   </svg>`;
 }
+
+/* One handler for every chart on the page, now and after any redraw. Charts
+   are rebuilt constantly, so binding per chart would leak listeners; the
+   document keeps one and reads the data off whichever svg is under the
+   pointer. Skipped entirely on a touch device, where there is no hover and a
+   tap would fight scrolling. */
+(function chartTips(){
+  if(typeof document === "undefined") return;
+  let box = null;
+  const kill = () => {
+    if(box) box.style.display = "none";
+    document.querySelectorAll("svg.ctip .xhair").forEach(l => l.setAttribute("opacity","0"));
+    document.querySelectorAll("svg.ctip .xdots").forEach(g => g.innerHTML = "");
+  };
+  document.addEventListener("mousemove", e => {
+    const rect = e.target.closest ? e.target.closest("svg.ctip .hits rect") : null;
+    if(!rect){ if(!e.target.closest || !e.target.closest("svg.ctip")) kill(); return; }
+    const svg = rect.closest("svg.ctip");
+    let tip; try { tip = JSON.parse(svg.dataset.tip); } catch(err){ return; }
+    const i = +rect.dataset.i, row = tip.rows[i];
+    if(!row) return;
+    const x = tip.x0 + tip.dx * i;
+    const hair = svg.querySelector(".xhair");
+    if(hair){ hair.setAttribute("x1", x.toFixed(1)); hair.setAttribute("x2", x.toFixed(1));
+              hair.setAttribute("opacity", "0.55"); }
+    const dots = svg.querySelector(".xdots");
+    if(dots) dots.innerHTML = row.v.map(v =>
+      `<circle cx="${x.toFixed(1)}" cy="${v.y}" r="3.4" fill="${v.c}"
+         stroke="var(--card)" stroke-width="1.5"/>`).join("");
+    if(!box){
+      box = document.createElement("div");
+      box.className = "charttip";
+      document.body.appendChild(box);
+    }
+    box.innerHTML = `<b>${esc(row.fy)}</b>` + row.v.map(v =>
+      `<span><i style="background:${v.c}"></i>${esc(v.t)}<em>${esc(v.s)}</em></span>`).join("");
+    box.style.display = "block";
+    // Flip to the left of the pointer near the right edge, so the readout
+    // never runs off the screen it is describing.
+    const w = box.offsetWidth, flip = e.clientX + w + 26 > window.innerWidth;
+    box.style.left = (e.clientX + (flip ? -w - 16 : 16)) + "px";
+    box.style.top  = Math.min(window.innerHeight - box.offsetHeight - 8,
+                              Math.max(8, e.clientY - box.offsetHeight / 2)) + "px";
+  });
+  document.addEventListener("mouseleave", kill, true);
+  window.addEventListener("scroll", kill, {passive:true});
+})();
 const legend = items => `<div class="legend">${items.map(x=>
   `<span><i style="background:${x.c}"></i>${esc(x.t)}</span>`).join("")}</div>`;
 function otable(d, rows, n){

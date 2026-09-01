@@ -442,6 +442,37 @@ table.pwlbtab td.num,table.pwlbtab th.num{text-align:right}
   text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:5px}
 .plain p{font-family:var(--sans);font-size:14.5px;line-height:1.6;color:var(--ink);margin:0}
 .plain p b{font-family:var(--mono);font-weight:600}
+
+/* The hover readout. Fixed rather than absolute so it is never clipped by a
+   chart sitting inside a scrolling panel. */
+.charttip{position:fixed;z-index:90;display:none;pointer-events:none;
+  background:var(--card);border:1px solid var(--line2);border-radius:var(--r-sm);
+  box-shadow:0 8px 28px rgba(15,26,36,.16);padding:9px 11px;min-width:186px}
+.charttip b{display:block;font-family:var(--mono);font-size:12px;color:var(--ink);
+  font-weight:600;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--hair)}
+.charttip span{display:flex;align-items:center;gap:7px;font-family:var(--sans);
+  font-size:12px;color:var(--ink2);line-height:1.7;white-space:nowrap}
+.charttip i{width:9px;height:9px;border-radius:2px;flex:0 0 auto}
+.charttip em{margin-left:auto;font-style:normal;font-family:var(--mono);
+  font-weight:600;color:var(--ink);padding-left:14px}
+svg.ctip .hits rect{cursor:crosshair}
+
+/* The indicator picker. Screen furniture inside a document, so it is marked
+   no-print and never reaches the export. */
+.picker{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 16px;
+  padding:9px 11px;background:var(--sunken);border-radius:var(--r-sm);
+  border:1px solid var(--line)}
+.picker .pl{font-family:var(--sans);font-size:11px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted);font-weight:700;margin-right:2px}
+.picker .sp{flex:1;min-width:8px}
+.pbtn{font-family:var(--sans);font-size:12px;font-weight:600;padding:4px 10px;
+  border:1px solid var(--line2);background:var(--card);color:var(--ink2);
+  border-radius:var(--r-sm);cursor:pointer}
+.pbtn:hover{border-color:var(--muted);color:var(--ink)}
+.pbtn.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.picker .pnote{flex:1 1 100%;font-family:var(--sans);font-size:11.5px;color:var(--muted);
+  margin-top:2px}
+@media print{.no-print{display:none}}
 </style>
 
 <div class="shell">
@@ -806,7 +837,8 @@ function colLabel(c){
 
 const MTFP = 5;   // years most authorities actually forecast — marked, not enforced
 
-let S = {gss:"", report:"tmss", fy0:2026, asAt:null, natOverride:null, hra:"no", fund:"gf", years:51,
+let S = {gss:"", report:"tmss", fy0:2026, asAt:null, natOverride:null,
+         view:{ind:"all", fund:"all"}, hra:"no", fund:"gf", years:51,
          loans:[], g:{}, text:{}, sec:"intro",
          choices:{mrpmethod:"asset", cycle:"thrice"}, rates:[], limits:{}, portfolio:[], portfolioText:"", portfolioNote:"", logo:null};
 const blank = () => { const o={}; COLS.forEach(c=>o[c.k]=Array(S.years).fill(0)); return o; };
@@ -863,10 +895,45 @@ function chart(d, spec){
       font-size="9.5" fill="var(--faint)">beyond the MTFP</text>` : "";
   const step=Math.max(1,Math.round(d.length/9)), tx=[];
   for(let i=0;i<d.length;i+=step) tx.push(i);
+  /* THE NUMBERS, CARRIED WITH THE PICTURE.
+   *
+   * A line chart says shape and hides value. Everything here is money to one
+   * decimal place and somebody is going to want to know what it was in
+   * 2033/34 — and reading it off a table twenty rows down is not the same as
+   * pointing at the line. So each chart carries its own formatted values, and
+   * one delegated handler turns a hover into a readout.
+   *
+   * Formatted at render time rather than at hover: spec.fmt is a function and
+   * cannot be put in an attribute, and the chart already knows how it wants
+   * its own numbers written. */
+  const fmt = spec.fmt || m1;
+  // The x label. The indicator charts carry a bare year while every table
+  // beside them says 2031/32; passing a formatter lets both agree without the
+  // model having to change the field every consumer reads.
+  const xlab = spec.xlab || (v => v);
+  const tip = {
+    x0: P.l, dx: iw / Math.max(1, d.length - 1), n: d.length,
+    top: P.t, bot: P.t + ih,
+    rows: d.map((p, i) => ({
+      fy: xlab(p.fy),
+      v: spec.lines.map(l => ({
+        t: l.t || l.k, c: l.c,
+        s: p[l.k] == null ? null : fmt(p[l.k]),
+        y: p[l.k] == null ? null : +Y(p[l.k]).toFixed(1)
+      })).filter(x => x.s !== null)
+    }))
+  };
+  const hit = `<g class="hits">${d.map((p,i)=>
+    `<rect x="${(X(i)-tip.dx/2).toFixed(1)}" y="${P.t}" width="${Math.max(2,tip.dx).toFixed(1)}"
+       height="${ih.toFixed(1)}" fill="transparent" data-i="${i}"/>`).join("")}</g>
+    <line class="xhair" x1="0" y1="${P.t}" x2="0" y2="${P.t+ih}" stroke="var(--ink2)"
+      stroke-width="1" stroke-dasharray="3 3" opacity="0"/>
+    <g class="xdots"></g>`;
   const mark = `<text x="${W-P.r}" y="${P.t+11}" text-anchor="end"
     font-family="var(--sans)" font-size="11" font-weight="600"
     fill="var(--muted)" opacity=".42" letter-spacing="0.5">PWLBtoday</text>`;
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
+    class="ctip" data-tip="${esc(JSON.stringify(tip))}"
     aria-label="${esc(spec.label)}">${gl.join("")}${fills}${zero}${mk}${mark}
     ${spec.lines.map(l=>`<path d="${path(l.k)}" fill="none" stroke="${l.c}"
       stroke-width="${l.w||2}" stroke-linejoin="round" stroke-linecap="round"${
@@ -877,9 +944,57 @@ function chart(d, spec){
         ? `<circle cx="${X(d.length-1).toFixed(1)}" cy="${Y(last[l.k]).toFixed(1)}" r="2.6"
              fill="${l.c}" stroke="var(--card)" stroke-width="1.4"/>` : "";}).join("")}
     ${tx.map(i=>`<text x="${X(i).toFixed(1)}" y="${H-7}" text-anchor="middle"
-      font-family="var(--mono)" font-size="11.5" fill="var(--ink2)">${d[i].fy}</text>`).join("")}
+      font-family="var(--mono)" font-size="11.5" fill="var(--ink2)">${esc(xlab(d[i].fy))}</text>`).join("")}
+    ${hit}
   </svg>`;
 }
+
+/* One handler for every chart on the page, now and after any redraw. Charts
+   are rebuilt constantly, so binding per chart would leak listeners; the
+   document keeps one and reads the data off whichever svg is under the
+   pointer. Skipped entirely on a touch device, where there is no hover and a
+   tap would fight scrolling. */
+(function chartTips(){
+  if(typeof document === "undefined") return;
+  let box = null;
+  const kill = () => {
+    if(box) box.style.display = "none";
+    document.querySelectorAll("svg.ctip .xhair").forEach(l => l.setAttribute("opacity","0"));
+    document.querySelectorAll("svg.ctip .xdots").forEach(g => g.innerHTML = "");
+  };
+  document.addEventListener("mousemove", e => {
+    const rect = e.target.closest ? e.target.closest("svg.ctip .hits rect") : null;
+    if(!rect){ if(!e.target.closest || !e.target.closest("svg.ctip")) kill(); return; }
+    const svg = rect.closest("svg.ctip");
+    let tip; try { tip = JSON.parse(svg.dataset.tip); } catch(err){ return; }
+    const i = +rect.dataset.i, row = tip.rows[i];
+    if(!row) return;
+    const x = tip.x0 + tip.dx * i;
+    const hair = svg.querySelector(".xhair");
+    if(hair){ hair.setAttribute("x1", x.toFixed(1)); hair.setAttribute("x2", x.toFixed(1));
+              hair.setAttribute("opacity", "0.55"); }
+    const dots = svg.querySelector(".xdots");
+    if(dots) dots.innerHTML = row.v.map(v =>
+      `<circle cx="${x.toFixed(1)}" cy="${v.y}" r="3.4" fill="${v.c}"
+         stroke="var(--card)" stroke-width="1.5"/>`).join("");
+    if(!box){
+      box = document.createElement("div");
+      box.className = "charttip";
+      document.body.appendChild(box);
+    }
+    box.innerHTML = `<b>${esc(row.fy)}</b>` + row.v.map(v =>
+      `<span><i style="background:${v.c}"></i>${esc(v.t)}<em>${esc(v.s)}</em></span>`).join("");
+    box.style.display = "block";
+    // Flip to the left of the pointer near the right edge, so the readout
+    // never runs off the screen it is describing.
+    const w = box.offsetWidth, flip = e.clientX + w + 26 > window.innerWidth;
+    box.style.left = (e.clientX + (flip ? -w - 16 : 16)) + "px";
+    box.style.top  = Math.min(window.innerHeight - box.offsetHeight - 8,
+                              Math.max(8, e.clientY - box.offsetHeight / 2)) + "px";
+  });
+  document.addEventListener("mouseleave", kill, true);
+  window.addEventListener("scroll", kill, {passive:true});
+})();
 const legend = items => `<div class="legend">${items.map(x=>
   `<span><i style="background:${x.c}"></i>${esc(x.t)}</span>`).join("")}</div>`;
 function otable(d, rows, n){
@@ -3533,7 +3648,7 @@ function affordBlock(d){
            stream has been entered` : ""}.</p>`
     + `<div class="chartwrap">${chart(have.map(r=>({fy:fy(r.fy).slice(2), i:r.i, afford:r.afford})),
         {label:"Financing costs as a share of net revenue stream", h:210, zero:"tight",
-         fmt:v=>v.toFixed(1)+"%", lines:[{k:"afford", c:"var(--l-lb)", w:2.2}]})}</div>`
+         fmt:v=>v.toFixed(1)+"%", lines:[{k:"afford",t:"Financing costs %", c:"var(--l-lb)", w:2.2}]})}</div>`
     + otable(have,[{l:"Interest payable",k:"intpay"},
                    {l:NAT().mrpCap+" charged",k:"mrp"},
                    {l:"Investment income",k:"intinc"},
@@ -3580,23 +3695,70 @@ function propBlock(have){
  * authority saw no split at all AND had its LB2 to LB5 computed from the
  * General Fund grid with the HRA discarded.
  */
-function indicatorSplit(gf, hra, all, hasHRA, twoPool){
-  if(!hasHRA) return indicatorBlock(gf, "", null);
+/* A viewing filter, and ONLY a viewing filter.
+ *
+ * On screen the five indicators and up to three funds are a lot to scroll
+ * past when you are checking one of them. So they can be narrowed to one.
+ *
+ * The EXPORT ignores this completely. What the Code requires in the paper does
+ * not depend on which tab somebody happened to leave open, and a filter that
+ * could silently drop LB4 out of a committee report would be a trap rather
+ * than a convenience. forExport passes `false` and everything comes back.
+ */
+function indicatorPicker(hasHRA, twoPool){
+  const V = S.view || {};
+  const inds = ["all","LB1","LB2","LB3","LB4","LB5"];
+  const funds = twoPool ? [["all","Whole authority"],["gf","General Fund"],["hra","HRA"]]
+              : hasHRA  ? [["all","Whole authority"],["gf","General Fund"],["hra","HRA"]]
+              : null;
+  return `<div class="picker no-print">
+    <span class="pl">Show</span>
+    ${inds.map(k=>`<button type="button" class="pbtn${(V.ind||"all")===k?" on":""}"
+        data-vi="${k}">${k==="all"?"All five":k}</button>`).join("")}
+    ${funds ? `<span class="sp"></span><span class="pl">Fund</span>` +
+      funds.map(([k,t])=>`<button type="button" class="pbtn${(V.fund||"all")===k?" on":""}"
+        data-vf="${k}">${esc(t)}</button>`).join("") : ""}
+    <span class="pnote">On screen only — the export carries every indicator the Code asks for.</span>
+  </div>`;
+}
+
+function viewWanted(tag, fundKey){
+  const V = S.view || {};
+  if((V.ind || "all") !== "all" && V.ind !== tag) return false;
+  if((V.fund || "all") !== "all" && fundKey && V.fund !== fundKey) return false;
+  return true;
+}
+
+function indicatorSplit(gf, hra, all, hasHRA, twoPool, forExport){
+  // Filtering is a screen convenience; the paper is the paper.
+  const F = forExport ? null : (S.view || null);
+  const wantInd = t => !F || (F.ind || "all") === "all" || F.ind === t;
+  const wantFund = k => !F || (F.fund || "all") === "all" || F.fund === k;
+  const only = list => list.filter(wantInd);
+  const head = forExport ? "" : indicatorPicker(hasHRA, twoPool);
+
+  if(!hasHRA)
+    return head + indicatorBlock(gf, "", null, {only: only(["LB1","LB2","LB3","LB4","LB5"])});
 
   const H = t => `<h4 style="margin-top:24px">${t}</h4>`;
+  const part = (model, label, cross, tags, fundKey, heading) => {
+    const keep = only(tags);
+    if(!keep.length || !wantFund(fundKey)) return "";
+    return (heading ? H(heading) : "") + indicatorBlock(model, label, cross, {only:keep});
+  };
+
   if(twoPool)
-    return indicatorBlock(gf, "General Fund", hra, {only:["LB1","LB2","LB3","LB4"]})
-         + H("Housing Revenue Account")
-         + indicatorBlock(hra, "HRA", null, {only:["LB1","LB2","LB3","LB4"]})
-         + H("Whole authority")
-         + indicatorBlock(all, "", null, {only:["LB5"]});
+    return head
+         + part(gf,  "General Fund", hra, ["LB1","LB2","LB3","LB4"], "gf")
+         + part(hra, "HRA", null, ["LB1","LB2","LB3","LB4"], "hra", "Housing Revenue Account")
+         + part(all, "", null, ["LB5"], "all", "Whole authority");
 
   // One pool. LB1 for each fund; everything else on the combined balance sheet.
-  return indicatorBlock(gf, "General Fund", null, {only:["LB1"]})
-       + H("Housing Revenue Account")
-       + indicatorBlock(hra, "HRA", null, {only:["LB1"]})
-       + H("Whole authority — debt is pooled, so the benchmarks are not split")
-       + indicatorBlock(all, "", null, {only:["LB2","LB3","LB4","LB5"]});
+  return head
+       + part(gf,  "General Fund", null, ["LB1"], "gf")
+       + part(hra, "HRA", null, ["LB1"], "hra", "Housing Revenue Account")
+       + part(all, "", null, ["LB2","LB3","LB4","LB5"], "all",
+              "Whole authority — debt is pooled, so the benchmarks are not split");
 }
 
 function documentHTML(forExport){
@@ -3613,7 +3775,7 @@ function documentHTML(forExport){
   const all = hasHRA ? buildModel(S,"all") : d;
   const body = secs.map(s=>`
     <section class="dsec"><h3><span class="secn">${s.n}</span>${esc(natText(s.t))}</h3>${s.b}
-    ${s.indicators ? indicatorSplit(d, hra, all, hasHRA, twoPool) : ""}</section>`).join("");
+    ${s.indicators ? indicatorSplit(d, hra, all, hasHRA, twoPool, forExport) : ""}</section>`).join("");
   const outstanding = secs.filter(s=>/class="gap"/.test(s.b)).length;
   const head = (S.logo ? `<img class="doclogo" src="${S.logo}" alt="">` : "")
     + `<h2>${esc(name)}</h2>
@@ -3701,44 +3863,44 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
   // from Housing Revenue Account." A separate chart was my first reading and
   // it was wrong — it belongs on every one of them.
   const D = hraSet ? crossFund(d, hraSet) : d;
-  const XF = hraSet ? [{k:"cross", c:"var(--l-strat)", w:1.6, dash:"2 3"}] : [];
+  const XF = hraSet ? [{k:"cross",t:"GF lending to the HRA", c:"var(--l-strat)", w:1.6, dash:"2 3"}] : [];
   const XL = hraSet ? [{c:"var(--l-strat)", t:"GF lending to / borrowing from the HRA"}] : [];
   return `
    ${!want("LB1") ? "" : IND("LB1","Net treasury position",
-     `<div class="chartwrap">${chart(D,{label:"LB1",lines:[
-       {k:"cfr",c:"var(--l-cfr)",w:2},{k:"obs",c:"var(--l-obs)",w:1.8,dash:"5 3"},
-       {k:"ntp",c:"var(--l-ntp)",w:2.4}].concat(XF)})}${L([{c:"var(--l-cfr)",t:"CFR"},
+     `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB1",lines:[
+       {k:"cfr",t:"CFR",c:"var(--l-cfr)",w:2},{k:"obs",t:"Other balance sheet",c:"var(--l-obs)",w:1.8,dash:"5 3"},
+       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:2.4}].concat(XF)})}${L([{c:"var(--l-cfr)",t:"CFR"},
        {c:"var(--l-obs)",t:"Other balance sheet items"},{c:"var(--l-ntp)",t:"Net treasury position"}].concat(XL))}</div>
       ${readoutHTML("LB1", d, fundLabel)}`)}
    ${!want("LB2") ? "" : IND("LB2","Treasury benchmarks"+tag,
-     `<div class="chartwrap">${chart(D,{label:"LB2",lines:[
-       {k:"ntp",c:"var(--l-ntp)",w:1.8},{k:"tib",c:"var(--l-inv)",w:1.8},
-       {k:"lb",c:"var(--l-lb)",w:2.4},{k:"al",c:"var(--l-al)",w:1.6,dash:"7 4"}].concat(XF)})}
+     `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB2",lines:[
+       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:1.8},{k:"tib",t:"Investment benchmark",c:"var(--l-inv)",w:1.8},
+       {k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.4},{k:"al",t:"Authorised limit",c:"var(--l-al)",w:1.6,dash:"7 4"}].concat(XF)})}
        ${L([{c:"var(--l-ntp)",t:"Net treasury position"},{c:"var(--l-inv)",t:"Investment benchmark"},
             {c:"var(--l-lb)",t:"Liability benchmark"},{c:"var(--l-al)",t:"Authorised limit"}].concat(XL))}</div>
       ${otable(d,[{l:"Net treasury position",k:"ntp"},{l:"Treasury investment benchmark",k:"tib"},
                   {l:"Liability benchmark",k:"lb",cls:"lb"},{l:"Authorised limit",k:"al",cls:"key"}])}
       ${readoutHTML("LB2", d, fundLabel)}`)}
    ${!want("LB3") ? "" : IND("LB3","Treasury commitments against the benchmarks"+tag,
-     `<div class="chartwrap">${chart(D,{label:"LB3",h:280,fill:[{k:"lb",to:"el",c:"var(--l-lb)",o:.09}],
-       lines:[{k:"lb",c:"var(--l-lb)",w:2.4},{k:"el",c:"var(--l-debt)",w:2.2},
-              {k:"ei",c:"var(--l-ei)",w:1.8,dash:"3 3"},{k:"ntp",c:"var(--l-ntp)",w:1.6},
-              {k:"tib",c:"var(--l-inv)",w:1.6,dash:"4 3"}].concat(XF)})}
+     `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB3",h:280,fill:[{k:"lb",to:"el",c:"var(--l-lb)",o:.09}],
+       lines:[{k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.4},{k:"el",t:"Existing loans",c:"var(--l-debt)",w:2.2},
+              {k:"ei",t:"Existing investments",c:"var(--l-ei)",w:1.8,dash:"3 3"},{k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:1.6},
+              {k:"tib",t:"Investment benchmark",c:"var(--l-inv)",w:1.6,dash:"4 3"}].concat(XF)})}
        ${L([{c:"var(--l-lb)",t:"Liability benchmark"},{c:"var(--l-debt)",t:"Existing loans"},
             {c:"var(--l-ei)",t:"Existing investments"}].concat(XL))}</div>
       ${otable(d,[{l:"Existing loan commitments",k:"el"},{l:"Liability benchmark",k:"lb",cls:"lb"},
                   {l:"Existing investment commitments",k:"ei"}])}
       ${readoutHTML("LB3", d, fundLabel)}`)}
    ${!want("LB4") ? "" : IND("LB4","Borrowing requirement / overborrowing"+tag,
-     `<div class="chartwrap">${chart(D,{label:"LB4",h:220,fill:[{k:"br",c:"var(--l-lb)",o:.14}],
+     `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB4",h:220,fill:[{k:"br",c:"var(--l-lb)",o:.14}],
        lines:[{k:"br",c:"var(--l-lb)",w:2.4}].concat(XF)})}</div>
       ${otable(d,[{l:"Borrowing requirement",k:"need"},{l:"Above-benchmark borrowing",k:"over"}])}
       ${readoutHTML("LB4", d, fundLabel)}`)}
    ${(skipLB5 || !want("LB5")) ? "" : IND("LB5","Treasury investment projection",
      `<div class="chartwrap">${chart(d,{label:"LB5",h:240,fill:[{k:"liq",c:"var(--l-inv)",o:.16}],
-       lines:[{k:"tib",c:"var(--l-inv)",w:2.4},{k:"ei",c:"var(--l-ei)",w:1.8,dash:"3 3"},
-              {k:"liq",c:"var(--muted)",w:1.6},{k:"strategic",c:"var(--l-strat)",w:1.8},
-              {k:"excess",c:"var(--l-exc)",w:1.8}]})}
+       lines:[{k:"tib",t:"Investment benchmark",c:"var(--l-inv)",w:2.4},{k:"ei",t:"Existing investments",c:"var(--l-ei)",w:1.8,dash:"3 3"},
+              {k:"liq",c:"var(--muted)",w:1.6},{k:"strategic",t:"Strategic",c:"var(--l-strat)",w:1.8},
+              {k:"excess",t:"Excess",c:"var(--l-exc)",w:1.8}]})}
        ${L([{c:"var(--l-inv)",t:"Investment benchmark"},{c:"var(--muted)",t:"Liquidity allowance"},
             {c:"var(--l-strat)",t:"Strategic"},{c:"var(--l-exc)",t:"Excess"}])}</div>
       ${otable(d,[{l:"Treasury investment benchmark",k:"tib",cls:"inv"},{l:"Liquidity allowance",k:"liq"},
@@ -4539,6 +4701,16 @@ function stampSaved(word){
   $("downx").addEventListener("click", downloadCSV);
   $("save").addEventListener("click", saveVersion);
   $("restore").addEventListener("click", restoreVersion);
+  // The indicator picker lives inside the rendered draft, so it is delegated.
+  document.addEventListener("click", e=>{
+    const b = e.target.closest("[data-vi],[data-vf]");
+    if(!b) return;
+    S.view = S.view || {ind:"all", fund:"all"};
+    if(b.dataset.vi) S.view.ind = b.dataset.vi;
+    if(b.dataset.vf) S.view.fund = b.dataset.vf;
+    render();
+  });
+
   $("seclist").addEventListener("click", e=>{
     const b=e.target.closest("button"); if(!b) return;
     S.sec=b.dataset.s; renderSections(); });
