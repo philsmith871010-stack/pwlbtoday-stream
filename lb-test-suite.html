@@ -200,6 +200,11 @@ table.bo tr.hi td,table.bo tr.hi th{background:var(--accent-soft)}
 .charttip em{margin-left:auto;font-style:normal;font-family:var(--mono);
   font-weight:600;color:var(--ink);padding-left:14px}
 svg.ctip .hits rect{cursor:crosshair}
+
+/* A year a column is not asked for. Hatched rather than blank, so it reads as
+   "not applicable" instead of "you have not filled this in". */
+td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
+  transparent 4px,transparent 8px);opacity:.7}
 </style>
 
 <div class="bwrap">
@@ -398,23 +403,30 @@ function natText(t){
 
 const REPORTS = [{k:"tmss",t:"Annual treasury strategy"},{k:"mid",t:"Mid-year review"},
                  {k:"out",t:"Annual outturn"},{k:"quart",t:"Quarterly monitoring"}];
+/* The order is the order they are read in: the balance sheet first, then what
+   the authority holds against it, then the budget lines that only exist across
+   the MTFP. Capital expenditure sits with the budget lines rather than up
+   among the balance sheet, because that is what it is.
+     scalar  asked for once, above the grid
+     gf      the General Fund has it and the HRA does not
+     mtfp    forecast across the MTFP and not beyond it */
 const COLS = [
   {k:"cfr",   l:"Capital financing<br>requirement", s:"LB1 (a)"},
-  {k:"mrp",   l:"MRP and VRP",            s:"charged in year", natl:{scotland:"Loans fund<br>repayments"}},
-  {k:"rec",   l:"Capital receipts<br>applied", s:"set aside"},
-  {k:"capex", l:"Capital expenditure<br>financed by borrowing"},
+  {k:"mrp",   l:"MRP",                          s:"charged in year"},
+  {k:"rec",   l:"Capital receipts<br>applied",  s:"set aside"},
   {k:"obs",   l:"Other balance<br>sheet items", s:"LB1 (b)"},
   {k:"loans", l:"Existing loan<br>commitments", s:"LB3 (d)", ours:true},
   {k:"inv",   l:"Existing investment<br>commitments", s:"LB3 (e)", gf:true},
-  {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark", gf:true},
+  {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark", gf:true, scalar:true},
+  {k:"capex", l:"Capital expenditure<br>financed by borrowing", mtfp:true},
   // Affordability. The Prudential Code's own indicator, and the one the tool
   // produced no figure for at all: it computed six debt and investment limits
   // and left the question members actually ask — what does this cost us as a
   // share of what we raise — to prose.
-  {k:"intpay", l:"Interest<br>payable",     s:"on borrowing and leases"},
-  {k:"intinc", l:"Investment<br>income",    s:"netted off", gf:true},
-  {k:"nrs",    l:"Net revenue<br>stream",   s:"grants and local taxpayers"},
-  {k:"comminc",l:"Non-treasury<br>investment income", s:"net, if any", gf:true}
+  {k:"intpay",  l:"Interest<br>payable",  s:"on borrowing and leases", mtfp:true},
+  {k:"intinc",  l:"Investment<br>income", s:"netted off", gf:true, mtfp:true},
+  {k:"nrs",     l:"Net revenue<br>stream", s:"grants and local taxpayers", mtfp:true},
+  {k:"comminc", l:"Non-treasury<br>investment income", s:"net, if any", gf:true, mtfp:true}
 ];
 /* A column whose name changes with the country — Scotland charges loans fund
    repayments where England and Wales make MRP. */
@@ -437,7 +449,13 @@ function colLabel(c){
  * would then be counted twice in the combined sheet.
  */
 const GF_ONLY = COLS.filter(c => c.gf).map(c => c.k);
-const colsFor = fund => COLS.filter(c => !(c.gf && fund === "hra"));
+/* Which columns the grid shows. A scalar is asked for once, above the grid,
+   rather than fifty-one times inside it. */
+const colsFor = fund => COLS.filter(c => !c.scalar && !(c.gf && fund === "hra"));
+/* And which YEARS a column is asked for. The budget lines are forecast across
+   the MTFP; beyond it they are neither nil nor known, and an empty cell that
+   could mean either is worse than no cell. */
+const colAsked = (c, i) => !(c.mtfp && i >= MTFP);
 
 const MTFP = 5;   // years most authorities actually forecast — marked, not enforced
 
@@ -1216,7 +1234,8 @@ function bApply(g, spec, years){
   const at = (v, i) => r1(typeof v === "function" ? v(i) : (v || 0));
   Object.keys(spec || {}).forEach(k => {
     if(!g[k]) return;
-    for(let i=0;i<years;i++) g[k][i] = at(spec[k], i);
+    const c = BCOLS.find(x => x.k === k);
+    for(let i=0;i<years;i++) g[k][i] = (c && !colAsked(c, i)) ? 0 : at(spec[k], i);
   });
   // Walk the CFR from its movements so the reconciliation check passes by
   // construction. Round before the next year reads it — see the note above.
@@ -1256,9 +1275,10 @@ function bGrid(){
     CS.map(c => `<th title="${esc(c.s||"")}">${c.l.replace(/<br>/g," ")}</th>`).join("") +
     "</tr></thead><tbody>";
   for(let i=0;i<y;i++){
-    h += `<tr><th>${fy(S.fy0+i)}</th>` + CS.map(c =>
-      `<td><input inputmode="decimal" data-k="${c.k}" data-i="${i}"
-        value="${g[c.k][i] || ""}"></td>`).join("") + "</tr>";
+    h += `<tr><th>${fy(S.fy0+i)}</th>` + CS.map(c => colAsked(c, i)
+      ? `<td><input inputmode="decimal" data-k="${c.k}" data-i="${i}"
+          value="${g[c.k][i] || ""}"></td>`
+      : `<td class="nask" title="forecast across the MTFP only"></td>`).join("") + "</tr>";
   }
   $("bgrid").innerHTML = h + "</tbody>";
   $("bgrid").querySelectorAll("input").forEach(inp =>
@@ -1492,7 +1512,11 @@ function bAll(){ bGrid(); bOut(); }
     cols: colsFor(BFUND).map(c => c.k),
     rows: () => S.years,
     get: (k,i) => S.g[BFUND][k][i],
-    set: (k,i,v) => { S.g[BFUND][k][i] = v; },
+    set: (k,i,v) => {
+      const c = COLS.find(x => x.k === k);
+      if(c && !colAsked(c, i)) return;
+      S.g[BFUND][k][i] = v;
+    },
     after: () => { bSync(); bOut(); },
     // Undo restores the fund that was being edited, not the whole state: the
     // other fund is untouched by anything this grid does.

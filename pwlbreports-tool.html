@@ -512,6 +512,11 @@ svg.ctip .hits rect{cursor:crosshair}
   opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
+
+/* A year a column is not asked for. Hatched rather than blank, so it reads as
+   "not applicable" instead of "you have not filled this in". */
+td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
+  transparent 4px,transparent 8px);opacity:.7}
 </style>
 
 <div class="shell">
@@ -639,36 +644,8 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
         <label class="minliq" for="minliq">Minimum liquidity balance £m
           <input type="text" inputmode="decimal" id="minliq" value="" placeholder="e.g. 15">
         </label>
-        <button type="button" id="applyliq">Apply across the horizon</button>
-        <span class="hintline">The lowest balance you would run to. It sets the liquidity
-          allowance, and so the benchmark. Vary a year in the grid if it changes.</span>
-      </div>
-      <div class="ltools">
-        <button type="button" id="pasteproj">Paste year-end balances</button>
-        <button type="button" class="ghost" id="tmplproj">Balances template .csv</button>
-        <button type="button" id="seedloans">Fill loans from the PWLB book</button>
-        <span class="hintline" id="projnote"></span>
-      </div>
-      <div class="pastebox" id="projpaste" hidden>
-        <label for="projtext">Paste a projection of year-end balances<span class="hint">Years
-          down a column beside the balances, or a row of years above a row of balances —
-          either way round. Choose which row it fills below.</span></label>
-        <textarea id="projtext" rows="5" placeholder="2026/27&#9;412.6
-2027/28&#9;398.1
-2028/29&#9;385.4"></textarea>
-        <div class="ltools">
-          <label class="minliq" for="projrow">Fills
-            <select id="projrow">
-              <option value="loans">Existing loan commitments</option>
-              <option value="inv">Existing investment commitments</option>
-              <option value="cfr">Capital financing requirement</option>
-              <option value="obs">Other balance sheet items</option>
-              <option value="liq">Liquidity allowance</option>
-            </select></label>
-          <button type="button" class="primary" id="projread">Read it</button>
-          <button type="button" id="projcancel">Cancel</button>
-          <span class="hintline" id="projreadnote"></span>
-        </div>
+        <span class="hintline">One figure, applied across every year — the lowest balance you
+          would run to. It sets the benchmark.</span>
       </div>
       <div class="ltools">
         <label class="minliq" for="demokind">Demonstration
@@ -678,13 +655,11 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
             <option value="two">HRA, two pool</option>
           </select></label>
         <button type="button" class="primary" id="example">Fill it completely</button>
-        <button type="button" id="filldown">Fill down from selected cell</button>
         <button type="button" id="clear">Clear</button>
         <span class="sp"></span>
         <button type="button" id="copyx">Copy for Excel</button>
-        <button type="button" id="downx">Download .csv</button>
-        <span class="hintline" id="xhint">Paste into Excel, edit, then copy the block back
-          into the first cell.</span>
+        <span class="hintline" id="xhint">Copy, edit in Excel, then paste back into any cell —
+          the block lands from the cell you are in.</span>
       </div>
       <div class="chk" id="chk"></div>
     </div>
@@ -850,23 +825,30 @@ function natText(t){
 
 const REPORTS = [{k:"tmss",t:"Annual treasury strategy"},{k:"mid",t:"Mid-year review"},
                  {k:"out",t:"Annual outturn"},{k:"quart",t:"Quarterly monitoring"}];
+/* The order is the order they are read in: the balance sheet first, then what
+   the authority holds against it, then the budget lines that only exist across
+   the MTFP. Capital expenditure sits with the budget lines rather than up
+   among the balance sheet, because that is what it is.
+     scalar  asked for once, above the grid
+     gf      the General Fund has it and the HRA does not
+     mtfp    forecast across the MTFP and not beyond it */
 const COLS = [
   {k:"cfr",   l:"Capital financing<br>requirement", s:"LB1 (a)"},
-  {k:"mrp",   l:"MRP and VRP",            s:"charged in year", natl:{scotland:"Loans fund<br>repayments"}},
-  {k:"rec",   l:"Capital receipts<br>applied", s:"set aside"},
-  {k:"capex", l:"Capital expenditure<br>financed by borrowing"},
+  {k:"mrp",   l:"MRP",                          s:"charged in year"},
+  {k:"rec",   l:"Capital receipts<br>applied",  s:"set aside"},
   {k:"obs",   l:"Other balance<br>sheet items", s:"LB1 (b)"},
   {k:"loans", l:"Existing loan<br>commitments", s:"LB3 (d)", ours:true},
   {k:"inv",   l:"Existing investment<br>commitments", s:"LB3 (e)", gf:true},
-  {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark", gf:true},
+  {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark", gf:true, scalar:true},
+  {k:"capex", l:"Capital expenditure<br>financed by borrowing", mtfp:true},
   // Affordability. The Prudential Code's own indicator, and the one the tool
   // produced no figure for at all: it computed six debt and investment limits
   // and left the question members actually ask — what does this cost us as a
   // share of what we raise — to prose.
-  {k:"intpay", l:"Interest<br>payable",     s:"on borrowing and leases"},
-  {k:"intinc", l:"Investment<br>income",    s:"netted off", gf:true},
-  {k:"nrs",    l:"Net revenue<br>stream",   s:"grants and local taxpayers"},
-  {k:"comminc",l:"Non-treasury<br>investment income", s:"net, if any", gf:true}
+  {k:"intpay",  l:"Interest<br>payable",  s:"on borrowing and leases", mtfp:true},
+  {k:"intinc",  l:"Investment<br>income", s:"netted off", gf:true, mtfp:true},
+  {k:"nrs",     l:"Net revenue<br>stream", s:"grants and local taxpayers", mtfp:true},
+  {k:"comminc", l:"Non-treasury<br>investment income", s:"net, if any", gf:true, mtfp:true}
 ];
 /* A column whose name changes with the country — Scotland charges loans fund
    repayments where England and Wales make MRP. */
@@ -889,7 +871,13 @@ function colLabel(c){
  * would then be counted twice in the combined sheet.
  */
 const GF_ONLY = COLS.filter(c => c.gf).map(c => c.k);
-const colsFor = fund => COLS.filter(c => !(c.gf && fund === "hra"));
+/* Which columns the grid shows. A scalar is asked for once, above the grid,
+   rather than fifty-one times inside it. */
+const colsFor = fund => COLS.filter(c => !c.scalar && !(c.gf && fund === "hra"));
+/* And which YEARS a column is asked for. The budget lines are forecast across
+   the MTFP; beyond it they are neither nil nor known, and an empty cell that
+   could mean either is worse than no cell. */
+const colAsked = (c, i) => !(c.mtfp && i >= MTFP);
 
 const MTFP = 5;   // years most authorities actually forecast — marked, not enforced
 
@@ -4186,9 +4174,13 @@ function buildLedger(){
     `<th>${colLabel(c)}${c.s?`<small>${esc(c.s)}</small>`:""}</th>`).join("") + `</tr></thead><tbody>`;
   for(let i=0;i<S.years;i++){
     h += `<tr class="${i<MTFP?"mtfp":"beyond"}"><th class="yr">${fy(S.fy0+i)}</th>` +
-      CS.map(c=>`<td class="${c.ours?"ours":""}">
-        <input type="text" inputmode="decimal" data-k="${c.k}" data-i="${i}" value="0.0"
-          aria-label="${esc(c.l.replace(/<br>/g," "))} ${fy(S.fy0+i)}"></td>`).join("") + `</tr>`;
+      CS.map(c=> colAsked(c, i)
+        ? `<td class="${c.ours?"ours":""}">
+            <input type="text" inputmode="decimal" data-k="${c.k}" data-i="${i}" value="0.0"
+              aria-label="${esc(c.l.replace(/<br>/g," "))} ${fy(S.fy0+i)}"></td>`
+        // Beyond the MTFP a budget line is not nil, it is not forecast. An
+        // empty cell there would be read as a figure of zero.
+        : `<td class="nask" title="forecast across the MTFP only"></td>`).join("") + `</tr>`;
   }
   $("ledger").innerHTML = h + "</tbody>";
   $("ledger").querySelectorAll("input").forEach(inp=>{
@@ -4207,7 +4199,11 @@ function buildLedger(){
       cols: colsFor(S.fund).map(c => c.k),
       rows: () => S.years,
       get: (k,i) => S.g[S.fund][k][i],
-      set: (k,i,v) => { S.g[S.fund][k][i] = v; },
+      set: (k,i,v) => {
+        const c = COLS.find(x => x.k === k);
+        if(c && !colAsked(c, i)) return;      // not asked for, not written
+        S.g[S.fund][k][i] = v;
+      },
       after: () => { syncLedger(true); render(); },
       snapshot: () => ({f:S.fund, g:JSON.parse(JSON.stringify(S.g[S.fund]))}),
       restore: v => { S.g[v.f] = v.g; },
@@ -4603,49 +4599,26 @@ function stampSaved(word){
   /* ---- templates -------------------------------------------------------- */
   $("tmplloans").addEventListener("click", ()=>downloadTemplate("loans"));
   $("tmplinv").addEventListener("click",   ()=>downloadTemplate("investments"));
-  $("tmplproj").addEventListener("click",  ()=>downloadTemplate("projection"));
 
   /* ---- the authority's own projection ----------------------------------- */
-  $("pasteproj").addEventListener("click", ()=>{
-    const b=$("projpaste"); b.hidden=!b.hidden; if(!b.hidden) $("projtext").focus(); });
-  $("projcancel").addEventListener("click", ()=>{ $("projpaste").hidden=true; });
-  $("projread").addEventListener("click", ()=>{
-    const r = parseProjection($("projtext").value);
-    $("projreadnote").textContent = r.note;
-    if(!r.vals) return;
-    const row = $("projrow").value;
-    S.g[S.fund][row] = r.vals.slice();
-    $("projnote").textContent =
-      `${COLS.find(c=>c.k===row).l.replace(/<br>/g," ")} filled from your projection `
-      + `(${S.fund==="hra"?"HRA":"General Fund"}).`;
-    $("projpaste").hidden = true;
-    syncLedger(true); render();
-  });
-  $("seedloans").addEventListener("click", seedLoansFromBook);
 
   /* ---- minimum liquidity balance ---------------------------------------- */
   // One figure across the horizon, because that is how an authority holds it:
   // a floor it will not go below. A year that differs is edited in the grid.
+  // One figure, not a column and not a button. The allowance is the same in
+  // every year of a projection unless an authority says otherwise, and asking
+  // for it fifty-one times and then offering to copy it down was three
+  // controls doing the work of one input.
   const applyMinLiq = () => {
     const v = num($("minliq").value);
-    if(!isFinite(v) || v <= 0){ flash("Enter the minimum balance you would run to, in £m."); return; }
-    S.minliq = v;
-    S.g[S.fund].liq = Array(S.years).fill(Math.round(v*10)/10);
-    flash(`Liquidity allowance set to £${m1(v)}m across all ${S.years} years `
-        + `(${S.fund==="hra"?"HRA":"General Fund"}).`);
+    S.minliq = (isFinite(v) && v > 0) ? v : null;
+    S.g.gf.liq = Array(S.years).fill(S.minliq == null ? 0 : Math.round(v * 10) / 10);
     syncLedger(true); render();
   };
-  $("applyliq").addEventListener("click", applyMinLiq);
-  $("minliq").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); applyMinLiq(); } });
+  $("minliq").addEventListener("input", applyMinLiq);
 
   // Fill down: the honest way to enter a constant like the liquidity allowance
   // across fifty years without typing it fifty times. It is still their figure.
-  $("filldown").addEventListener("click", ()=>{
-    if(!SEL) return;
-    const g=S.g[S.fund], v=g[SEL.k][SEL.i];
-    for(let i=SEL.i;i<S.years;i++) g[SEL.k][i]=v;
-    syncLedger(true); render();
-  });
   $("clear").addEventListener("click", ()=>{
     COLS.forEach(c=>S.g[S.fund][c.k]=Array(S.years).fill(0));
     if(S.fund==="gf") applyLoans(); else refresh(); });
@@ -4690,10 +4663,13 @@ function stampSaved(word){
       // Interest is charged on the loans actually outstanding rather than on
       // the CFR, so affordability moves as debt runs off — which is the whole
       // point of the indicator.
-      g.intpay[i]=r1(g.loans[i]*0.042);
-      g.intinc[i]=k.inv==null ? 0 : r1(g.inv[i]*0.038);
-      g.nrs[i]=k.nrs ? r1(base*k.nrs*Math.pow(1.02,Math.min(i,MTFP))) : 0;
-      g.comminc[i]=k.comminc ? r1(base*k.comminc) : 0;
+      // The budget lines exist across the MTFP and not beyond it, so the
+      // demonstration fills exactly the years the grid asks for.
+      const inMTFP = i < MTFP;
+      g.intpay[i]=inMTFP ? r1(g.loans[i]*0.042) : 0;
+      g.intinc[i]=(inMTFP && k.inv!=null) ? r1(g.inv[i]*0.038) : 0;
+      g.nrs[i]=(inMTFP && k.nrs) ? r1(base*k.nrs*Math.pow(1.02,Math.min(i,MTFP))) : 0;
+      g.comminc[i]=(inMTFP && k.comminc) ? r1(base*k.comminc) : 0;
     }
   }
 
@@ -4762,8 +4738,8 @@ function stampSaved(word){
       inv_close:   r1(pot),
       inv_max:     r1(pot * 1.35)
     };
-    S.minliq = S.g.gf.liq[0];
-    if($("minliq")) $("minliq").value = S.minliq;
+    S.minliq = S.g.gf.liq[0] || null;
+    if($("minliq")) $("minliq").value = S.minliq == null ? "" : S.minliq;
 
     // The choices that let the clauses in, and the market-data references,
     // because a demonstration should show the tool with its features on.
@@ -4846,7 +4822,6 @@ function stampSaved(word){
       ()=>$("dhint").textContent="Draft copied as text.",
       ()=>$("dhint").textContent="Could not reach the clipboard.");
   });
-  $("downx").addEventListener("click", downloadCSV);
   $("save").addEventListener("click", saveVersion);
   $("restore").addEventListener("click", restoreVersion);
   // The indicator picker lives inside the rendered draft, so it is delegated.
