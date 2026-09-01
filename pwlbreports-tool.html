@@ -1743,43 +1743,32 @@ function rangeTable(){
 
 /* The prediction table as PWLBtoday publishes it: last reset, the gilts it was
    struck from, and where the model puts the next one. */
-function predTable(){
-  const p = MKT.pred || [];
-  if(p.length < 2) return "";
-  const head = p[0].slice(1);
-  const want = ["Last PWLB Reset","Latest Gilts","Predicted","Change"];
-  const rows = p.slice(1).filter(r=>want.includes(r[0]));
-  return `<div style="overflow-x:auto"><table class="otable">
-    <thead><tr><th>Years</th>${head.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead>
-    <tbody>${rows.map(r=>`<tr class="${r[0]==="Predicted"?"key":""}">
-      <td>${esc(r[0])}</td>${r.slice(1).map(v=>`<td>${esc(v)}</td>`).join("")}</tr>`).join("")}
-    </tbody></table></div>
-    <p class="note">The predicted row is PWLBtoday's model of the next reset from current gilt
-      yields. It is a model output, not a forecast of rates — say so if you use it.</p>`;
-}
-
 function marketBlock(){
   if(!MKT.as_at) return "";
+  // The next-reset prediction is a PWLBtoday model rather than a fact about
+  // the authority, and a committee paper is not the place to carry someone
+  // else's forecast of a rate that resets before it is read.
   return `<h4>PWLB rates</h4>${curveTable()}
     ${rateBlock()}${rangeTable()}
-    <h4>Where the next reset lands</h4>${predTable()}
     <p class="note">Rates as at <b>${esc(mkDate())}</b>, from PWLBtoday. This page carries a
       snapshot taken when it was built; on pwlbtoday.org the same tables refresh with each
       reset.</p>`;
 }
 
 /* ===========================================================================
- * Rate assumptions.
+ * The market-implied Bank Rate path.
  *
- * We publish a MARKET-IMPLIED path, not a forecast. The distinction matters
- * in a committee paper: an implied rate is what the market is currently
- * pricing, which is a fact about prices, whereas a forecast is somebody's
- * opinion about the future. We are not in the business of having opinions
- * about Bank Rate, and an authority that adopted ours as its own would be
- * unable to say where it came from.
+ * Not a forecast, and the distinction matters in a committee paper: an
+ * implied rate is what the market is currently pricing, which is a fact about
+ * prices, whereas a forecast is somebody's opinion about the future. We are
+ * not in the business of having opinions about Bank Rate, and an authority
+ * that adopted ours as its own would be unable to say where it came from.
  *
- * So the tool gives the implied path as context and leaves a column for the
- * authority's own assumption — usually its treasury adviser's — beside it.
+ * This file used to render that path as a chart and a table of its own, under
+ * a "Rate assumptions" heading. Both are gone: the boxes in the rates block
+ * say the same thing more directly, and a report carrying both asked a reader
+ * to reconcile two pictures of one number. What remains is the data and the
+ * date formatting the rest of the page reads.
  * ======================================================================== */
 const FC = {"as_at":"2026-08-27","years":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60],"implied":[3.737975135,3.800459523,3.871437051,3.946553287,4.021079426,4.090332208,4.151340481,4.202814774,4.244787319,4.279336251,4.30731653,4.329749422,4.347786295,4.361891837,4.372350016,4.3794448,4.38346016,4.384680064,4.383418911,4.380147018,4.3753845,4.369651493,4.363468134,4.357354559,4.35176962,4.346842078,4.342590047,4.339031559,4.336184648,4.334067348,4.332697691,4.33209371,4.332273441,4.333254914,4.335056164,4.337695225,4.341180628,4.345474593,4.35052525,4.356280724,4.362689141,4.369698626,4.377257305,4.385313304,4.393814748,4.402709764,4.411946476,4.421473011,4.431243403,4.441237778,4.451443459,4.461847769,4.472438032,4.48320157,4.494125707,4.505197766,4.51640507,4.527734944,4.539174709,4.550711689],"sonia_as_at":"2026-08-28 17:59","spot":[["1D",3.732],["1W",3.733],["2W",3.734],["1M",3.75],["2M",3.764],["3M",3.807],["4M",3.852],["5M",3.894],["6M",3.939],["7M",3.988],["8M",4.031],["9M",4.07],["10M",4.112],["11M",4.147],["1Y",4.182],["18M",4.262],["2Y",4.319],["3Y",4.356],["4Y",4.384],["5Y",4.419]],"spot_as_at":"2026-08-28 17:59"};
 
@@ -1801,43 +1790,12 @@ function impliedPath(n){
   return out;
 }
 
-function forecastTable(){
-  if(!FC.implied) return "";
-  const n = Math.min(10, S.years);
-  const d = impliedPath(n);
-  const own = d.some(r=>r.own!=null);
-  return `<div style="overflow-x:auto"><table class="otable">
-    <thead><tr><th>Rate assumption</th>${d.map(r=>`<th>${fy(r.fy)}</th>`).join("")}</tr></thead>
-    <tbody>
-      <tr class="key"><td>Market implied</td>${
-        d.map(r=>`<td>${r.implied==null?"–":r.implied.toFixed(2)+"%"}</td>`).join("")}</tr>
-      <tr><td>Your assumption${own?"":" — not entered"}</td>${
-        d.map(r=>`<td>${r.own==null?'<span class="blank">—</span>':r.own.toFixed(2)+"%"}</td>`).join("")}</tr>
-    </tbody></table></div>
-    <p class="note">The implied path is what the market prices as at
-      <b>${esc(fcDate(FC.as_at))}</b>, not a view. Your own assumption is usually your treasury
-      adviser's; enter it above and both appear in the report so members can see the
-      difference.</p>`;
-}
 
-function forecastChart(){
-  if(!FC.implied) return "";
-  const d = impliedPath(Math.min(S.years, 21)).map(r=>Object.assign({}, r,
-    {implied: r.implied==null?0:r.implied, own: r.own==null?null:r.own}));
-  const lines=[{k:"implied",c:"var(--l-cfr)",w:2.2,t:"Bank Rate, market implied"}];
-  if(d.some(r=>r.own!=null)){
-    d.forEach(r=>{ if(r.own==null) r.own = r.implied; });   // no gaps in the path
-    lines.push({k:"own",c:"var(--l-nlr,var(--orange))",w:2,dash:"5 3"});
-  }
-  return `<div class="chartwrap">${chart(d,{label:"Rate assumptions",h:210,lines})}
-    ${legend([{c:"var(--l-cfr)",t:"Market implied"}].concat(
-      d.some(r=>r.own!=null)?[{c:"var(--orange)",t:"Your assumption"}]:[]))}</div>`;
-}
 
-function forecastBlock(){
-  if(!FC.implied) return "";
-  return `<h4>Rate assumptions</h4>${forecastChart()}${forecastTable()}`;
-}
+/* The rate assumptions chart and table are gone. The market-implied Bank Rate
+   boxes in the rates block say the same thing more directly, and a report
+   carrying both invited a reader to reconcile two pictures of one forecast. */
+function forecastBlock(){ return ""; }
 
 /* A tenor as words. The series key is "10Y" because that is what the data
    calls it; a hover readout has room to say what it means. */
@@ -1984,7 +1942,6 @@ function rateBlock(){
   return `<h4>PWLB certainty rates</h4>${rateSeriesPicker()}
     ${rateLevelChart()}${rateChangeChart()}
     <h4>The curve over time</h4>${curveChart()}
-    <h4>Gilts and the money market</h4>${giltChart()}${soniaChart()}
     <h4>Bank Rate, market implied</h4>${bankRateBoxes()}`;
 }
 
@@ -2031,47 +1988,7 @@ function rateViewNarrative(){
     instead and say whose it is — the table below shows both.</span></p>`;
 }
 
-/* Gilts and the overnight rate over the same year as the PWLB series. PWLB lending is set
-   off the gilt curve — standard is gilt plus 80 basis points, certainty plus
-   60 — so a treasurer reading a rate movement wants to know whether it came
-   from the gilt market or from a change in the margin. Showing both answers
-   that without anyone having to say it. */
-function giltChart(){
-  const h = mktGiltHist(), keys = MKT.gilt_keys || [];
-  if(h.length < 3 || !keys.length) return "";
-  const use = keys.filter(k => h.some(r=>r[k]!=null));
-  const d = h.map((r,i)=>{
-    const o = {fy:r.d.slice(2,7), i};
-    use.forEach(k => o[k] = r[k]);
-    return o;
-  }).filter(o => use.every(k=>o[k]!=null));
-  if(d.length < 3) return "";
-  return `<div class="chartwrap">${chart(d,{label:"Gilt yields, 12 months",
-      h:210, zero:"tight", mtfp:false, fmt:v=>v.toFixed(2)+"%",
-      lines:use.map((k,ix)=>({k, c:seqFor(ix,use.length), w:1.8, t:tenorLabel(k)}))})}
-    ${legend(use.map((k,ix)=>({c:seqFor(ix,use.length), t:k})))}
-    <p class="note" style="padding:0 4px 6px">Benchmark yields, taken as the
-      conventional gilt nearest each maturity on the day. PWLB standard rates are set
-      80 basis points above this curve and certainty rates 60 above.</p></div>`;
-}
 
-function soniaChart(){
-  const h = mktSoniaHist(), keys = MKT.sonia_keys || [];
-  if(h.length < 3 || !keys.length) return "";
-  const use = keys.filter(k => h.some(r=>r[k]!=null));
-  const d = h.map((r,i)=>{
-    const o = {fy:r.d.slice(2,7), i};
-    use.forEach(k => o[k] = r[k]==null ? null : r[k]);
-    return o;
-  }).filter(o => use.every(k=>o[k]!=null));
-  if(d.length < 3) return "";
-  return `<div class="chartwrap">${chart(d,{label:"Overnight rate, 12 months",
-      h:200, zero:"tight", mtfp:false, fmt:v=>v.toFixed(2)+"%",
-      lines:use.map((k,ix)=>({k, c:seqFor(ix,use.length), w:1.8, t:tenorLabel(k)}))})}
-    ${legend(use.map((k,ix)=>({c:seqFor(ix,use.length), t:k})))}
-    <p class="note" style="padding:0 4px 6px">The money market the authority invests in,
-      and the curve the implied Bank Rate path is taken from.</p></div>`;
-}
 
 /* ===========================================================================
  * Pasting a loan book and an investment portfolio.

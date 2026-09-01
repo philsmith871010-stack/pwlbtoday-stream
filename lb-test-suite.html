@@ -619,6 +619,8 @@ function render(){
   if(typeof renderRail === "function"){ renderRail(); renderNav(); }
   const dc = $("debtcost");
   if(dc) dc.innerHTML = (typeof debtCostNote === "function") ? debtCostNote() : "";
+  const iv = $("invsummary");
+  if(iv && typeof portfolioNote === "function") iv.textContent = portfolioNote();
   const pc = $("portfoliocharts");
   if(pc) pc.innerHTML = portfolioCharts();
   $("prefill").innerHTML = c
