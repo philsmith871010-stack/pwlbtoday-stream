@@ -114,12 +114,45 @@ button,input,select{font:inherit;color:inherit}
   letter-spacing:.02em}
 .phead .why{color:var(--muted);font-size:12px;flex:1 1 320px;min-width:0}
 .pbody{padding:16px 20px 20px}
-.setup{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
-label{display:block;font-size:11.5px;font-weight:500;color:var(--ink2);margin-bottom:4px}
-label .hint{display:block;font-weight:400;color:var(--faint);font-size:10.5px;margin-top:1px}
-select,input[type=text],input[type=number]{width:100%;padding:7px 9px;border:1px solid var(--line2);
-  border-radius:var(--r-sm);background:var(--paper);font-size:13px}
-select:hover{border-color:var(--accent)}
+/* ---- question grids ------------------------------------------------------
+ * A cell is a label and a control, and the labels are different lengths — a
+ * one-line question sat its control a line higher than the two-line question
+ * beside it, so nothing lined up across a row.
+ *
+ * Each cell is a column with the label taking the slack, which pins every
+ * control to the bottom of its row whatever the question above it does. The
+ * fix has to be the label growing rather than a fixed label height: a
+ * min-height guessed at three lines wastes space on a grid of short questions
+ * and still breaks on a long one at a narrow width.
+ */
+.setup{display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));
+  gap:14px 16px;align-items:stretch}
+.setup > div{display:flex;flex-direction:column;min-width:0}
+.setup > div > label{flex:1 1 auto;display:flex;flex-direction:column;margin-bottom:6px}
+.setup > div > label > .hint{margin-top:auto;padding-top:3px}
+label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:4px;
+  line-height:1.4}
+label .hint{display:block;font-weight:400;color:var(--muted);font-size:11px;
+  line-height:1.4;margin-top:1px}
+select,input[type=text],input[type=number],input[type=date]{width:100%;padding:8px 10px;
+  border:1px solid var(--line2);border-radius:var(--r-sm);background:var(--paper);
+  font-size:13px;font-family:var(--sans);color:var(--ink)}
+/* One height for every control in a question grid. A date input and a select
+   render a few pixels apart by default, and a file input a whole line
+   shorter — enough that a row of them reads as ragged even once the tops
+   agree. Fixed here rather than per control, so a new field cannot reopen it. */
+.setup select,.setup input{height:38px;box-sizing:border-box}
+.setup input[type=file]{padding:7px 10px;font-size:12px;line-height:1.5;
+  background:var(--paper);border:1px dashed var(--line2);cursor:pointer}
+.setup input[type=file]::file-selector-button{font-family:var(--sans);font-size:12px;
+  font-weight:600;margin-right:9px;padding:3px 9px;border:1px solid var(--line2);
+  border-radius:3px;background:var(--card);color:var(--ink2);cursor:pointer}
+select:hover,input[type=text]:hover,input[type=number]:hover{border-color:var(--accent)}
+select:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+
+/* The choices are whole questions rather than field names, so they need the
+   room a sentence takes before it wraps somewhere unhelpful. */
+#choices{grid-template-columns:repeat(auto-fit,minmax(268px,1fr))}
 
 /* ---- the ledger: years down, measures across ---------------------------- */
 .fundtabs{display:flex;gap:6px;margin-bottom:10px}
