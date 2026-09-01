@@ -610,12 +610,32 @@ function otable(d, rows, n){
 }
 const IND=(n,t,b)=>`<section class="ind"><h3><span class="lbtag">${n}</span>${esc(t)}</h3>${b}</section>`;
 
+/* WHY THE PAGE USED TO JUMP.
+ *
+ * render() rebuilt the entire draft — five thousand words, thirteen charts,
+ * every table — on every keystroke in the ledger, and did it even when the
+ * draft was on a step nobody was looking at. Replacing that much DOM forces a
+ * full layout, and a full layout while the caret is in a cell is what the eye
+ * reads as the page jerking.
+ *
+ * The draft is only built when it is the visible step. Everything else the
+ * render does is small and stays immediate, so the rail and the summaries
+ * still track what is typed. Moving to the draft rebuilds it, so it is never
+ * stale — showStep() calls render() on the way in.
+ */
+let _docDirty = true;
 function render(){
   const c = LB[S.gss];
-  $("doc").innerHTML =
-    `<div class="dh"><span>Draft — ${esc(c?c.n:"your authority")}</span>
-      <span>Assembled from your ledger and your commentary</span></div>`
-    + documentHTML(false);
+  const docVisible = (typeof STEP === "undefined") || STEP === STEPS.length;
+  if(docVisible){
+    $("doc").innerHTML =
+      `<div class="dh"><span>Draft — ${esc(c?c.n:"your authority")}</span>
+        <span>Assembled from your ledger and your commentary</span></div>`
+      + documentHTML(false);
+    _docDirty = false;
+  } else {
+    _docDirty = true;
+  }
   if(typeof renderRail === "function"){ renderRail(); renderNav(); }
   const dc = $("debtcost");
   if(dc) dc.innerHTML = (typeof debtCostNote === "function") ? debtCostNote() : "";

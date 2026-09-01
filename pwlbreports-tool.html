@@ -91,16 +91,8 @@ button,input,select{font:inherit;color:inherit}
   background:var(--accent)}
 .mast h1{font-size:21px;font-weight:600;letter-spacing:-.022em}
 .mast h1 b{font-weight:700}
-.mast .sub{color:var(--muted);font-size:12.5px;margin-top:4px;max-width:74ch}
 .stamp{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-align:right;line-height:1.6}
 .stamp b{color:var(--ink2)}
-.codebadge{flex-basis:100%;order:3;display:flex;align-items:center;gap:9px;
-  font-family:var(--sans);font-size:11.5px;color:var(--muted);margin-top:12px;
-  padding-top:11px;border-top:1px solid var(--hair)}
-.codebadge b{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;
-  background:var(--accent-soft);color:var(--accent-ink,var(--accent));
-  border:1px solid var(--line2);border-radius:3px;padding:3px 8px;font-weight:600;
-  white-space:nowrap}
 .proto{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;
   text-transform:uppercase;background:var(--orange);color:var(--card);padding:2px 7px;
   border-radius:3px;vertical-align:middle;margin-left:8px}
@@ -523,18 +515,14 @@ svg.ctip .hits rect{cursor:crosshair}
 </style>
 
 <div class="shell">
+  <!-- The masthead says what this is and gets out of the way. What it used to
+       carry — a paragraph of description and the Code edition strip — is
+       either obvious once you are looking at the tool or already stated in the
+       draft's own footer, which is where a reader needs it. -->
   <header class="mast">
-    <div>
-      <h1>PWLB<b>reports</b><span class="proto">Prototype</span></h1>
-      <div class="sub">Strategies, outturns and monitoring reports, built to the liability
-        benchmark framework the Codes require. Enter your own projections for the full
-        horizon; we supply your PWLB loans from the published book, the market data, and the
-        five indicators. Nothing is extrapolated.</div>
-    </div>
+    <h1>PWLB<b>reports</b><span class="proto">Prototype</span></h1>
     <div class="stamp" id="stamp"></div>
-    <a class="benchlink" href="lb-test-suite.html">LB test suite &rarr;<span>internal — try a
-      balance sheet against the full output</span></a>
-    <div class="codebadge" id="codebadge"></div>
+    <a class="benchlink" href="lb-test-suite.html">LB test suite &rarr;</a>
   </header>
 
   <nav class="railwrap" aria-label="Report progress">
@@ -1074,12 +1062,32 @@ function otable(d, rows, n){
 }
 const IND=(n,t,b)=>`<section class="ind"><h3><span class="lbtag">${n}</span>${esc(t)}</h3>${b}</section>`;
 
+/* WHY THE PAGE USED TO JUMP.
+ *
+ * render() rebuilt the entire draft — five thousand words, thirteen charts,
+ * every table — on every keystroke in the ledger, and did it even when the
+ * draft was on a step nobody was looking at. Replacing that much DOM forces a
+ * full layout, and a full layout while the caret is in a cell is what the eye
+ * reads as the page jerking.
+ *
+ * The draft is only built when it is the visible step. Everything else the
+ * render does is small and stays immediate, so the rail and the summaries
+ * still track what is typed. Moving to the draft rebuilds it, so it is never
+ * stale — showStep() calls render() on the way in.
+ */
+let _docDirty = true;
 function render(){
   const c = LB[S.gss];
-  $("doc").innerHTML =
-    `<div class="dh"><span>Draft — ${esc(c?c.n:"your authority")}</span>
-      <span>Assembled from your ledger and your commentary</span></div>`
-    + documentHTML(false);
+  const docVisible = (typeof STEP === "undefined") || STEP === STEPS.length;
+  if(docVisible){
+    $("doc").innerHTML =
+      `<div class="dh"><span>Draft — ${esc(c?c.n:"your authority")}</span>
+        <span>Assembled from your ledger and your commentary</span></div>`
+      + documentHTML(false);
+    _docDirty = false;
+  } else {
+    _docDirty = true;
+  }
   if(typeof renderRail === "function"){ renderRail(); renderNav(); }
   const dc = $("debtcost");
   if(dc) dc.innerHTML = (typeof debtCostNote === "function") ? debtCostNote() : "";
@@ -4080,9 +4088,14 @@ function stepStatus(k){
 
   if(k === "draft"){
     if(!S.gss) return {state:"", note:"Nothing to draft yet", need:null};
+    // The draft is only rebuilt when it is the visible step, so its word count
+    // is the count as of the last time it was drawn. Saying "5,064 words" over
+    // a draft three edits out of date would be worse than saying nothing.
     const el = $("doc");
-    const words = el ? (el.innerText || "").trim().split(/\s+/).filter(Boolean).length : 0;
-    const gaps = el ? ((el.innerText||"").match(/\{\{/g) || []).length : 0;
+    const built = el && !_docDirty;
+    if(!built) return {state:"", note:"Open it to build the draft", need:null};
+    const words = (el.innerText || "").trim().split(/\s+/).filter(Boolean).length;
+    const gaps = ((el.innerText||"").match(/\{\{/g) || []).length;
     return {state: words > 400 ? "done" : "part",
             note: `${words.toLocaleString("en-GB")} words · ${gaps} figure${gaps===1?"":"s"} still to supply`,
             need: null};
@@ -4113,15 +4126,20 @@ function showStep(n){
   document.querySelectorAll("[data-step]").forEach(el => {
     el.hidden = (+el.dataset.step !== STEP);
   });
+  // Arriving at the draft is what builds it, since render() no longer does so
+  // while it is hidden. Without this the step opens empty and the rail keeps
+  // saying "open it to build the draft" on the step you are standing on.
+  if(STEP === STEPS.length) render();
   renderRail();
   renderNav();
-  // Back to the top of the step, not the top of the document: the rail should
-  // stay where it is so you can see where you have got to.
+  // Scroll only if the step is not already where you can see it. Smooth-
+  // scrolling every click animated the page under the reader even when the
+  // step was already in view, which is half of what "jerking around" was.
   const sh = $("stepwrap");
   if(sh){
-    const y = sh.getBoundingClientRect().top + window.scrollY - 96;
-    window.scrollTo({top: Math.max(0, y),
-                     behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+    const top = sh.getBoundingClientRect().top;
+    if(top < 0 || top > window.innerHeight * 0.5)
+      window.scrollTo({top: Math.max(0, top + window.scrollY - 96), behavior: "auto"});
   }
 }
 
@@ -4846,9 +4864,6 @@ function stampSaved(word){
     S.sec=b.dataset.s; renderSections(); });
 
   $("stamp").innerHTML=`PWLB loan book <b>3 Aug 2026</b><br>${keys.length} authorities`;
-  $("codebadge").innerHTML = `<b>${esc(codeStamp())}</b><span>${codeLine()}
-    Every report states the edition it was produced under, so it stays readable after the
-    next revision lands.</span>`;
   fundTabs(); buildLedger(); loanRows(); renderSections(); render();
   wireSteps();
 })();
