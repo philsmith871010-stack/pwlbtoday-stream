@@ -345,10 +345,13 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
   font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .cprow .cpt{font-family:var(--sans);font-size:13px;color:var(--ink);font-weight:500;
   padding-top:5px}
-.cprow input{width:100%;max-width:110px;font-family:var(--mono);font-size:12.5px;
+.cprow input[type=text]{width:100%;max-width:110px;font-family:var(--mono);font-size:12.5px;
   padding:5px 8px;border:1px solid var(--line2);border-radius:3px;
   background:var(--card);color:var(--ink);text-align:right}
 .cprow input:focus{outline:2px solid var(--accent);outline-offset:-2px}
+/* A checkbox is not a field: it must never inherit the text inputs' width. */
+.cprow input[type=checkbox]{width:15px;height:15px;max-width:15px;flex:0 0 15px;
+  margin:0;padding:0}
 @media (max-width:720px){.cprow{grid-template-columns:1fr}.cprow.cphead{display:none}}
 
 .cpchecks{display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));gap:9px}
@@ -438,8 +441,8 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
 
 .cptable.tight .cprow{padding:6px 13px}
 .cptable.tight .cprow .cpt{padding-top:4px;font-size:12.5px}
-.cptable.tight .cprow input{max-width:96px;padding:4px 8px}
-.cptable.tight .cprow input:placeholder-shown{color:var(--faint)}
+.cptable.tight .cprow input[type=text]{max-width:96px;padding:4px 8px}
+.cptable.tight .cprow input[type=text]:placeholder-shown{color:var(--faint)}
 table.dtab td.wrap{white-space:normal;line-height:1.5}
 
 
@@ -455,9 +458,11 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 .cppair > section{min-width:0}
 .cppair .cph{margin-top:22px}
 
-.cptable.tight .cprow{grid-template-columns:minmax(0,1fr) 72px 78px;gap:8px;padding:5px 11px}
+.cptable.tight:not(.wide) .cprow{grid-template-columns:minmax(0,1fr) 72px 78px;
+  gap:8px;padding:5px 11px}
+.cptable.tight .cprow{gap:8px;padding:5px 11px}
 .cptable.tight .cprow .cpt{padding-top:3px;font-size:12px;line-height:1.3}
-.cptable.tight .cprow input{max-width:100%;padding:3px 7px;font-size:12px}
+.cptable.tight .cprow input[type=text]{max-width:100%;padding:3px 7px;font-size:12px}
 .cptable.tight .cprow.cphead{padding:6px 11px;font-size:9.5px}
 
 .cpchecks.tight{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
@@ -502,10 +507,16 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 
 
 /* Five columns: the type, then the four decisions about it. */
-.cptable.wide .cprow{grid-template-columns:minmax(0,1.6fr) 62px 66px 132px 92px;
-  gap:8px;align-items:center;padding:4px 11px}
+/* Fixed control widths with ONE flexible column meant the name column took
+   every spare pixel: at 1122px wide it was 716px of whitespace beside a 62px
+   input, and the label collided with the field next to it. The name gets a
+   sensible share and a ceiling, and the table stops stretching. */
+.cptable.wide{max-width:860px}
+.cptable.wide .cprow{grid-template-columns:minmax(180px,1fr) 70px 74px 136px 96px;
+  gap:10px;align-items:center;padding:5px 12px}
 .cptable.wide .cprow.cphead{align-items:end}
-.cptable.wide .cprow .cpt{padding-top:0}
+.cptable.wide .cprow .cpt{padding-top:0;min-width:0}
+.cptable.wide .cprow input[type=text]{width:100%;text-align:right}
 .cptable.wide select{width:100%;font-family:var(--sans);font-size:11.5px;padding:3px 5px;
   border:1px solid var(--line2);border-radius:3px;background:var(--card);color:var(--ink2)}
 .cptable.wide select:focus{outline:2px solid var(--accent);outline-offset:-2px}
@@ -541,7 +552,8 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 /* A ticked row is in the report; an unticked one is not. The tick sits with
    the name because that is what it includes, and the whole row lifts so the
    state reads down the table rather than one column at a time. */
-.cpuse{display:flex;align-items:center;gap:7px;cursor:pointer;font:inherit;color:inherit}
+.cpuse{display:flex;align-items:center;gap:8px;cursor:pointer;font:inherit;color:inherit;
+  min-width:0;line-height:1.3}
 .cpuse input{accent-color:var(--good);flex:0 0 auto;margin:0}
 .cptable.wide .cprow.on{background:var(--cell-ours)}
 .cptable.wide .cprow.on .cpt{color:var(--ink);font-weight:600}
