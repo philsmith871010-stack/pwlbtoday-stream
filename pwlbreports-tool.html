@@ -761,15 +761,21 @@ table.pwlbtab td.num,table.pwlbtab th.num{text-align:right}
 .legend .lsw{flex:none}
 .otable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;
   font-variant-numeric:tabular-nums;margin-top:8px}
-.otable th,.otable td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--hair);
-  white-space:nowrap}
-.otable th:first-child,.otable td:first-child{text-align:left;font-family:var(--sans);font-size:13px}
+/* ROW HEIGHT IS WHAT MAKES A FINANCIAL TABLE LOOK PROFESSIONAL OR NOT.
+   Seven pixels above and below a 12.5px figure gives a 27px row, so a
+   five-year indicator table ran the depth of a chart and a fifty-year run-off
+   needed a scroll to see a trend. Four gives 21px, which is where a printed
+   appendix sits, and the line rules do the separating rather than the air. */
+.otable th,.otable td{padding:3px 10px;text-align:right;border-bottom:1px solid var(--hair);
+  white-space:nowrap;line-height:1.3}
+.otable th:first-child,.otable td:first-child{text-align:left;font-family:var(--sans);
+  font-size:12.5px}
 .otable thead th{font-family:var(--sans);font-size:10.5px;font-weight:600;color:var(--ink2);
   text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--line2);
-  padding-bottom:6px}
+  padding-bottom:5px;line-height:1.25}
 .otable tbody tr:last-child td{border-bottom:0}
 .otable tr.key td{font-weight:600;border-top:1.5px solid var(--line2)}
-.otable tr.pihead td{font-weight:600;color:var(--ink);padding-top:11px;
+.otable tr.pihead td{font-weight:600;color:var(--ink);padding-top:9px;padding-bottom:2px;
   border-bottom:0;font-family:var(--sans)}
 .otable tr.lb td{color:var(--l-lb);font-weight:600}
 .otable tr.inv td{color:var(--l-inv);font-weight:600}
@@ -875,13 +881,13 @@ svg.ctip .hits rect{cursor:crosshair}
   text-transform:uppercase;letter-spacing:.06em;text-align:right;padding:0 8px 7px;
   border-bottom:1px solid var(--line2)}
 .perf th:first-child{text-align:left}
-.perf td{padding:3px 8px;border-bottom:1px solid var(--hair);text-align:right}
+.perf td{padding:2px 8px;border-bottom:1px solid var(--hair);text-align:right}
 .perf td.pl{text-align:left;font-family:var(--sans);font-size:12.5px;color:var(--ink2);
   white-space:nowrap;padding-right:18px}
 .perf td.pl b{font-weight:600;color:var(--ink);display:block;font-size:13px}
 .perf td.pl span{font-size:11px;color:var(--muted)}
 .perf input{width:104px;text-align:right;font-family:var(--mono);font-size:12.5px;
-  padding:5px 8px;border:1px solid var(--line2);border-radius:var(--r-sm);
+  padding:3px 8px;border:1px solid var(--line2);border-radius:var(--r-sm);
   background:var(--card);color:var(--ink);font-variant-numeric:tabular-nums}
 .perf input:focus{outline:none;border-color:var(--accent)}
 .perf td.nask{background:repeating-linear-gradient(135deg,transparent,transparent 4px,
@@ -6487,8 +6493,9 @@ function documentHTML(forExport){
     .lede{font-style:italic;color:#444;margin:0 0 18pt}
     .doclogo{max-height:56px;max-width:260px;margin:0 0 12pt 0;display:block}
 
-    table{border-collapse:collapse;width:100%;font-size:9.5pt;margin:9pt 0;font-family:Arial,sans-serif}
-    th,td{border:1px solid #ccc;padding:3pt 5pt;text-align:right}
+    table{border-collapse:collapse;width:100%;font-size:9.5pt;margin:8pt 0;
+      font-family:Arial,sans-serif;line-height:1.25}
+    th,td{border:1px solid #ccc;padding:1.5pt 5pt;text-align:right}
     th:first-child,td:first-child{text-align:left}
     thead th{background:#eee}
     .barwrap{margin:8pt 0}
