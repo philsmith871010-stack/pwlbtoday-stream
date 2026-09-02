@@ -299,49 +299,6 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
 <script>
 const LB = {};
 /* ===========================================================================
- * The mark.
- *
- * Drawn rather than fetched: the tool is a single file that has to work from
- * a local disk with no network, so an <img> to a hosted asset would be a
- * broken box exactly where a broken box is least welcome — the top of a
- * document going to committee.
- *
- * WHAT IT IS. A yield curve over a baseline: the short end low on the left,
- * the long end higher, and a marker where a decision sits on it. That is the
- * one picture this whole tool is about — a rate, at a term, on a date — and
- * it reads at 20px as a rising line, which is all a mark has to do.
- *
- * It takes its colours from the page, so it themes with everything else and
- * never fights the council's own logo when one is uploaded. Where an
- * authority supplies a logo, theirs leads and this becomes a small credit at
- * the foot of the document, because the report is the council's and not ours.
- * ======================================================================== */
-function brandMark(size, opts){
-  const o = opts || {};
-  const h = size || 22, w = Math.round(h * 1.6);
-  const c = o.mono ? "currentColor" : "var(--accent)";
-  const a = o.mono ? "currentColor" : "var(--good)";
-  return `<svg class="brandmark" viewBox="0 0 32 20" width="${w}" height="${h}"
-     role="img" aria-label="PWLBreports" focusable="false">
-    <path d="M1 18 H31" stroke="${c}" stroke-width="1.1" opacity=".28"
-          stroke-linecap="round"/>
-    <path d="M1 15.5 C 7 15.2, 11 11.5, 16 8 S 26 3.2, 31 2.6"
-          fill="none" stroke="${c}" stroke-width="2.1"
-          stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="16" cy="8" r="3" fill="${a}"/>
-    <circle cx="16" cy="8" r="3" fill="none" stroke="var(--card)" stroke-width="1.2"/>
-  </svg>`;
-}
-
-/* The wordmark. "PWLB" carries the weight because that is the noun; "reports"
-   is what we do with it and sits lighter, which also stops the two halves
-   competing at small sizes. */
-function brandWord(opts){
-  const o = opts || {};
-  return `<span class="brandword ${o.small ? "sm" : ""}">${brandMark(o.small ? 15 : 20, o)}<b>PWLB</b><i>reports</i></span>`;
-}
-
-/* ===========================================================================
  * Which edition of the Codes the tool implements.
  *
  * Held as a registry rather than assumed, because the Codes move and a report
