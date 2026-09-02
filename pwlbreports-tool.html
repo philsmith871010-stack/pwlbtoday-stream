@@ -435,6 +435,13 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
 .cph{position:relative;padding-left:0}
 .cph::first-letter{color:var(--accent);font-weight:700}
 
+
+.cptable.tight .cprow{padding:6px 13px}
+.cptable.tight .cprow .cpt{padding-top:4px;font-size:12.5px}
+.cptable.tight .cprow input{max-width:96px;padding:4px 8px}
+.cptable.tight .cprow input:placeholder-shown{color:var(--faint)}
+table.dtab td.wrap{white-space:normal;line-height:1.5}
+
 /* ---- the step rail --------------------------------------------------------
  * Sticky, because the one question it answers — where am I, and what is left
  * — is the question you have while you are in the middle of a step, not the
@@ -4051,7 +4058,9 @@ const CPB = {
    "posture": "excluded outright",
    "text": "No non-UK counterparty policy is stated; the document restricts investments by currency instead \u2014 \"Specified Investments \u2013 all such investments will be sterling denominated\" and fund managers must keep \"All investments restricted to sterlin"
   }
- ]
+ ],
+ "as_at": "2026-09",
+ "basis_note": "current 2026/27 treasury management strategies"
 };
 
 /* The sectors, in the order a strategy states them. `k` keys the answer,
@@ -4186,34 +4195,47 @@ function cpSummary(){
   </div>`;
 }
 
+/* The common figure, offered as a starting point. It is a PLACEHOLDER until
+   the field is typed in, so an untouched default never silently becomes an
+   authority's published limit: the value is grey, the state stays empty, and
+   the draft omits the row until a real figure is entered. */
+function cpDefault(sectorLabel, which){
+  const b = ((CPB.sectors||{})[sectorLabel]||{})[which];
+  return b ? String(b.med) : "—";
+}
+
 function cpRender(){
   const host = $("cpbody");
   if(!host) return;
   const c = cpState();
   const num = (k, f, ph) => `<input type="text" inputmode="decimal" data-cp="${k}"
-      data-f="${f}" value="${esc(String((c.sec[k]||{})[f] ?? ""))}" placeholder="${ph}">`;
+      data-f="${f}" value="${esc(String((c.sec[k]||{})[f] ?? ""))}"
+      placeholder="${esc(String(ph))}">`;
 
   host.innerHTML = cpSummary() + `
-    <div class="cpnote">Every figure below is set against what
-      <b>${CPB.councils || 0} authorities</b> publish in their current strategies.
-      The comparison says what is common. It does not say what is right for you.</div>
+    <div class="cpnote">Starting points come from <b>${CPB.councils || 0} authorities'</b>
+      ${esc(CPB.basis_note || "current strategies")}, surveyed
+      ${esc(CPB.as_at || "")}. What is common is not what is right for you — every figure
+      here is yours to set.</div>
 
     <h3 class="cph">1 · Limits by sector</h3>
-    <p class="cpsub">A cash limit is the most that may sit with any one name in that
-      sector. A duration is the longest it may sit there.</p>
-    <div class="cptable">
+    <p class="cpsub">The cash limit is the most that may sit with any one name in that
+      sector. The duration is the longest it may sit there, <b>in months</b>. Figures
+      start at what is most common and are meant to be changed.</p>
+    <div class="cptable tight">
       <div class="cprow cphead"><span>Sector</span><span>Cash limit £m</span>
-        <span>Maximum duration</span></div>
+        <span>Max duration, months</span></div>
       ${CP_SECTORS.map(s => `
         <div class="cprow">
           <span class="cpt">${esc(s.t)}</span>
-          <span>${num(s.k,"cash","—")}${cpBench(s.b,"cash",(c.sec[s.k]||{}).cash)}</span>
-          <span>${num(s.k,"months","—")}${cpBench(s.b,"months",(c.sec[s.k]||{}).months)}</span>
+          <span>${num(s.k,"cash", cpDefault(s.b,"cash"))}</span>
+          <span>${num(s.k,"months", cpDefault(s.b,"months"))}</span>
         </div>`).join("")}
     </div>
-    <p class="cphint">Unsecured bank and building society duration sits at 13 months at the
-      25th, the median and the 75th percentile — the sector has converged on one answer.
-      Secured exposure to the same institutions runs to a median of 120 months.</p>
+    <p class="cphint">Where a figure is grey it is the common starting point rather than
+      your policy. Type over it. Unsecured bank and building society durations cluster
+      hard at 13 months across the sector; secured exposure to the same institutions runs
+      very much longer.</p>
 
     <h3 class="cph">2 · What the limit applies to</h3>
     <p class="cpsub">A per-counterparty cap and a per-group cap control different things.</p>
@@ -4311,11 +4333,8 @@ function cpWire(){
     const c = cpState(), el = e.target;
     if(el.dataset.cp){
       (c.sec[el.dataset.cp] = c.sec[el.dataset.cp] || {})[el.dataset.f] = el.value;
-      // Redraw only the bar beside the field being typed in. Re-rendering the
-      // whole step would take the focus out of the input mid-keystroke.
-      const cell = el.parentElement, b = cell && cell.querySelector(".cpb");
-      const sec = CP_SECTORS.find(x => x.k === el.dataset.cp);
-      if(b && sec) b.outerHTML = cpBench(sec.b, el.dataset.f === "cash" ? "cash" : "months", el.value);
+      // Only the summary moves as you type. Re-rendering the step would take
+      // the focus out of the input mid-keystroke.
       const sum = host.querySelector(".cpsum");
       if(sum) sum.outerHTML = cpSummary();
     }
@@ -4343,15 +4362,24 @@ function cpSectionHTML(){
   const c = cpState();
   const rows = CP_SECTORS.filter(s => (c.sec[s.k]||{}).cash || (c.sec[s.k]||{}).months);
   if(!rows.length && !c.country) return "";
-  const basis = CP_BASIS.filter(b => c.basis[b.k]).map(b => b.t.toLowerCase());
+  const basis = CP_BASIS.filter(b => c.basis[b.k]);
   const ags = Object.keys(c.agencies).filter(a => c.agencies[a]);
   const instr = CP_INSTRUMENTS.filter(([k]) => c.instr[k]).map(([,t]) => t.toLowerCase());
   const pools = CP_POOL_TYPES.filter(([k]) => c.pool[k]).map(([,t]) => t.toLowerCase());
   const country = CP_COUNTRY.find(o => o.k === c.country);
-
   let out = "";
+
+  /* The lead-in follows how authorities actually introduce the table -- the
+     permission first, the table as the limits on it. Hampshire: "The County
+     Council may invest its surplus funds with any of the counterparty types
+     in Table 4, subject to the limits shown". */
   if(rows.length){
-    out += `<table class="dtab"><thead><tr><th>Counterparty</th>
+    out += `<p>The authority may invest its surplus funds with any of the counterparty
+      types set out below, subject to the cash and duration limits shown against each.
+      A limit applies to the amount held with any one name at any one time, and the
+      duration is the longest remaining term the authority will accept at the point of
+      investment.</p>`;
+    out += `<table class="dtab"><thead><tr><th>Counterparty type</th>
       <th>Cash limit</th><th>Maximum duration</th></tr></thead><tbody>` +
       rows.map(s => {
         const v = c.sec[s.k] || {};
@@ -4360,28 +4388,44 @@ function cpSectionHTML(){
           <td>${v.months ? esc(v.months) + " months" : "—"}</td></tr>`;
       }).join("") + `</tbody></table>`;
   }
-  if(basis.length)
-    out += `<p>Limits are applied ${basis.join(", ")}.` +
-      (c.basis.per_group ? ` Institutions under common ownership are treated as a single
-        counterparty.` : "") + `</p>`;
+
+  /* Everything that is a rule rather than a number, as a second table. Prose
+     that lists four controls in one sentence is unreadable and impossible to
+     amend; a table can be lifted straight into a committee report. */
+  const controls = [];
+  basis.forEach(b => controls.push([b.t, b.d]));
+  if(c.basis.per_group)
+    controls.push(["Common ownership",
+      "A group of entities under the same ownership is treated as a single organisation for limit purposes."]);
   if(ags.length)
-    out += `<p>Counterparties are assessed on ratings from ${ags.join(", ")}, with a minimum
-      long-term rating of ${esc(c.ltrating)}` +
+    controls.push(["Credit assessment",
+      `Ratings from ${ags.join(", ")}, with a minimum long-term rating of ${esc(c.ltrating)}` +
       (c.mmfrating && c.mmfrating !== "same as above"
-        ? ` and a minimum of ${esc(c.mmfrating)} for money market funds` : "") + `.</p>`;
+        ? `, and a minimum of ${esc(c.mmfrating)} for money market funds` : "") + "."]);
   if(country)
-    out += `<p>${esc(natText(country.w.replace("[[FLOOR]]", c.floor)
-                                      .replace("[[PCT]]", c.pct)))}</p>`;
-  if(pools.length)
-    out += `<p>The authority may hold ${pools.join(", ")}. These funds have no defined
-      maturity date, so no duration limit is applied to them; exposure is controlled by the
-      cash limit and, where stated, by fund manager.</p>`;
+    controls.push(["Counterparties outside the UK",
+      natText(country.w.replace("[[FLOOR]]", c.floor).replace("[[PCT]]", c.pct))]);
   if(c.split)
-    out += `<p>Investments are classified as specified or non-specified in accordance with
-      the statutory guidance` + (c.nonspec ? `, with non-specified investments limited in
-      aggregate to £${esc(c.nonspec)}m` : "") + `.</p>`;
+    controls.push(["Specified and non-specified",
+      "Investments are classified as specified or non-specified in accordance with the statutory guidance" +
+      (c.nonspec ? `, with non-specified investments limited in aggregate to £${esc(c.nonspec)}m` : "") + "."]);
+  if(pools.length)
+    controls.push(["Pooled funds",
+      `The authority may hold ${pools.join(", ")}. These funds have no defined maturity date, ` +
+      "so no duration limit is applied to them; exposure is controlled by the cash limit " +
+      "and, where stated, by fund manager."]);
   if(instr.length)
-    out += `<p>The instruments approved for use are ${instr.join(", ")}.</p>`;
+    controls.push(["Approved instruments", `${instr.join(", ")}.`]);
+
+  if(controls.length)
+    out += `<table class="dtab"><thead><tr><th>Control</th><th>How it applies</th></tr></thead>
+      <tbody>` + controls.map(([a,b]) =>
+        `<tr><td>${esc(a)}</td><td class="wrap">${esc(b)}</td></tr>`).join("") +
+      `</tbody></table>`;
+
+  out += `<p>These limits are the maximum the authority will accept. The Section 151
+    Officer may operate within tighter limits at any time, and will do so where market
+    conditions or a counterparty's standing warrant it.</p>`;
   return out;
 }
 
@@ -4419,9 +4463,6 @@ function docSections(){
     return !sec || !sec.in || sec.in.indexOf(S.report) >= 0;
   };
   const all = [
-   {k:"counterparty", n:"CP", t:"Investment counterparty policy",
-    b: cpSectionHTML() || gap("the counterparty limits, credit criteria and country policy")},
-
    {k:"intro", n:"1", t:"Introduction",
     b: clausesFor("1") + (t("intro_body") ? para(t("intro_body")) : "")},
 
@@ -4495,6 +4536,9 @@ function docSections(){
      // wrong argument; a portfolio is a set of amounts at one date, and bars
      // are the honest picture of that.
      + ((S.portfolio||[]).length ? barChart(groupHoldings(S.portfolio), "inv") : "")},
+
+   {k:"counterparty", n:"5a", t:"Investment counterparty policy and limits",
+    b: cpSectionHTML() || gap("the counterparty limits, credit criteria and country policy")},
 
    {k:"corefunds", n:"5b", t:"Core funds and expected investment balances",
     b: `<p>Other balance sheet items of <b>£${m1(d[0].obs)}m</b> are set against the capital
