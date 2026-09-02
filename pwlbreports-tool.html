@@ -880,6 +880,41 @@ svg.ctip .hits rect{cursor:crosshair}
    period did, then how much of it was the HRA's — so it is ruled off. */
 .perf th.fcol,.perf td.fcol{border-left:1px solid var(--line2);padding-left:14px}
 .perf th.fcol{color:var(--muted)}
+/* ---- the counterparty survey, and the block index ------------------------
+   The survey is a modal because inline it would turn a form into a report
+   about other councils. Same mechanics as the chart's enlarged state: one
+   element, a class, a veil, and Escape. */
+.cpsurv-modal{position:fixed;inset:16px;z-index:60;background:var(--card);
+  border:1px solid var(--line2);border-radius:var(--r);padding:20px 24px;overflow:auto;
+  box-shadow:0 24px 60px rgba(0,0,0,.28)}
+.cpsurvhead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px}
+.cpsurvhead h3{font-family:var(--sans);font-size:17px;font-weight:600;margin:0}
+.cpsurvhead .pvsub{flex:1;min-width:180px}
+.cpsurvwrap{overflow-x:auto;margin:10px 0 18px}
+.cpsurv th{font-size:10.5px;white-space:nowrap}
+.cpsurv td.med{font-weight:600;color:var(--ink)}
+.cpsurv td.none{color:var(--muted);font-style:italic;text-align:left}
+.cptally{display:grid;grid-template-columns:minmax(150px,260px) 1fr auto;gap:6px 12px;
+  align-items:center;margin:8px 0 20px}
+.ct{display:contents}
+.ctl{font-family:var(--sans);font-size:12.5px;color:var(--ink2)}
+.ctb{background:var(--line);border-radius:2px;height:12px}
+.ctb i{display:block;height:100%;border-radius:2px;background:var(--l-inv);opacity:.75}
+.ctn{font-family:var(--mono);font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums}
+/* The block index. Step 5 is 76 fields in one panel; four named parts with
+   their own state make it four jobs rather than one long one. */
+.cpindex{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 18px;
+  padding-bottom:14px;border-bottom:1px solid var(--line)}
+.cpix{display:inline-flex;align-items:center;gap:7px;font-family:var(--sans);font-size:12px;
+  font-weight:600;padding:6px 11px;border:1px solid var(--line2);border-radius:var(--r-sm);
+  background:var(--card);color:var(--ink2);cursor:pointer}
+.cpix:hover{border-color:var(--accent);color:var(--accent)}
+.cpix i{width:15px;height:15px;border-radius:50%;display:inline-flex;align-items:center;
+  justify-content:center;font-size:9.5px;font-style:normal;font-weight:700;
+  background:color-mix(in srgb, var(--muted) 20%, var(--card));color:var(--muted)}
+.cpix.on i{background:var(--good);color:#fff}
+.cpindex .sp{flex:1;min-width:8px}
 .ltop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .ltop .sp{flex:1;min-width:8px}
 /* The two Excel buttons. They were bare <button>s taking the browser's own
@@ -1247,7 +1282,19 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
   <section class="panel" data-step="5">
     <div class="phead"><span class="n">5</span><h2>Counterparty policy</h2>
       <span class="why">Who you will lend to, for how long, and how much.</span></div>
-    <div class="pbody"><div id="cpbody"></div></div>
+    <div class="pbody">
+      <div class="cpindex" id="cpindex"></div>
+      <div id="cpbody"></div>
+      <div class="cpsurv-modal" id="cpsurv" hidden>
+        <div class="cpsurvhead">
+          <h3>How <span id="cpsurvn">143</span> councils do this</h3>
+          <span class="pvsub">Every published policy we could read. Read only, and it
+            recommends nothing.</span>
+          <button type="button" class="pvbig" id="cpsurvclose">Close</button>
+        </div>
+        <div id="cpsurvbody"></div>
+      </div>
+    </div>
   </section>
 
   <section class="panel" data-step="6">
@@ -1776,6 +1823,14 @@ function render(){
  *   drag the corner         fill the value down or up
  *   paste                   a block from Excel lands from the anchor cell
  * ======================================================================== */
+/* Arriving in a cell selects its value so typing replaces it. That leaves the
+   caret neither at the start nor at the end, so a left/right test written
+   against those two positions silently refuses to move — which is how you end
+   up able to go down a column and not across a row. Selected-all is the
+   spreadsheet's "not editing yet". */
+const SELALL = el => el && el.value != null && el.value.length > 0
+  && el.selectionStart === 0 && el.selectionEnd === el.value.length;
+
 function excelGrid(root, o){
   if(!root) return;
   const cols = o.cols, nR = () => o.rows();
@@ -1930,11 +1985,15 @@ function excelGrid(root, o){
       case "ArrowLeft":
         if(e.shiftKey){ e.preventDefault(); grow(-1, 0); return; }
         // The caret moves first; only at the start of the text does the cell.
-        if(el.selectionStart === 0 && el.selectionEnd === 0){ e.preventDefault(); go(c-1, r); }
+        // A wholly selected value counts as the start AND the end: arriving
+        // in a cell selects it, and until a key is pressed nobody is editing.
+        if(SELALL(el) || (el.selectionStart === 0 && el.selectionEnd === 0)){
+          e.preventDefault(); go(c-1, r); }
         return;
       case "ArrowRight":
         if(e.shiftKey){ e.preventDefault(); grow(1, 0); return; }
-        if(el.selectionStart === el.value.length && el.selectionEnd === el.value.length){
+        if(SELALL(el) || (el.selectionStart === el.value.length
+                       && el.selectionEnd === el.value.length)){
           e.preventDefault(); go(c+1, r); }
         return;
       case "Tab": {
@@ -2065,6 +2124,105 @@ function excelGrid(root, o){
   });
 
   return {repaint: paint, clear(){ sel = null; paint(); }};
+}
+
+/* ===========================================================================
+ * Arrow keys in a table that is not the ledger.
+ *
+ * The ledger has excelGrid: ranges, fill down and right, undo, block paste, a
+ * model behind it. That is right for 331 cells and it is far more machinery
+ * than the other tables need. But Tab-only was far too little: the
+ * counterparty step alone is 76 fields in one panel, and reaching the rating
+ * on the seventh sector meant something like forty tab presses.
+ *
+ * This is the middle. Move between cells with the arrows and Enter, worked
+ * out from where the input SITS IN THE TABLE rather than from a model, so it
+ * attaches to any table of inputs without one being written for it.
+ *
+ * Left and right move the caret first and the cell only at the end of the
+ * text, the same rule the ledger uses — otherwise editing a figure becomes
+ * impossible, which is the trap every hand-rolled grid falls into.
+ * ======================================================================== */
+function arrowNav(root){
+  if(!root || root.dataset.anav) return;
+  root.dataset.anav = "1";
+
+  const FOCUS = "input:not([type=hidden]):not([disabled]),select:not([disabled])";
+  // A row is a <tr> OR a CSS-grid row. The first version only knew about
+  // tables and did nothing at all on the counterparty step, which is laid out
+  // as a grid of divs — the one place with 76 fields and the whole reason for
+  // writing this.
+  const ROW = "tr,.cprow,.setup>div";
+
+  const posOf = el => {
+    const row = el.closest(ROW);
+    if(!row) return null;
+    let cell = el;
+    while(cell.parentElement && cell.parentElement !== row) cell = cell.parentElement;
+    if(cell.parentElement !== row) return null;
+    const rows = row.tagName === "TR" && row.closest("table")
+      ? [...row.closest("table").rows]
+      : [...row.parentElement.children].filter(x => x.matches(ROW));
+    return {rows, r: rows.indexOf(row), c: [...row.children].indexOf(cell)};
+  };
+  const inCell = (row, c) => {
+    const cell = row && row.children[c];
+    return cell ? cell.querySelector(FOCUS) : null;
+  };
+  const move = (el, dc, dr) => {
+    const p = posOf(el);
+    if(!p || p.r < 0) return false;
+    let f = null;
+    if(dr){
+      // Step over a row with nothing focusable in that column — a header, or
+      // a cell deliberately left blank.
+      for(let i = p.r + dr; i >= 0 && i < p.rows.length; i += dr){
+        f = inCell(p.rows[i], p.c);
+        if(f) break;
+      }
+    } else {
+      const row = p.rows[p.r];
+      for(let cc = p.c + dc; cc >= 0 && cc < row.children.length; cc += dc){
+        f = inCell(row, cc);
+        if(f) break;
+      }
+    }
+    if(!f) return false;
+    f.focus();
+    if(f.select && f.type !== "checkbox" && f.tagName !== "SELECT") f.select();
+    return true;
+  };
+
+  root.addEventListener("keydown", e => {
+    const el = e.target;
+    if(!el.matches || !el.matches(FOCUS)) return;
+    // A select owns its own up and down: they change the value.
+    if(el.tagName === "SELECT" && (e.key === "ArrowUp" || e.key === "ArrowDown")) return;
+    const text = el.tagName === "INPUT" && el.type !== "checkbox";
+    /* A WHOLLY SELECTED VALUE MEANS NOBODY HAS STARTED EDITING.
+     *
+     * Arriving in a cell selects it, so that typing replaces rather than
+     * appends. But that leaves the caret neither at the start nor at the end,
+     * and left/right were testing for exactly those — so after moving DOWN a
+     * column you could not then move ACROSS one. Every sideways keypress did
+     * nothing, which reads as the page being broken rather than as a rule.
+     *
+     * Selected-all is the spreadsheet's "not in edit mode": arrows move. One
+     * keystroke into the value and they go back to moving the caret. */
+    const whole = text && el.value.length > 0
+               && el.selectionStart === 0 && el.selectionEnd === el.value.length;
+    const atStart = !text || whole || (el.selectionStart === 0 && el.selectionEnd === 0);
+    const atEnd   = !text || whole || (el.selectionStart === el.value.length
+                           && el.selectionEnd === el.value.length);
+    switch(e.key){
+      case "Enter":     if(move(el, 0, e.shiftKey ? -1 : 1)) e.preventDefault(); return;
+      case "ArrowDown": if(move(el, 0,  1)) e.preventDefault(); return;
+      case "ArrowUp":   if(move(el, 0, -1)) e.preventDefault(); return;
+      case "ArrowLeft": if(atStart && move(el, -1, 0)) e.preventDefault(); return;
+      case "ArrowRight":if(atEnd   && move(el,  1, 0)) e.preventDefault(); return;
+      case "Escape":    el.blur(); return;
+    }
+  });
 }
 
 /* ===========================================================================
@@ -4590,6 +4748,9 @@ function renderSections(){
     if(i>=0){ if(RATE_ON.length>1) RATE_ON.splice(i,1); } else RATE_ON.push(k);
     renderSections(); render();
   });
+  // The period-performance grid and the limits panel: same arrows as the
+  // ledger, so a figure is never more than a keypress away.
+  if(typeof arrowNav === "function") arrowNav($("secbody"));
   $("secbody").querySelectorAll("[data-p]").forEach(el=>
     el.addEventListener("input", e=>{
       const k=e.target.dataset.p, c=e.target.dataset.pc, v=e.target.value.trim();
@@ -5043,6 +5204,11 @@ function cpDefault(sectorLabel, which){
 function cpRender(){
   const host = $("cpbody");
   if(!host) return;
+  const ix = $("cpindex");
+  if(ix) ix.innerHTML = cpIndexHTML();
+  // 76 fields in one panel. Attached after the render, and arrowNav guards
+  // against binding itself twice.
+  setTimeout(()=>{ if(typeof arrowNav === "function") arrowNav($("cpbody")); }, 0);
   const c = cpState();
   const num = (k, f, ph) => `<input type="text" inputmode="decimal" data-cp="${k}"
       data-f="${f}" value="${esc(String((c.sec[k]||{})[f] ?? ""))}"
@@ -5358,6 +5524,107 @@ function cpProgress(){
                  CP_SECTORS.some(s => (c.sec[s.k]||{}).rating),
                  Object.keys(c.instr).some(k=>c.instr[k])];
   return {limits, done: parts.filter(Boolean).length, of: parts.length};
+}
+
+/* ===========================================================================
+ * How 143 councils do this.
+ *
+ * The survey is already beside every question — a bar with the middle half,
+ * the median and where the authority's own figure falls. That is the right
+ * place for it while a limit is being set, and it is the wrong place for the
+ * whole distribution: five numbers a sector, ten sectors, two measures, plus
+ * ratings, geography, structure, instruments and the published wording. Put
+ * that inline and the page stops being a form and becomes a report about
+ * other councils.
+ *
+ * So it is a modal. It answers the question the inline bar raises and cannot
+ * answer — "what does the rest of the range look like, and who is at the
+ * ends?" — and then gets out of the way.
+ *
+ * READ ONLY, AND IT RECOMMENDS NOTHING. Quartiles and counts, with the n on
+ * every row, because a median over nine councils and a median over 166 are
+ * different kinds of fact and the reader is entitled to tell them apart.
+ * ======================================================================== */
+function cpSurveyHTML(){
+  const S_ = CPB.sectors || {};
+  const num = (v, u) => v == null ? "–" : (u === "£" ? "£" + v + "m" : v + " mo");
+  const band = (b, u) => !b ? `<td colspan="5" class="none">too few publish it</td>`
+    : `<td>${b.n}</td><td>${num(b.p25,u)}</td><td class="med">${num(b.med,u)}</td>
+       <td>${num(b.p75,u)}</td><td>${num(b.max,u)}</td>`;
+  // s.b is the label the survey uses; s.t is what the page calls it.
+  const rows = CP_SECTORS.map(s => {
+    const d = S_[s.b] || {};
+    return `<tr><td class="w">${esc(s.t)}</td>${band(d.cash,"£")}${band(d.months,"")}</tr>`;
+  }).join("");
+
+  // The survey's own keys are storage names, not English.
+  const LBL = {fitch:"Fitch", moodys:"Moody's", sp:"S&P", tiered:"A tiered scale",
+    sovereign:"A sovereign rating floor", group_limits:"A limit across a group",
+    specified_split:"Specified and non-specified split", credit_bands:"Credit bands"};
+  const tally = (title, obj, note) => {
+    const ks = Object.keys(obj || {});
+    if(!ks.length) return "";
+    const top = Math.max(...ks.map(k => +obj[k] || 0), 1);
+    return `<h4>${esc(title)}</h4>${note ? `<p class="cpsub">${esc(note)}</p>` : ""}
+      <div class="cptally">${ks.map(k => `<div class="ct">
+        <span class="ctl">${esc(LBL[k] || k)}</span>
+        <span class="ctb"><i style="width:${Math.round((+obj[k]||0)/top*100)}%"></i></span>
+        <span class="ctn">${+obj[k]||0}</span></div>`).join("")}</div>`;
+  };
+
+  return `<p class="cpsub">Every counterparty policy we could read from a published
+      strategy: <b>${CPB.councils}</b> authorities, <b>${CPB.rows}</b> separate limits,
+      surveyed ${esc(CPB.as_at||"")}. Counts differ by row because not every authority
+      publishes every measure — the <i>n</i> is given so a median over nine councils is not
+      read as one over a hundred. Nothing here is a recommendation.</p>
+    <div class="cpsurvwrap"><table class="otable cpsurv">
+      <thead>
+        <tr><th rowspan="2" class="w">Counterparty type</th>
+            <th colspan="5">Cash limit</th><th colspan="5">Duration</th></tr>
+        <tr><th>n</th><th>25th</th><th>median</th><th>75th</th><th>max</th>
+            <th>n</th><th>25th</th><th>median</th><th>75th</th><th>max</th></tr>
+      </thead><tbody>${rows}</tbody></table></div>
+    ${tally("What the limit is measured against", CPB.basis,
+            "More than one may apply, so these do not sum to " + CPB.councils + ".")}
+    ${tally("Minimum long-term rating, by agency named", CPB.ratings)}
+    ${tally("Counterparties outside the UK", CPB.geography)}
+    ${tally("Structure", CPB.structure)}
+    ${tally("Instruments named as approved", CPB.instruments)}
+    ${(CPB.wording||[]).length ? `<h4>How authorities word it</h4>
+      <p class="cpsub">${CPB.wording.length} passages, quoted from published strategies. No
+        authority is named — a policy is a decision its members took, not a specimen.</p>
+      <div class="cpwords">${CPB.wording.map(w=>`<blockquote>${esc(w.text)}</blockquote>`)
+        .join("")}</div>` : ""}`;
+}
+
+/* The four parts of this step, each with its own state.
+ *
+ * Step 5 is 76 fields in one panel — the second heaviest in the tool, and the
+ * only heavy one with no sense of where you are in it. The rail can only say
+ * "partly set" about the whole thing. This says which of the four parts are
+ * answered and jumps to one, which turns one long job into four short ones
+ * without adding a fifth step to a rail that already wraps.
+ *
+ * Like the rail, it reports what is IN THE STATE, never what has been
+ * visited. */
+function cpBlocks(){
+  const c = cpState();
+  const anySec = f => CP_SECTORS.some(s => (c.sec[s.k]||{})[f]);
+  return [
+    {n:1, t:"Limits & duration",  on: CP_SECTORS.some(s => (c.sec[s.k]||{}).on)},
+    {n:2, t:"Outside the UK",     on: !!c.country},
+    {n:3, t:"Pooled funds",       on: !!(c.pool || c.split || c.groupnote)},
+    {n:4, t:"Instruments",        on: Object.keys(c.instr||{}).some(k => c.instr[k])}
+  ];
+}
+
+function cpIndexHTML(){
+  const b = cpBlocks(), done = b.filter(x=>x.on).length;
+  return b.map(x => `<button type="button" class="cpix${x.on?" on":""}" data-cpix="${x.n}">
+      <i>${x.on ? "✓" : x.n}</i>${esc(x.t)}</button>`).join("")
+    + `<span class="sp"></span>
+       <button type="button" class="cpix" id="cpsurvopen">How ${CPB.councils||0} councils
+         do this</button>`;
 }
 
 /* ===========================================================================
@@ -6731,6 +6998,7 @@ function loanRows(){
           : f==="rate" ? (e.target.value.trim()==="" ? null : num(e.target.value))
           : e.target.value;
       applyLoans(); }));
+  if(typeof arrowNav === "function") arrowNav($("loanrows").closest("table") || $("loanrows"));
   $("loanrows").querySelectorAll("[data-rm]").forEach(b=>
     b.addEventListener("click", e=>{ S.loans.splice(+e.target.dataset.rm,1); loanRows(); applyLoans(); }));
 }
@@ -7424,6 +7692,39 @@ function stampSaved(word){
     if(b.dataset.pf) S.pv.fund = b.dataset.pf;
     render();
   });
+  /* The counterparty step: jump to a part, and the survey modal. */
+  document.addEventListener("click", e => {
+    const j = e.target.closest("[data-cpix]");
+    if(j){
+      const h = $("cpbody").querySelectorAll(".cph")[+j.dataset.cpix - 1];
+      if(h){ h.scrollIntoView({block:"start"}); window.scrollBy(0, -90); }
+      return;
+    }
+    if(e.target.closest("#cpsurvopen")) cpSurvey(true);
+    if(e.target.closest("#cpsurvclose")) cpSurvey(false);
+  });
+  function cpSurvey(on){
+    const m = $("cpsurv");
+    if(on){
+      $("cpsurvn").textContent = CPB.councils || 0;
+      $("cpsurvbody").innerHTML = cpSurveyHTML();
+    }
+    m.hidden = !on;
+    const old = document.querySelector(".cpveil");
+    if(old) old.remove();
+    if(on){
+      const v = document.createElement("div");
+      v.className = "pvveil cpveil";
+      v.addEventListener("click", ()=>cpSurvey(false));
+      document.body.appendChild(v);
+      m.scrollTop = 0;
+    }
+    document.body.style.overflow = on ? "hidden" : "";
+  }
+  document.addEventListener("keydown", e => {
+    if(e.key === "Escape" && !$("cpsurv").hidden) cpSurvey(false);
+  });
+
   const PVW = $("pv"), PVT = $("pvtog"), PVB = $("pvbig");
   function pvVeil(on){
     const old = document.querySelector(".pvveil");
