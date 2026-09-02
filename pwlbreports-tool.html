@@ -163,7 +163,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
 
 /* The choices are whole questions rather than field names, so they need the
    room a sentence takes before it wraps somewhere unhelpful. */
-#choices{grid-template-columns:repeat(auto-fit,minmax(268px,1fr))}
+
 
 /* ---- the ledger: years down, measures across ---------------------------- */
 .fundtabs{display:flex;gap:6px;margin-bottom:10px}
@@ -915,6 +915,33 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
   background:color-mix(in srgb, var(--sc) 8%, var(--card));
   box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--sc) 45%, transparent)}
 
+
+
+/* ---- the choices, as questions rather than fields -------------------------
+ * One question per line with its control beside it, grouped by what the
+ * question is about. Stacked labels in an auto-fit grid put a long question's
+ * text above a different question's control.
+ */
+#choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
+  gap:16px 26px;align-items:start}
+.cgroup{min-width:0;border:1px solid var(--line);border-radius:var(--r-sm);
+  background:var(--card);overflow:hidden}
+.cgroup h3{display:flex;align-items:baseline;gap:9px;margin:0;
+  font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink);
+  letter-spacing:.02em;padding:9px 13px;background:var(--sunken);
+  border-bottom:1px solid var(--line)}
+.cgroup h3 i{margin-left:auto;font-style:normal;font-size:10.5px;font-weight:500;
+  color:var(--muted);font-family:var(--mono)}
+.qrow{display:grid;grid-template-columns:minmax(0,1fr) 168px;gap:14px;
+  align-items:center;padding:7px 13px;border-bottom:1px solid var(--hair)}
+.qrow:last-child{border-bottom:0}
+.qrow label{margin:0;font-size:12.5px;font-weight:500;color:var(--ink2);line-height:1.35}
+.qrow.done label{color:var(--ink)}
+.qrow.done{background:color-mix(in srgb, var(--good) 5%, transparent)}
+.qrow select,.qrow input[type=text]{width:100%;padding:5px 8px;font-size:12.5px;
+  background:var(--card)}
+.qrow input[type=text]::placeholder{color:var(--faint);font-size:11.5px}
+@media(max-width:520px){.qrow{grid-template-columns:1fr;gap:4px}}
 
 </style>
 
@@ -3249,19 +3276,27 @@ const FWD_REPORTS  = ["tmss"];
 const BACK_REPORTS = ["mid","out","quart"];
 function inReport(c){ return !c.rep || c.rep.indexOf(S.report) >= 0; }
 
+/* GROUPED, because twenty-three questions in one flat grid is a form and not
+   a conversation. The groups are the order a treasury officer thinks in:
+   who advises and who receives, how debt is repaid, borrowing, investments,
+   and last the committee wrapper, which is about the paper rather than the
+   policy. */
+const CHOICE_GROUPS = ["Advice and reporting","Repaying debt","Borrowing",
+                       "Investments","Committee report sections"];
+
 const CHOICES = [
-  {k:"adviser",   l:"Treasury adviser", type:"text",
+  {k:"adviser", g:"Advice and reporting",   l:"Treasury adviser", type:"text",
    ph:"e.g. Arlingclose, Link, MUFG — or leave blank if none"},
   // Nation-gated, like the clauses. A Scottish authority was being shown a
   // four-option MRP question that changed nothing in its report, because
   // Scotland has no MRP — the sweep found all four values producing a
   // byte-identical document. A control that does nothing is worse than a
   // missing one: it invites an answer and then ignores it.
-  {k:"mrpmethod", l:"MRP method for borrowing-funded capital", type:"select",
+  {k:"mrpmethod", g:"Repaying debt", l:"MRP method for borrowing-funded capital", type:"select",
    nat:["england","wales"],
    opts:[["asset","Asset life — equal instalment"],["annuity","Asset life — annuity"],
          ["ceb","Capital expenditure basis"],["other","Other / mixed"]]},
-  {k:"lfmethod", l:"How loans fund advances are repaid", type:"select",
+  {k:"lfmethod", g:"Repaying debt", l:"How loans fund advances are repaid", type:"select",
    nat:["scotland"],
    opts:[["equal","Equal instalments of principal"],["annuity","Annuity"],
          ["asset","Asset life"],["other","Other / mixed"]]},
@@ -3272,30 +3307,30 @@ const CHOICES = [
      authority's own constitution and democratic services template, not by the
      treasury Code, so they are offered rather than assumed. Emitting all of
      them would impose one council's house style on every other. */
-  {k:"committee", l:"Committee that receives treasury reports", type:"text",
+  {k:"committee", g:"Advice and reporting", l:"Committee that receives treasury reports", type:"text",
    ph:"e.g. Audit and Governance Committee — named in the scheme of delegation"},
-  {k:"wrapsummary", l:"Include an executive summary?", type:"yesno"},
-  {k:"wrapfin",     l:"Include a financial implications heading?", type:"yesno"},
-  {k:"wraplegal",   l:"Include a legal implications heading?", type:"yesno"},
-  {k:"wraprisk",    l:"Include a risk implications heading?", type:"yesno"},
-  {k:"wrapequality",l:"Include an equality impact heading?", type:"yesno"},
-  {k:"wrapclimate", l:"Include a climate or environmental heading?", type:"yesno"},
-  {k:"wrapconsult", l:"Include consultation and background papers?", type:"yesno"},
-  {k:"wrapoptions", l:"Include options considered?", type:"yesno"},
-  {k:"wrapauthor",  l:"Report author and contact", type:"text",
+  {k:"wrapsummary", g:"Committee report sections", l:"Include an executive summary?", type:"yesno"},
+  {k:"wrapfin", g:"Committee report sections",     l:"Include a financial implications heading?", type:"yesno"},
+  {k:"wraplegal", g:"Committee report sections",   l:"Include a legal implications heading?", type:"yesno"},
+  {k:"wraprisk", g:"Committee report sections",    l:"Include a risk implications heading?", type:"yesno"},
+  {k:"wrapequality", g:"Committee report sections",l:"Include an equality impact heading?", type:"yesno"},
+  {k:"wrapclimate", g:"Committee report sections", l:"Include a climate or environmental heading?", type:"yesno"},
+  {k:"wrapconsult", g:"Committee report sections", l:"Include consultation and background papers?", type:"yesno"},
+  {k:"wrapoptions", g:"Committee report sections", l:"Include options considered?", type:"yesno"},
+  {k:"wrapauthor", g:"Committee report sections",  l:"Report author and contact", type:"text",
    ph:"name, job title, email — appears at the foot of the report"},
-  {k:"vrp",       l:"Voluntary revenue provision made?", type:"yesno"},
-  {k:"advance",   l:"Borrow in advance of need?", type:"yesno"},
-  {k:"resched",   l:"Rescheduling or premature repayment considered?", type:"yesno"},
-  {k:"pooled",    l:"Use externally managed or pooled funds?", type:"yesno"},
-  {k:"nontreas",  l:"Hold non-treasury investments?", type:"yesno"},
-  {k:"commprop",  l:"Hold commercial property or investments for financial return?",
+  {k:"vrp", g:"Repaying debt",       l:"Voluntary revenue provision made?", type:"yesno"},
+  {k:"advance", g:"Borrowing",   l:"Borrow in advance of need?", type:"yesno"},
+  {k:"resched", g:"Borrowing",   l:"Rescheduling or premature repayment considered?", type:"yesno"},
+  {k:"pooled", g:"Investments",    l:"Use externally managed or pooled funds?", type:"yesno"},
+  {k:"nontreas", g:"Investments",  l:"Hold non-treasury investments?", type:"yesno"},
+  {k:"commprop", g:"Investments",  l:"Hold commercial property or investments for financial return?",
    type:"yesno"},
-  {k:"commborrow",l:"Was any of it acquired with borrowing?", type:"yesno"},
-  {k:"mifid",     l:"Elective professional client under MiFID II?", type:"yesno"},
-  {k:"pwlbtoday", l:"Use PWLBtoday for market data, training or counterparty monitoring?",
+  {k:"commborrow", g:"Investments",l:"Was any of it acquired with borrowing?", type:"yesno"},
+  {k:"mifid", g:"Investments",     l:"Elective professional client under MiFID II?", type:"yesno"},
+  {k:"pwlbtoday", g:"Advice and reporting", l:"Use PWLBtoday for market data, training or counterparty monitoring?",
    type:"yesno"},
-  {k:"cycle",     l:"Reporting cycle", type:"select",
+  {k:"cycle", g:"Advice and reporting",     l:"Reporting cycle", type:"select",
    opts:[["quarterly","Quarterly"],["thrice","Strategy, mid-year, outturn"],["other","Other"]]}
 ];
 
@@ -6134,22 +6169,36 @@ function stampSaved(word){
   // Choices. Each one either lets a clause in or keeps it out, so the count
   // moves as they answer and the draft changes underneath.
   function renderChoices(){
-    const C=S.choices;
-    $("choices").innerHTML = CHOICES.filter(inNation).map(c=>{
-      const v=C[c.k]==null?"":C[c.k];
-      if(c.type==="text")
-        return `<div><label for="c_${c.k}">${esc(c.l)}<span class="hint">${esc(c.ph||"")}</span></label>
-          <input type="text" id="c_${c.k}" data-c="${c.k}" value="${esc(v)}"></div>`;
-      const opts = c.type==="yesno" ? [["yes","Yes"],["no","No"]] : c.opts;
-      return `<div><label for="c_${c.k}">${esc(c.l)}</label>
-        <select id="c_${c.k}" data-c="${c.k}">
-          ${c.type==="yesno"?`<option value=""${v?"":" selected"}>Not answered</option>`:""}
-          ${opts.map(([k,t])=>`<option value="${k}"${v===k?" selected":""}>${esc(t)}</option>`).join("")}
-        </select></div>`;
+    const C = S.choices;
+    const avail = CHOICES.filter(inNation);
+    // Question left, control right, on one line. Stacked label-over-field in
+    // an auto-fit grid, a long question wrapped over three lines and its
+    // control ended up beside a DIFFERENT question's text; the commonest
+    // report of this step was not knowing which box answered what.
+    const field = c => {
+      const v = C[c.k] == null ? "" : C[c.k];
+      if(c.type === "text")
+        return `<input type="text" id="c_${c.k}" data-c="${c.k}" value="${esc(v)}"
+                  placeholder="${esc(c.ph||"")}">`;
+      const opts = c.type === "yesno" ? [["yes","Yes"],["no","No"]] : c.opts;
+      return `<select id="c_${c.k}" data-c="${c.k}">
+        ${c.type==="yesno" ? `<option value=""${v?"":" selected"}>—</option>` : ""}
+        ${opts.map(([k,t])=>`<option value="${k}"${v===k?" selected":""}>${esc(t)}</option>`).join("")}
+      </select>`;
+    };
+    $("choices").innerHTML = CHOICE_GROUPS.map(g => {
+      const list = avail.filter(c => c.g === g);
+      if(!list.length) return "";
+      const answered = list.filter(c => C[c.k]).length;
+      return `<section class="cgroup">
+        <h3>${esc(g)}<i>${answered} of ${list.length}</i></h3>
+        ${list.map(c => `<div class="qrow ${C[c.k]?"done":""}">
+          <label for="c_${c.k}">${esc(c.l)}</label>${field(c)}</div>`).join("")}
+      </section>`;
     }).join("");
-    $("choices").querySelectorAll("input,select").forEach(el=>
-      el.addEventListener("input", e=>{ S.choices[e.target.dataset.c]=e.target.value;
-        countClauses(); renderSections(); render(); }));
+    $("choices").querySelectorAll("input,select").forEach(el =>
+      el.addEventListener("input", e => { S.choices[e.target.dataset.c] = e.target.value;
+        countClauses(); renderSections(); render(); renderChoices(); }));
     countClauses();
   }
   function countClauses(){
