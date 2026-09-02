@@ -876,6 +876,10 @@ svg.ctip .hits rect{cursor:crosshair}
    the authority filled, and typing over it is what the note explains. */
 .perf td.drv{color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums;
   padding-right:16px}
+/* The fund column is a different question from the three beside it — what the
+   period did, then how much of it was the HRA's — so it is ruled off. */
+.perf th.fcol,.perf td.fcol{border-left:1px solid var(--line2);padding-left:14px}
+.perf th.fcol{color:var(--muted)}
 .ltop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .ltop .sp{flex:1;min-width:8px}
 /* The two Excel buttons. They were bare <button>s taking the browser's own
@@ -4111,21 +4115,53 @@ function complianceTable(){
  * computed from income over average balance only when BOTH are entered, and
  * it is shown as derived so nobody mistakes it for a figure they gave.
  * ======================================================================== */
+/* THE HRA SPLIT GOES ON THE DEBT LINES AND NOWHERE ELSE.
+ *
+ * Asked whether performance should be split by fund, the corpus answers it
+ * rather than an opinion doing so. Of the reports that mention an HRA at all
+ * -- 145 outturns, 83 mid-year reviews, 80 quarterly monitors -- a quarter
+ * split interest or debt by fund (21%, 15%, 28% for the interest charge; 26%,
+ * 13%, 28% for debt). Almost none give the HRA its own investment return:
+ * 7%, 3% and 10%.
+ *
+ * That asymmetry is not an accident of drafting. Debt can belong to a fund;
+ * cash cannot. The investments are one pot, managed as one portfolio against
+ * one benchmark, which is exactly why pooling in this tool is a question
+ * about DEBT. Splitting a portfolio return between funds would need an
+ * apportionment nothing published supports, and inventing one here would be
+ * the same mistake as guessing which pool a loan sits in.
+ *
+ * So the debt lines take an "of which HRA" figure the authority enters, and
+ * the investment lines stay whole-authority and say why. Under a single pool
+ * the split is an apportionment -- the item 8 charge -- and is labelled as
+ * one, because the authority making that apportionment is a different thing
+ * from the tool assuming it. */
 const PERF = [
-  {k:"intpay",  l:"Interest payable",        u:"£m", s:"on borrowing and leases"},
+  {k:"intpay",  l:"Interest payable",        u:"£m", s:"on borrowing and leases", fund:true},
   {k:"intinc",  l:"Investment income",       u:"£m", s:"earned in the period"},
   {k:"avginv",  l:"Average investments held", u:"£m", s:"the denominator of a return",
    noBudget:true},
-  {k:"avgdebt", l:"Average debt outstanding", u:"£m", noBudget:true},
+  {k:"avgdebt", l:"Average debt outstanding", u:"£m", noBudget:true, fund:true},
   {k:"ret",     l:"Rate of return achieved",  u:"%",  s:"derived where income and balance allow",
    pct:true},
   {k:"bench",   l:"Benchmark return",         u:"%",  s:"SONIA, 7-day, or your own measure",
    pct:true, noBudget:true},
-  {k:"newborr", l:"New borrowing taken",      u:"£m", s:"leave blank if none", noBudget:true},
+  {k:"newborr", l:"New borrowing taken",      u:"£m", s:"leave blank if none", noBudget:true,
+   fund:true},
   {k:"newrate", l:"Average rate on it",       u:"%",  pct:true, noBudget:true},
-  {k:"repaid",  l:"Debt repaid or matured",   u:"£m", noBudget:true}
+  {k:"repaid",  l:"Debt repaid or matured",   u:"£m", noBudget:true, fund:true}
 ];
 const PERF_COLS = [["budget","Budget"], ["actual","Actual"], ["prior","Prior year"]];
+
+/* The fund column exists only where there is a fund to split into, and only
+   on the lines the sector actually splits. */
+function perfFundCol(){
+  if(S.hra === "no") return null;
+  return {k:"hra", t:"of which HRA",
+          s: S.hra === "two"
+            ? "the HRA's own pool"
+            : "the apportionment you charge the HRA — debt is pooled, so this is yours to state"};
+}
 
 /* A return we can compute: income over the average balance held. Only when
    both are there, and never overwriting a figure the authority entered. */
@@ -4149,16 +4185,24 @@ function perfRows(){
       if(x.k === "ret"){ const d = perfDerive(c); v = d.v; derived = d.derived; }
       cells[c] = {v, derived};
     });
+    const fc = perfFundCol();
+    if(fc && x.fund){
+      const raw = P[x.k] && P[x.k][fc.k];
+      cells[fc.k] = {v:(raw == null || raw === "") ? null : +raw};
+    }
     return Object.assign({}, x, {cells,
-      any: PERF_COLS.some(([c]) => cells[c].v != null)});
+      any: PERF_COLS.some(([c]) => cells[c].v != null)
+        || (cells.hra && cells.hra.v != null)});
   });
 }
 
 function perfPanel(){
   S.perf = S.perf || {};
   const rows = perfRows();
+  const fc = perfFundCol();
   return `<div class="perfwrap"><table class="perf">
-    <thead><tr><th>The period</th>${PERF_COLS.map(([,t])=>`<th>${esc(t)}</th>`).join("")}</tr></thead>
+    <thead><tr><th>The period</th>${PERF_COLS.map(([,t])=>`<th>${esc(t)}</th>`).join("")}${
+      fc ? `<th class="fcol">${esc(fc.t)}</th>` : ""}</tr></thead>
     <tbody>${rows.map(r=>`<tr>
       <td class="pl"><b>${esc(r.l)}</b>${r.s?`<span>${esc(r.s)}</span>`:""}</td>
       ${PERF_COLS.map(([c])=>{
@@ -4170,10 +4214,19 @@ function perfPanel(){
         return `<td><input type="text" inputmode="decimal" data-p="${r.k}" data-pc="${c}"
           value="${raw == null ? "" : raw}" placeholder="${r.u === "%" ? "—" : "—"}"
           aria-label="${esc(r.l)} ${c}"></td>`;
-      }).join("")}</tr>`).join("")}</tbody></table></div>
+      }).join("")}${!fc ? "" : (x => x)(r.fund
+        ? `<td class="fcol"><input type="text" inputmode="decimal" data-p="${r.k}"
+             data-pc="${fc.k}" value="${(S.perf[r.k]||{})[fc.k] == null ? ""
+             : (S.perf[r.k]||{})[fc.k]}" placeholder="—"
+             aria-label="${esc(r.l)} HRA share"></td>`
+        : `<td class="fcol nask" title="the investments are one pot — a return cannot be
+             split between funds without an apportionment nothing published supports"></td>`)
+      }</tr>`).join("")}</tbody></table></div>
     <p class="hintline">Leave a line blank and it does not appear in the report. The rate of
       return fills itself from investment income over average investments held; type over it
-      to use your own.</p>`;
+      to use your own.${fc ? ` ${esc(fc.s.charAt(0).toUpperCase() + fc.s.slice(1))}. The
+      investment lines are whole-authority: the cash is one portfolio, so a return cannot be
+      split by fund.` : ""}</p>`;
 }
 
 /* The table the report carries. Variance is stated with its direction named,
@@ -4204,14 +4257,27 @@ function perfTable(){
      actual. The report table used to name its four columns by hand while the
      input grid derived its three -- two lists to keep in step, which is how
      the chart legend came to describe lines it was not drawing. */
+  const fc = perfFundCol();
+  // Only carried where an authority actually gave a figure for it: a column
+  // of dashes tells a reader nothing except that we asked.
+  const showFund = fc && rows.some(r => r.cells[fc.k] && r.cells[fc.k].v != null);
   const cells = fn => PERF_COLS.map(([c]) =>
-    fn(c) + (c === "actual" ? fn("__var") : "")).join("");
+    fn(c) + (c === "actual" ? fn("__var") : "")).join("") + (showFund ? fn("__fund") : "");
   return `<div style="overflow-x:auto"><table class="otable">
     <thead><tr><th>The period</th>${cells(c => `<th>${
-      c === "__var" ? "Variance" : esc(PERF_COLS.find(x=>x[0]===c)[1])}</th>`)}</tr></thead>
+      c === "__var"  ? "Variance"
+    : c === "__fund" ? esc(fc.t)
+    : esc(PERF_COLS.find(x=>x[0]===c)[1])}</th>`)}</tr></thead>
     <tbody>${rows.map(r=>`<tr><td class="w">${esc(r.l)}</td>${
-      cells(c => `<td>${c === "__var" ? varc(r) : f(r, c)}</td>`)}</tr>`).join("")}</tbody>
+      cells(c => c === "__var"  ? `<td>${varc(r)}</td>`
+               : c === "__fund" ? `<td>${r.cells[fc.k] && r.cells[fc.k].v != null
+                                    ? "£"+m1(r.cells[fc.k].v)+"m" : "–"}</td>`
+               : `<td>${f(r, c)}</td>`)}</tr>`).join("")}</tbody>
     </table></div>
+    ${showFund ? `<p class="note">The investment lines are whole-authority. Treasury cash is
+      one portfolio managed against one benchmark, so a return cannot be apportioned between
+      funds${S.hra === "one" ? `; the debt is pooled too, and the HRA figures above are the
+      authority's own apportionment` : ""}.</p>` : ""}
     ${perfNote(rows)}`;
 }
 
@@ -7111,6 +7177,14 @@ function stampSaved(word){
       newrate: {actual: 4.48},
       repaid:  {actual: r1(dbt * 0.04)}
     };
+    // The HRA's share of the debt lines, where there is an HRA to have one.
+    if(S.hra !== "no"){
+      const sh = S.hra === "two" ? 0.34 : 0.29;
+      ["intpay","avgdebt","newborr","repaid"].forEach(k => {
+        if(S.perf[k] && S.perf[k].actual != null)
+          S.perf[k].hra = r1(S.perf[k].actual * sh);
+      });
+    }
     S.minliq = S.g.gf.liq[0] || null;
     if($("minliq")) $("minliq").value = S.minliq == null ? "" : S.minliq;
 
