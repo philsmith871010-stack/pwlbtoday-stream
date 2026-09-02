@@ -946,17 +946,16 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
       <div><label for="council">Authority<span class="hint" id="stamp"></span></label>
         <select id="council"></select></div>
       <div><label for="rtype">Report</label><select id="rtype"></select></div>
-      <div><label for="fy0">First year<span class="hint">balance sheet date</span></label>
+      <div><label for="fy0">First year</label>
         <select id="fy0"></select></div>
-      <div><label for="asat">Report as at<span class="hint">market data cut to this date</span></label>
+      <div><label for="asat">Report as at</label>
         <input type="date" id="asat"></div>
-      <div><label for="hra">HRA<span class="hint">LB1 must be split either way</span></label>
+      <div><label for="hra">HRA</label>
         <select id="hra"><option value="no">No HRA</option><option value="one">One pool</option>
         <option value="two">Two pool</option></select></div>
-      <div><label for="horizon">Horizon<span class="hint">the Code wants the full loan life</span></label>
+      <div><label for="horizon">Horizon</label>
         <select id="horizon"></select></div>
-      <div><label for="logo">Council logo<span class="hint">optional — appears on the draft
-        and travels with the export</span></label>
+      <div><label for="logo">Council logo</label>
         <input type="file" id="logo" accept="image/png,image/jpeg,image/svg+xml"></div>
     </div>
     <div class="ltools" style="margin-top:12px">
@@ -3275,6 +3274,8 @@ const CHOICES = [
      authority's own constitution and democratic services template, not by the
      treasury Code, so they are offered rather than assumed. Emitting all of
      them would impose one council's house style on every other. */
+  {k:"committee", l:"Committee that receives treasury reports", type:"text",
+   ph:"e.g. Audit and Governance Committee — named in the scheme of delegation"},
   {k:"wrapsummary", l:"Include an executive summary?", type:"yesno"},
   {k:"wrapfin",     l:"Include a financial implications heading?", type:"yesno"},
   {k:"wraplegal",   l:"Include a legal implications heading?", type:"yesno"},
@@ -4729,6 +4730,15 @@ function cpProgress(){
 /* The report in one paragraph, built from the figures rather than written.
    An executive summary that has to be typed is one that stays empty; this one
    states what the numbers already say and leaves the judgement to the body. */
+/* The report's own name. It was written as a [[token]], which is for text
+   that changes with the NATION -- and this changes with the report type. The
+   token had no entry in NATIONS, so it reached the draft unresolved, and a
+   .toLowerCase() on the way past turned it into a second broken token. */
+function reportTitle(){
+  const r = REPORTS.find(x => x.k === S.report);
+  return r ? r.t : "treasury management strategy";
+}
+
 function execSummary(d, hra){
   const a = d[0], z = d[d.length-1];
   const peak = d.reduce((x,y)=> y.need > x.need ? y : x, d[0]);
@@ -4777,7 +4787,7 @@ function docSections(){
       strategy, the indicators and the MRP statement are approved together. */
    {k:"recommend", n:"", t:"Recommendations",
     b: `<p>Members are asked to:</p><ol class="recs">
-        <li>approve the ${esc(natText("[[reportName]]"))} for ${fy(S.fy0)};</li>
+        <li>approve the ${esc(reportTitle())} for ${fy(S.fy0)};</li>
         <li>approve the prudential and treasury management indicators set out in it;</li>
         ${IN2("mrp") ? `<li>approve the ${esc(natText("[[mrpTitle]]").toLowerCase())};</li>` : ""}
         <li>note the counterparty policy and investment limits it contains.</li>
@@ -4908,12 +4918,12 @@ function docSections(){
       easy hit for a reviewer rather than a safe omission. These are written,
       not offered. */
    {k:"delegation", n:"10c", t:"Treasury management scheme of delegation",
-    b: `<p>Full Council approves the ${esc(natText("[[reportName]]").toLowerCase())},
+    b: `<p>Full Council approves the ${esc(reportTitle().toLowerCase())},
         the prudential and treasury management indicators within it, and any in-year
         change to them.</p>
-        <p>The ${esc(natText("[[committee]]"))} receives the mid-year review and the
-        outturn report, and scrutinises the treasury management function on behalf of
-        members.</p>
+        <p>${esc(S.choices.committee || "The committee responsible for scrutiny of the treasury function")}
+        receives the mid-year review and the outturn report, and scrutinises treasury
+        management on behalf of members.</p>
         <p>The ${esc(natText("[[officer]]"))} is responsible for the execution and
         administration of treasury management decisions within the policy and limits
         approved, and may delegate day-to-day operation to named officers.</p>`},
