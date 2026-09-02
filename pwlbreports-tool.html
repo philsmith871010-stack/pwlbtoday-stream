@@ -18,7 +18,7 @@
      reader learns where they are from the colour before reading the number.
      Assigning seven unrelated colours would look busier and say less. */
   --s1:#1b4f8a; --s2:#1a6b8f; --s3:#177f86; --s4:#1a8a72;
-  --s5:#2a8f5c; --s6:#4a9247; --s7:#1a7f4b;
+  --s5:#2a8f5c; --s6:#4a9247; --s7:#5f8f3a; --s8:#1a7f4b;
 
   /* Series colours are fixed by MEANING, not by chart. Net treasury position
      is the same navy in LB1, LB2 and LB3; the benchmark is the same red
@@ -55,10 +55,10 @@
     --accent:#8fb6de; --accent-soft:#1c2b3a; --on-accent:#0e151d;
     --orange:#e8974a; --good:#4cb583; --alert:#e0776a;
   --s1:#6ea8dd; --s2:#5cb3d1; --s3:#4fc0bd; --s4:#4fc4a2;
-  --s5:#5ec98a; --s6:#7fcb72; --s7:#4cb583;
+  --s5:#5ec98a; --s6:#7fcb72; --s7:#9ccb6a; --s8:#4cb583;
 
     --s1:#6ea8dd; --s2:#5cb3d1; --s3:#4fc0bd; --s4:#4fc4a2;
-    --s5:#5ec98a; --s6:#7fcb72; --s7:#4cb583;
+    --s5:#5ec98a; --s6:#7fcb72; --s7:#9ccb6a; --s8:#4cb583;
 
     --l-debt:#c8d8e8; --l-cfr:#6fa4d8; --l-obs:#8d9aa8; --l-ntp:#c8d8e8;
     --l-lb:#e0776a; --l-al:#b795e0; --l-inv:#4cb583; --l-ei:#4fc2b5;
@@ -817,6 +817,41 @@ svg.ctip .hits rect{cursor:crosshair}
    .otable and .readout wholesale — it is the report's own block, not a
    lookalike — so there is nothing here but the frame around it and the
    enlarged state. */
+/* ---- the check -----------------------------------------------------------
+   Deliberately plain. This is the page a section 151 officer looks at last,
+   and anything that reads as a badge or a score would undo the one thing it
+   is for. No ticks, no percentage, no green wash: four counts and a list. */
+.ckhead{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:6px}
+.cktot{display:flex;gap:10px;flex-wrap:wrap}
+.ck{display:inline-flex;align-items:baseline;gap:7px;font-family:var(--sans);font-size:12px;
+  color:var(--ink2);border:1px solid var(--line2);border-radius:var(--r-sm);padding:7px 12px}
+.ck b{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.ck.out{border-color:var(--alert)}
+.ck.out b{color:var(--alert)}
+.ck.conf{border-color:var(--l-al)}
+.ck.na{color:var(--muted)}
+.cknote{font-family:var(--sans);font-size:13px;line-height:1.6;color:var(--ink2);
+  margin:14px 0 0;max-width:76ch}
+.ckgrp{margin-top:22px}
+.ckgrp h4{font-family:var(--sans);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;margin:0 0 8px}
+/* "out" and "conf", not "gap" and "yours": .gap already belongs to the draft,
+   where it means a paragraph still to be written -- italic, alert-coloured and
+   washed. These rows silently inherited all three. */
+.ckrow{display:grid;grid-template-columns:132px 1fr;gap:14px;align-items:start;
+  padding:12px 0;border-top:1px solid var(--hair)}
+.cktag{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);padding-top:2px}
+.ckrow.out .cktag{color:var(--alert);font-weight:600}
+.ckrow.conf .cktag{color:var(--l-al);font-weight:600}
+.ckt{font-family:var(--sans);font-size:13.5px;font-weight:600;color:var(--ink);display:block}
+.cksrc{font-family:var(--mono);font-size:10.5px;color:var(--muted);display:block;margin-top:2px}
+.ckbody p{font-family:var(--sans);font-size:13px;line-height:1.6;color:var(--ink2);
+  margin:6px 0 0;max-width:80ch}
+.cklink{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--accent);
+  background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
+@media(max-width:660px){.ckrow{grid-template-columns:1fr;gap:4px}}
 .ltop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .ltop .sp{flex:1;min-width:8px}
 /* The two Excel buttons. They were bare <button>s taking the browser's own
@@ -907,7 +942,7 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
 .dsec{scroll-margin-top:96px}
 
 /* ---- colour as position ---------------------------------------------------
- * Each step owns a hue (--s1..--s7, set inline from the step number). The
+ * Each step owns a hue (--s1..--s8, set inline from the step number). The
  * badge, the active border and the panel header all read from --sc, so the
  * rail and the panel below it agree without either knowing the other's rules.
  * State still overrides: a done step is green and a part-done step amber
@@ -930,7 +965,7 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
    rather than a bar. */
 .railtrack{height:4px}
 .railbar{background:linear-gradient(90deg,var(--s1),var(--s2),var(--s3),
-  var(--s4),var(--s5),var(--s6),var(--s7))}
+  var(--s4),var(--s5),var(--s6),var(--s7),var(--s8))}
 
 /* The panel wears its step's colour in the header rule and the number. */
 .panel[data-step]{--sc:var(--accent)}
@@ -1192,6 +1227,14 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
     </div></div>
   </section>
   <section class="panel doc" id="doc" data-step="7" aria-live="polite"></section>
+
+  <section class="panel" data-step="8">
+    <div class="phead"><span class="n">8</span><h2>The check</h2>
+      <span class="why">A read-only pass over the draft you have built, against what the Codes
+        ask of the report you have chosen. It reports; it changes nothing, and it certifies
+        nothing.</span></div>
+    <div class="pbody"><div id="checkbody"></div></div>
+  </section>
   </div>
 </div>
 <script>
@@ -1632,7 +1675,8 @@ const IND=(n,t,b)=>`<section class="ind"><h3><span class="lbtag">${n}</span>${es
 let _docDirty = true;
 function render(){
   const c = LB[S.gss];
-  const docVisible = (typeof STEP === "undefined") || STEP === STEPS.length;
+  const docVisible = (typeof STEP === "undefined")
+    || (typeof DRAFT_STEP !== "undefined" && STEP === DRAFT_STEP);
   if(docVisible){
     $("doc").innerHTML =
       `<div class="dh"><span>Draft — ${esc(c?c.n:"your authority")}</span>
@@ -1652,6 +1696,9 @@ function render(){
   // The figures step's live chart. Drawn only while that step is on screen —
   // three buildModel calls and an SVG on every keystroke is cheap, but not
   // when nobody is looking at the result.
+  const ck = $("checkbody");
+  if(ck && typeof CHECK_STEP !== "undefined" && STEP === CHECK_STEP)
+    ck.innerHTML = checkHTML();
   const pv = $("pvbody"), pvw = $("pv");
   if(pv && pvw && !pvw.classList.contains("shut")
      && (pvw.classList.contains("full") || (typeof STEP === "undefined") || STEP === 3))
@@ -5733,6 +5780,251 @@ function caveat(){
 }
 
 /* ===========================================================================
+ * The check.
+ *
+ * A read-only pass over the draft you have actually built, against the
+ * requirements the two Codes place on the report you have actually chosen.
+ *
+ * IT IS NOT A COMPLIANCE STATEMENT, AND MUST NEVER READ AS ONE. Nothing here
+ * certifies that an authority complies with anything; the tool cannot know
+ * that, because most of what compliance means is judgement the authority
+ * makes and figures only it can verify. What this does is narrower and
+ * useful: it says what it looked at, what it found, and — the part that
+ * matters — what it could NOT look at, so a gap is visible rather than
+ * hidden behind a document that looks finished.
+ *
+ * FOUR VERDICTS, AND THE THIRD IS THE POINT.
+ *   met      the tool looked at the draft and the thing is there
+ *   gap      it applies to this report and it is not there yet
+ *   yours    it applies and the tool cannot judge it — stated, never passed
+ *   n/a      the Code does not ask it of this report
+ *
+ * A check that quietly reported "yours" as met would be the single most
+ * damaging thing on the page: it would turn an honest instrument into a
+ * rubber stamp. So the counts are always given as four numbers, never as a
+ * score out of anything, and "yours" is displayed as prominently as "gap".
+ *
+ * REPORT-DEPENDENT, because the Codes are. A strategy SETS the borrowing
+ * strategy and the MRP policy; an outturn reports what was done against them
+ * and whether the limits held. Asking an outturn for a forward borrowing
+ * strategy would manufacture a gap that is not one, and letting a strategy
+ * off the compliance question would hide one that is.
+ * ======================================================================== */
+const CK_ALL  = ["tmss","mid","out","quart"];
+const CK_FWD  = ["tmss"];
+const CK_BACK = ["out","mid","quart"];
+
+/* Each check answers for the CURRENT state. `run` returns:
+ *   {v:"met"|"gap"|"yours", note:"what was found", go:<step number>}
+ * `go` is the step that would close it — the whole point of a read-only
+ * stage is that it hands you back to the place that fixes the thing. */
+const CHECKS = [
+  /* ---- the balance sheet the indicators are built from ------------------ */
+  {k:"cfr", src:"PC E10", g:"Figures", in:CK_ALL,
+   t:"A capital financing requirement is projected across the report's horizon",
+   run(){
+     const g = S.g[S.fund] || S.g.gf, n = (g.cfr||[]).filter(v=>v).length;
+     return n ? {v:"met", note:`${n} year${n===1?"":"s"} entered.`}
+              : {v:"gap", note:"Nothing entered. Every indicator is built from it.", go:3};
+   }},
+  {k:"walk", src:"PC E9", g:"Figures", in:CK_ALL,
+   t:"The CFR movement reconciles with the MRP and capital expenditure entered",
+   run(){
+     const bad = walkCheck(S, S.fund);
+     return bad.length
+       ? {v:"gap", go:3, note:`${bad.length} year${bad.length===1?"":"s"} disagree — first at `
+          + `${fy(bad[0].fy)}: entered ${m1(bad[0].cur)}, the walk implies ${m1(bad[0].implied)}. `
+          + `Your figures are used as entered.`}
+       : {v:"met", note:"Opening CFR plus capital expenditure less MRP and receipts applied "
+          + "equals closing CFR, in every year."};
+   }},
+  {k:"liq", src:"TMC LB", g:"Figures", in:CK_ALL,
+   t:"A minimum liquidity allowance is set — it is what turns the net position into a benchmark",
+   run(){
+     const g = S.g[S.fund] || S.g.gf;
+     return (g.liq||[]).some(v=>v)
+       ? {v:"met", note:`£${m1(S.minliq || (g.liq||[])[0] || 0)}m applied across every year.`}
+       : {v:"gap", note:"Not set. Without it the liability benchmark is the net treasury "
+          + "position, which is a different indicator.", go:3};
+   }},
+  {k:"nrs", src:"PC E10", g:"Figures", in:CK_ALL,
+   t:"A net revenue stream is entered, so affordability can be computed",
+   run(){
+     const g = S.g[S.fund] || S.g.gf;
+     return (g.nrs||[]).some(v=>v)
+       ? {v:"met", note:"Financing costs to net revenue stream are computed for every year entered."}
+       : {v:"gap", note:"Not entered, so the affordability ratio cannot be shown — and having "
+          + "regard to affordability is a duty, not an option.", go:3};
+   }},
+
+  /* ---- the indicators themselves ---------------------------------------- */
+  {k:"lb", src:"TMC 2026 consultation", g:"Indicators", in:CK_ALL,
+   t:"Every liability benchmark indicator the pooling approach requires is drawn",
+   run(){
+     const hasHRA = S.hra !== "no", twoPool = S.hra === "two";
+     const gf = buildModel(S,"gf");
+     const hra = hasHRA ? buildModel(S,"hra") : null;
+     const parts = indicatorParts(gf, hra, hasHRA ? buildModel(S,"all") : gf, hasHRA, twoPool);
+     const n = parts.reduce((a,p)=>a+p.tags.length, 0);
+     if(!(gf.some(r=>r.cfr) || (hra||[]).some(r=>r.cfr)))
+       return {v:"gap", note:"Nothing to draw until a CFR is entered.", go:3};
+     return {v:"met", note:`${n} charts across ${parts.length} `
+       + `${parts.length===1?"balance sheet":"funds"} — `
+       + (twoPool ? "LB1 to LB4 for each fund and LB5 whole authority, as two pools requires."
+          : hasHRA ? "LB1 for each fund and LB2 to LB5 on the pooled balance sheet."
+          : "all five on one balance sheet.")};
+   }},
+  {k:"al", src:"PC E12", g:"Indicators", in:CK_ALL,
+   t:"An authorised limit for external debt is derived from the projection, not typed in",
+   run(){
+     const d = buildModel(S, S.hra==="no" ? "gf" : "all");
+     if(!d.some(r=>r.al)) return {v:"gap", note:"Not yet derived — it comes from the projection.", go:3};
+     const over = d.filter(r => r.el > r.al + 1e-9);
+     return over.length
+       ? {v:"gap", go:3, note:`Existing loan commitments exceed the derived limit in `
+          + `${over.length} year${over.length===1?"":"s"}, first at ${fy(over[0].fy)}. `
+          + `That is a finding, not a formatting problem.`}
+       : {v:"met", note:`Derived as ${ACTIVE.derives.authorisedLimit}, and existing debt sits `
+          + `inside it in every year projected.`};
+   }},
+
+  /* ---- what a forward-looking report must SET ---------------------------- */
+  {k:"borrow", src:"TMC 5", g:"Strategy", in:CK_FWD,
+   t:"A borrowing strategy is stated for the year ahead",
+   run(){ return written("borrow_body", 3, "Section 4 is empty."); }},
+  {k:"mrp", src:"MRP Guidance", g:"Strategy", in:CK_FWD,
+   t:"An MRP or loans fund policy statement is included for members to approve",
+   run(){ return written("mrp_body", 6, "The statement is a formal approval; the report cannot go without it."); }},
+  {k:"invest", src:"Investment Guidance", g:"Strategy", in:CK_FWD,
+   t:"An investment strategy states the objectives, in the Guidance's order of priority",
+   run(){ return written("invest_body", 6, "Section 5 is empty."); }},
+  {k:"cp", src:"Investment Guidance", g:"Strategy", in:CK_FWD,
+   t:"Counterparty limits are set — who, for how long, and how much",
+   run(){
+     const p = cpProgress();
+     return p.limits
+       ? {v:"met", note:`${p.limits} sector${p.limits===1?"":"s"} limited`
+          + (S.cp && S.cp.country ? ", country policy set" : "") + "."}
+       : {v:"gap", note:"No sector limits set. The Guidance requires the specified and "
+          + "non-specified investments to be defined.", go:5};
+   }},
+
+  /* ---- what a backward-looking report must REPORT ------------------------ */
+  {k:"activity", src:"TMC 8", g:"The period", in:CK_BACK,
+   t:"The borrowing and investment activity of the period is described",
+   run(){ return written("activity_body", 6, "A report on a period that has happened has to say what happened in it."); }},
+  {k:"limits", src:"PC E12 / TMC 8", g:"The period", in:CK_BACK,
+   t:"Actual debt is compared against the limits members approved",
+   run(){
+     const rows = complianceRows();
+     if(!rows.length) return {v:"gap", go:4,
+       note:"The approved limits and the maximum reached are not entered, so no comparison "
+          + "is made. This is the question the report exists to answer."};
+     const bad = rows.filter(r=>!r.ok);
+     return bad.length
+       ? {v:"met", note:`${bad.length} limit${bad.length===1?" was":"s were"} EXCEEDED and is `
+          + `shown as such. The Code requires this to be reported to members with the action taken `
+          + `— check the commentary says so.`}
+       : {v:"met", note:`${rows.length} limit${rows.length===1?"":"s"} tested, all observed throughout.`};
+   }},
+
+  /* ---- required of every report ------------------------------------------ */
+  {k:"wording", src:"TMC", g:"The document", in:CK_ALL,
+   t:"Every section this report needs has been written",
+   run(){
+     const qs = visibleSections().flatMap(s => s.qs || []);
+     const done = qs.filter(q => (S.text[q.k]||"").trim().length > 40).length;
+     return done === qs.length
+       ? {v:"met", note:`${qs.length} of ${qs.length} written.`}
+       : {v:"gap", go:6, note:`${done} of ${qs.length} written. The draft marks the rest as `
+          + `visible gaps, so nothing reads as finished when it is not.`};
+   }},
+  {k:"gov", src:"TMC 3", g:"The document", in:CK_ALL,
+   t:"The reporting and scrutiny arrangements are stated",
+   run(){ return written("gov_body", 6, "Who receives this, and when, is a Code requirement."); }},
+
+  /* ---- and the things it cannot judge ------------------------------------ */
+  {k:"cfo", src:"PC — named NOT COVERED", g:"Yours to confirm", in:CK_ALL,
+   t:"The chief finance officer's responsibilities under CIPFA's Role of the CFO",
+   run(){ return {v:"yours", note:"A governance matter for the authority. The tool does not "
+     + "cover it and does not pretend to — it is named in the register rather than dropped."}; }},
+  {k:"prudent", src:"Investment Guidance — named NOT COVERED", g:"Yours to confirm", in:CK_ALL,
+   t:"The principles for determining prudently investable funds, approved by full council",
+   run(){ return {v:"yours", note:"Your authority's own policy. Section 5b prompts for it; "
+     + "nothing here can decide it."}; }},
+  {k:"econ", src:"TMC 2", g:"Yours to confirm", in:CK_ALL,
+   t:"The economic and interest rate commentary is current as at the report date",
+   run(){
+     const at = S.asAt || MKT.as_at || "";
+     return {v:"yours", note:`The market figures are as at ${esc(at || "the date shown")}. `
+       + `Whether that is current enough for the meeting this goes to is a judgement `
+       + `only you can make.`};
+   }},
+  {k:"members", src:"PC E2", g:"Yours to confirm", in:CK_ALL,
+   t:"The indicators are set or reviewed by full council, or the equivalent body",
+   run(){ return {v:"yours", note:"The tool produces them; approving them is a decision of "
+     + "members, and the report says which body is asked to take it."}; }},
+  {k:"figures", src:"—", g:"Yours to confirm", in:CK_ALL,
+   t:"Every figure is your authority's own and has been checked",
+   run(){ return {v:"yours", note:"Nothing here is extrapolated and nothing is verified against "
+     + "your ledger. A blank year is used as nil. Check it before it reaches a committee."}; }}
+];
+
+/* A wording section, tested the same way the rail tests it. */
+function written(key, step, why){
+  const t = (S.text[key] || "").trim();
+  return t.length > 40
+    ? {v:"met", note:`Written — ${t.split(/\s+/).length} words.`}
+    : {v:"gap", note:why, go:step};
+}
+
+function checkRun(){
+  return CHECKS.filter(c => c.in.indexOf(S.report) >= 0)
+               .map(c => Object.assign({}, c, c.run()));
+}
+
+function checkHTML(){
+  const rows = checkRun();
+  const n = {met:0, gap:0, yours:0};
+  rows.forEach(r => n[r.v]++);
+  const na = CHECKS.length - rows.length;
+  const rep = REPORTS.find(r => r.k === S.report);
+  const V = {met:"Found", gap:"Outstanding", yours:"Yours to confirm"};
+  // The row's class, kept clear of .gap and .yours which belong elsewhere.
+  const CLS = {met:"met", gap:"out", yours:"conf"};
+
+  const groups = [];
+  rows.forEach(r => {
+    let g = groups.find(x => x.t === r.g);
+    if(!g) groups.push(g = {t:r.g, rows:[]});
+    g.rows.push(r);
+  });
+
+  return `<div class="ckhead">
+      <div class="cktot">
+        <span class="ck met"><b>${n.met}</b>found</span>
+        <span class="ck out"><b>${n.gap}</b>outstanding</span>
+        <span class="ck conf"><b>${n.yours}</b>yours to confirm</span>
+        ${na ? `<span class="ck na"><b>${na}</b>not asked of ${esc(rep.t.toLowerCase())}</span>` : ""}
+      </div>
+      <p class="cknote"><b>This is not a compliance statement.</b> It says what could be
+        checked in the draft as it stands, and what could not. The
+        ${n.yours} marked <i>yours to confirm</i> are requirements the tool has no way to
+        judge; they are listed because a check that reported them as met would be worse than
+        no check at all.</p>
+    </div>
+    ${groups.map(g => `<div class="ckgrp"><h4>${esc(g.t)}</h4>
+      ${g.rows.map(r => `<div class="ckrow ${CLS[r.v]}">
+        <span class="cktag">${V[r.v]}</span>
+        <div class="ckbody">
+          <span class="ckt">${esc(r.t)}</span>
+          <span class="cksrc">${esc(r.src)}</span>
+          <p>${r.note}${r.go ? ` <button type="button" class="cklink" data-go="${r.go}">Go to
+            step ${r.go}</button>` : ""}</p>
+        </div></div>`).join("")}</div>`).join("")}`;
+}
+
+/* ===========================================================================
  * The workflow.
  *
  * This was six panels stacked down one page: everything visible at once, no
@@ -5756,9 +6048,16 @@ const STEPS = [
   {n:4, k:"choices",   t:"Choices",      s:"which clauses apply"},
   {n:5, k:"counterparty", t:"Counterparty policy", s:"who you will lend to"},
   {n:6, k:"wording",   t:"Wording",      s:"the commentary"},
-  {n:7, k:"draft",     t:"The draft",    s:"read and export"}
+  {n:7, k:"draft",     t:"The draft",    s:"read and export"},
+  {n:8, k:"check",     t:"The check",    s:"what is outstanding"}
 ];
 let STEP = 1;
+/* The draft used to be the last step, so "the last step" was used to mean
+   "the draft" in four places. Adding the check after it made every one of
+   them wrong at once -- the draft would have stopped rendering and the nav
+   would have jumped to the wrong panel. Named, so it cannot happen again. */
+const DRAFT_STEP = STEPS.find(s => s.k === "draft").n;
+const CHECK_STEP = STEPS.find(s => s.k === "check").n;
 
 /* What each step can honestly say about itself.
  *   state: "done" | "part" | "" — drives the mark on the rail
@@ -5795,6 +6094,20 @@ function stepStatus(k){
     return {state: p.done === p.of ? "done" : "part",
             note: bits.join(" · ") || "Partly set",
             need: p.done === p.of ? null : "Credit criteria, country policy and instruments complete the section."};
+  }
+
+  if(k === "check"){
+    // The check is never "done", because three or four of its lines are
+    // things only the authority can confirm. A tick here would be the tool
+    // marking its own homework.
+    const r = (typeof checkRun === "function") ? checkRun() : [];
+    if(!r.length) return {state:"", note:"Nothing to check yet", need:null};
+    const gap = r.filter(x => x.v === "gap").length;
+    const yours = r.filter(x => x.v === "yours").length;
+    return {state: gap ? "part" : "done",
+            note: gap ? `${gap} outstanding · ${yours} yours to confirm`
+                      : `Nothing outstanding · ${yours} yours to confirm`,
+            need: gap ? "Each one names the step that closes it." : null};
   }
 
   if(k === "figures"){
@@ -5890,7 +6203,7 @@ function showStep(n){
   // saying "open it to build the draft" on the step you are standing on.
   // The same is true of the figures step's live chart, which render() also
   // skips while it is off screen.
-  if(STEP === STEPS.length || STEP === 3) render();
+  if(STEP === DRAFT_STEP || STEP === CHECK_STEP || STEP === 3) render();
   renderRail();
   renderNav();
   // Scroll only if the step is not already where you can see it. Smooth-
@@ -5921,10 +6234,10 @@ function renderNav(){
      <span class="navnote">${st.need ? esc(st.need) : ""}</span>
      ${next ? `<button type="button" class="navbtn primary" data-go="${next.n}">${esc(next.t)} &rarr;</button>`
             : `<span class="navnote done">That is the whole report.</span>`}`;
-  // Step 6 carries the draft itself, so the nav goes above it rather than
-  // below several thousand words.
+  // The draft step carries the document itself, so the nav goes above it
+  // rather than below several thousand words.
   const doc = document.getElementById("doc");
-  if(STEP === STEPS.length && doc && doc.parentElement)
+  if(STEP === DRAFT_STEP && doc && doc.parentElement)
     doc.parentElement.insertBefore(nav, doc);
   else panel.appendChild(nav);
 }
@@ -6650,6 +6963,12 @@ function stampSaved(word){
   }
   renderChoices();
 
+  // The check is read-only, so its one control takes you back to the step
+  // that closes the gap rather than trying to close it here.
+  document.addEventListener("click", e => {
+    const b = e.target.closest(".cklink[data-go]");
+    if(b) showStep(+b.dataset.go);
+  });
   $("copyx").addEventListener("click", copyForExcel);
   $("pastex").addEventListener("click", ()=>{
     const b = $("xpaste"); b.hidden = !b.hidden;
