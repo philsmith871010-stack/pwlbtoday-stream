@@ -79,6 +79,13 @@ h2{font-size:clamp(28px,3.6vw,42px); line-height:1.14; letter-spacing:-.022em; f
   border-bottom:1px solid transparent;
 }
 .masthead .wrap{display:flex; align-items:center; gap:18px}
+/* Four links, a wordmark and an arrow do not fit across a phone: they wrapped
+   into an 86px tangle with "How it works" over three lines. The section links
+   go; the wordmark and the way in stay, which is all a masthead owes anyone. */
+@media (max-width:600px){
+  .masthead .mini:not(:last-child){display:none}
+  .masthead .wrap{gap:12px}
+}
 .brand{font-family:var(--mono); font-size:13px; letter-spacing:.13em;
   text-transform:uppercase; color:var(--ink2); font-weight:500}
 .brand b{color:var(--ink); font-weight:600}

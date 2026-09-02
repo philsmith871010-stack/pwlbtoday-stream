@@ -1,5 +1,10 @@
 <meta charset="utf-8">
 <title>PWLBreports</title>
+<!-- WITHOUT THIS A PHONE RENDERS THE PAGE AT 980px AND SCALES IT DOWN, and
+     every max-width media query below is dead code that has never once run on
+     a device. Seventeen of them. The landing page has always had the tag; the
+     tool never did, so nobody saw the difference between the two. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap">
@@ -917,6 +922,13 @@ svg.ctip .hits rect{cursor:crosshair}
 .cpindex .sp{flex:1;min-width:8px}
 .ltop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .ltop .sp{flex:1;min-width:8px}
+/* Once the row wraps, the spacer stops separating two groups and starts
+   throwing one button to each end of an empty line. Below the wrap it goes. */
+@media (max-width:640px){
+  .ltop .sp{display:none}
+  .ltop{gap:6px}
+  .xb{flex:1 1 auto;justify-content:center}
+}
 /* The two Excel buttons. They were bare <button>s taking the browser's own
    styling next to a styled fund tab, which read as unfinished. A pair, in the
    direction the data moves: an arrow in, an arrow out. Paste carries the
