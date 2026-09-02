@@ -133,6 +133,7 @@ h1 .em{
 .legend{display:flex; flex-wrap:wrap; gap:6px 18px; margin:12px 2px 0}
 .legend span{display:inline-flex; align-items:center; gap:7px;
   font-family:var(--sans); font-size:12px; color:var(--ink2)}
+.legend .lsw{flex:none}
 .legend i{width:14px; height:2.5px; border-radius:2px; display:block}
 
 /* ---- figures ------------------------------------------------------------- */
@@ -234,6 +235,7 @@ html.anim .rv.in{opacity:1; transform:none;
     <span class="sp"></span>
     <a class="mini" href="#why">Why</a>
     <a class="mini" href="#how">How it works</a>
+    <a class="mini" href="#worth">What it is worth</a>
     <a class="mini" href="pwlbreports-tool.html">Open the tool &rarr;</a>
   </div>
 </div>
@@ -246,8 +248,9 @@ html.anim .rv.in{opacity:1; transform:none;
         <h1 class="rv">The treasury report,<br>built to the <span class="em">liability&nbsp;benchmark</span>.</h1>
         <p class="sub rv">Strategies, outturns and monitoring reports, produced against CIPFA's
           2026 revision of the Prudential and Treasury Management Codes. Answer a few questions,
-          paste your figures, and take away a draft with every indicator the Code asks for —
-          complete, correctly presented, and yours to edit.</p>
+          paste your figures, set your lending limits beside what 143 councils publish, and
+          take away a committee-ready draft with every indicator the Code asks for — complete,
+          correctly presented, and yours to edit.</p>
         <div class="cta rv">
           <a class="btn" href="pwlbreports-tool.html">Open the tool <span class="arw">&rarr;</span></a>
           <a class="btn ghost" href="#why">Why we built it</a>
@@ -288,7 +291,9 @@ html.anim .rv.in{opacity:1; transform:none;
           <span><i style="background:#5695d1"></i>Capital financing requirement</span>
           <span><i style="background:#e0776a"></i>Liability benchmark</span>
           <span><i style="background:#c8d8e8"></i>Existing loans</span>
-          <span><i style="background:#b795e0"></i>Authorised limit</span>
+          <span><svg class="lsw" width="20" height="6" aria-hidden="true"><line x1="0" y1="3"
+            x2="20" y2="3" stroke="#b795e0" stroke-width="2.4"
+            stroke-dasharray="7 4"/></svg>Authorised limit</span>
         </div>
       </div>
     </div>
@@ -358,9 +363,10 @@ html.anim .rv.in{opacity:1; transform:none;
       <div class="fig"><b data-to="551">0</b><span>Treasury reports read and catalogued, across four report types</span></div>
       <div class="fig"><b data-to="4265">0</b><span>Distinct section headings found in them</span></div>
       <div class="fig"><b data-to="81">0</b><span>Per cent of those headings used by exactly one council</span></div>
-      <div class="fig"><b data-to="311">0</b><span>Authorities whose PWLB loan book is built in, loan by loan</span></div>
+      <div class="fig"><b data-to="315">0</b><span>Authorities whose PWLB loan book is built in, loan by loan</span></div>
+      <div class="fig"><b data-to="143">0</b><span>Published counterparty policies behind every lending limit it offers</span></div>
       <div class="fig"><b data-to="73">0</b><span>Binding Code requirements tracked, each named and answered</span></div>
-      <div class="fig"><b data-to="2197">0</b><span>Assertions the benchmark is checked against on every change</span></div>
+      <div class="fig"><b data-to="16372">0</b><span>Assertions the benchmark is checked against on every change</span></div>
     </div>
 
     <div class="cards">
@@ -383,9 +389,18 @@ html.anim .rv.in{opacity:1; transform:none;
           one in a different tense.</p>
       </div>
       <div class="card rv">
+        <span class="n">The policies</span>
+        <h3>What 143 councils actually permit</h3>
+        <p>Every counterparty policy we could read was extracted from its own published
+          strategy — 1,220 limits across ten sectors, with the duration, the cash cap and the
+          minimum rating each authority sets. So when the tool asks how long you will lend to a
+          money market fund, it can show you the range the sector publishes rather than a
+          number somebody suggested. It is a distribution, not a recommendation.</p>
+      </div>
+      <div class="card rv">
         <span class="n">The data</span>
         <h3>The loan book, already filled in</h3>
-        <p>Every PWLB advance to all 311 borrowing authorities, run off contractually across
+        <p>All 12,220 PWLB advances to 315 borrowing authorities, run off contractually across
           fifty years, so the existing-loans line starts populated. It is a starting point you
           amend, not an answer: it cannot see market debt, LOBOs, or which pool a loan sits in.</p>
       </div>
@@ -397,33 +412,95 @@ html.anim .rv.in{opacity:1; transform:none;
 <section id="how" class="honest">
   <div class="wrap">
     <p class="eyebrow rv">How it works</p>
-    <h2 class="rv">Three passes, and you have a draft.</h2>
+    <h2 class="rv">Four passes, and you have a draft.</h2>
 
     <div class="steps">
       <div class="step rv">
         <span class="k">01</span>
         <div><h3>Answer a few questions</h3></div>
         <p>Which authority, which report, whether you have an HRA and whether debt is pooled.
-          Nine further choices decide which clauses apply — a council with no HRA is never told
-          about two-pool apportionment, and a Scottish authority gets the loans fund and the
-          section 95 officer rather than MRP and section 151.</p>
+          Twenty-two further choices decide which clauses apply — a council with no HRA is
+          never told about two-pool apportionment; a Scottish authority gets the loans fund and
+          the section 95 officer rather than MRP and section 151; a combined authority gets the
+          section 73 officer. Or turn on a demonstration authority and every one of them is
+          answered for you, so you can read the whole report before typing a figure.</p>
       </div>
       <div class="step rv">
         <span class="k">02</span>
         <div><h3>Paste your figures</h3></div>
         <p>A grid of years down and measures across — CFR, MRP, capital receipts applied,
           other balance sheet items, your own projection of year-end loans and investments.
-          Paste it from Excel in whatever shape your spreadsheet holds it, or download a
-          template. Your loan book and investment portfolio go in at whatever level of detail
-          you want to present: every loan, grouped by type, or a single summary line.</p>
+          Paste the block straight out of Excel: it reads your header row, matches it to the
+          columns whatever order they are in and whatever your council calls them, and lines
+          the rows up by financial year. The chart redraws under the grid as you type, so you
+          can see what a change does without leaving the page.</p>
       </div>
       <div class="step rv">
         <span class="k">03</span>
+        <div><h3>Set your lending policy</h3></div>
+        <p>Who you will lend to, for how long, and how much — sector by sector, with minimum
+          ratings, country limits, group limits and pooled funds. Every question sits beside
+          what 143 published policies actually say, so you can see where your own limits fall
+          in the range before you set them. It is written into the report as your policy, in
+          tables a committee can read.</p>
+      </div>
+      <div class="step rv">
+        <span class="k">04</span>
         <div><h3>Take the draft away</h3></div>
         <p>LB1 to LB5 drawn and tabled, an authorised limit derived from the projection rather
           than typed, affordability against the net revenue stream, and every section written
-          in full — with each figure only you can supply left as a visible gap. Export to Word
-          and edit it like any other document.</p>
+          in full — with each figure only you can supply left as a visible gap. Wrapped in the
+          committee papers it has to travel in: recommendations, financial and legal
+          implications, and the proper officer for your nation. Export to Word and edit it like
+          any other document.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>#worth .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:760px){#worth .cards{grid-template-columns:1fr}}</style>
+<!-- ======================= WHAT IT IS WORTH ======================= -->
+<section id="worth">
+  <div class="wrap">
+    <p class="eyebrow rv">What it is worth to an authority</p>
+    <h2 class="rv">The report is not the hard part. Proving it is complete is.</h2>
+    <p class="lede rv">Four things a treasury team gets out of this that are difficult to get
+      any other way.</p>
+
+    <div class="cards">
+      <div class="card rv">
+        <span class="n">01</span>
+        <h3>Nothing is missed, and you can show that</h3>
+        <p>Seventy-three binding requirements from the two Codes and their Guidance Notes are
+          tracked one by one. Sixty-three are answered by the tool, eight fall outside what a
+          drafting aid can do, and two are named as not covered because they are your
+          authority's own judgement. A gap you can point to is worth more at audit than a
+          document that looks finished.</p>
+      </div>
+      <div class="card rv">
+        <span class="n">02</span>
+        <h3>The arithmetic is checked, not just drawn</h3>
+        <p>The liability benchmark is easy to draw and easy to get wrong. Every change is
+          checked against 16,372 assertions written from the consultation's own definitions,
+          and the tool tells you when your CFR does not reconcile with the MRP and capital
+          spend you entered — rather than quietly drawing a chart from figures that disagree.</p>
+      </div>
+      <div class="card rv">
+        <span class="n">03</span>
+        <h3>Your limits, next to the sector's</h3>
+        <p>Setting a counterparty policy usually means adopting last year's, or your adviser's.
+          Here every limit sits beside what 143 authorities publish, so a committee asking
+          "is six months unusual?" gets an answer from the sector rather than an assurance.
+          Nothing is recommended; the distribution is shown and the decision stays yours.</p>
+      </div>
+      <div class="card rv">
+        <span class="n">04</span>
+        <h3>It is yours, and it stays yours</h3>
+        <p>No account, no upload, no fee. The figures never leave the browser — there is no
+          server to send them to. It is independent of any adviser, which means the shape of
+          your report stops being evidence of who advises you, and the document that comes out
+          is a Word file you own and edit like any other.</p>
       </div>
     </div>
   </div>

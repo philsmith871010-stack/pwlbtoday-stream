@@ -4365,7 +4365,7 @@ function autoNote(k){
  * part with the most local variation.
  *
  * WHY EVERY QUESTION CARRIES A NUMBER. Asking "what is your limit for
- * unsecured banks" is a form. Asking it beside "145 councils publish one; the
+ * unsecured banks" is a form. Asking it beside "143 councils publish one; the
  * median is £5m, the middle half £3.8m to £15m" is a decision with a context,
  * and the reader can see immediately whether they are ordinary. Those figures
  * are read from councils' own current strategies, not from guidance.
@@ -5788,7 +5788,7 @@ function stepStatus(k){
   if(k === "counterparty"){
     const p = cpProgress();
     if(!p.limits && !p.done) return {state:"", note:"No policy set",
-      need:"Set your counterparty limits — every question shows what 145 authorities publish."};
+      need:`Set your counterparty limits — every question shows what ${CPB.councils} authorities publish.`};
     const bits = [];
     if(p.limits) bits.push(`${p.limits} sector${p.limits===1?"":"s"} limited`);
     if(S.cp && S.cp.country) bits.push("country policy set");
