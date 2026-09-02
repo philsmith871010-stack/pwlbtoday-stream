@@ -3289,7 +3289,8 @@ function inReport(c){ return !c.rep || c.rep.indexOf(S.report) >= 0; }
    and last the committee wrapper, which is about the paper rather than the
    policy. */
 const CHOICE_GROUPS = ["Advice and reporting","Repaying debt","Borrowing",
-                       "Investments","Committee report sections"];
+                       "Investments","Front matter and closing",
+                       "Implications headings"];
 
 const CHOICES = [
   {k:"adviser", g:"Advice and reporting",   l:"Treasury adviser", type:"text",
@@ -3316,15 +3317,15 @@ const CHOICES = [
      them would impose one council's house style on every other. */
   {k:"committee", g:"Advice and reporting", l:"Committee that receives treasury reports", type:"text",
    ph:"e.g. Audit and Governance Committee — named in the scheme of delegation"},
-  {k:"wrapsummary", g:"Committee report sections", l:"Include an executive summary?", type:"yesno"},
-  {k:"wrapfin", g:"Committee report sections",     l:"Include a financial implications heading?", type:"yesno"},
-  {k:"wraplegal", g:"Committee report sections",   l:"Include a legal implications heading?", type:"yesno"},
-  {k:"wraprisk", g:"Committee report sections",    l:"Include a risk implications heading?", type:"yesno"},
-  {k:"wrapequality", g:"Committee report sections",l:"Include an equality impact heading?", type:"yesno"},
-  {k:"wrapclimate", g:"Committee report sections", l:"Include a climate or environmental heading?", type:"yesno"},
-  {k:"wrapconsult", g:"Committee report sections", l:"Include consultation and background papers?", type:"yesno"},
-  {k:"wrapoptions", g:"Committee report sections", l:"Include options considered?", type:"yesno"},
-  {k:"wrapauthor", g:"Committee report sections",  l:"Report author and contact", type:"text",
+  {k:"wrapsummary", g:"Front matter and closing", l:"Include an executive summary?", type:"yesno"},
+  {k:"wrapfin", g:"Implications headings",     l:"Include a financial implications heading?", type:"yesno"},
+  {k:"wraplegal", g:"Implications headings",   l:"Include a legal implications heading?", type:"yesno"},
+  {k:"wraprisk", g:"Implications headings",    l:"Include a risk implications heading?", type:"yesno"},
+  {k:"wrapequality", g:"Implications headings",l:"Include an equality impact heading?", type:"yesno"},
+  {k:"wrapclimate", g:"Implications headings", l:"Include a climate or environmental heading?", type:"yesno"},
+  {k:"wrapconsult", g:"Front matter and closing", l:"Include consultation and background papers?", type:"yesno"},
+  {k:"wrapoptions", g:"Front matter and closing", l:"Include options considered?", type:"yesno"},
+  {k:"wrapauthor", g:"Front matter and closing",  l:"Report author and contact", type:"text",
    ph:"name, job title, email — appears at the foot of the report"},
   {k:"vrp", g:"Repaying debt",       l:"Voluntary revenue provision made?", type:"yesno"},
   {k:"advance", g:"Borrowing",   l:"Borrow in advance of need?", type:"yesno"},
