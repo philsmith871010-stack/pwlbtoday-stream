@@ -944,6 +944,25 @@ svg.ctip .hits rect{cursor:crosshair}
   background:var(--paper);font-family:var(--sans);font-size:12.5px;cursor:pointer;
   display:inline-block;line-height:1.25}
 .filebtn:hover{border-color:var(--accent)}
+.whobox{display:inline-flex;align-items:center;gap:7px;font-family:var(--sans);
+  font-size:12.5px;color:var(--ink2)}
+.whobox input{width:150px;padding:5px 9px;font-size:12.5px}
+/* The one place the tool stops and asks. It carries a list, so it is a panel
+   rather than a confirm() — a table does not fit in a browser dialog. */
+.askbox{position:fixed;inset:auto 0 0 0;margin:0 auto 24px;max-width:640px;z-index:70;
+  background:var(--card);border:1px solid var(--line2);border-radius:var(--r);
+  padding:20px 24px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.askbox h3{font-family:var(--sans);font-size:16px;font-weight:600;margin:0 0 10px}
+.askbox p{font-family:var(--sans);font-size:13px;line-height:1.6;color:var(--ink2);margin:0 0 10px}
+.asklist{max-height:230px;overflow:auto;border-top:1px solid var(--hair)}
+.askrow{display:grid;grid-template-columns:1fr auto;gap:12px;padding:6px 0;
+  border-bottom:1px solid var(--hair);font-family:var(--sans);font-size:12.5px}
+.askrow b{font-weight:600;color:var(--ink);display:block}
+.askrow span{color:var(--muted);font-size:11.5px}
+.asktag{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);white-space:nowrap;padding-top:2px}
+.asktag.older{color:var(--alert);font-weight:600}
+.asktag.new{color:var(--good)}
 .libbox{grid-column:1/-1;margin-top:14px;padding:14px 16px;border:1px solid var(--accent);
   border-radius:var(--r-sm);background:color-mix(in srgb, var(--accent) 4%, var(--card))}
 .libbox label{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--ink);
@@ -1215,9 +1234,21 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
       <input type="file" id="libopen" accept=".json,application/json" hidden>
       <label class="cpmini issuedbox"><input type="checkbox" id="issued">
         Issued to members</label>
+      <span class="sp"></span>
+      <label class="whobox" for="whoami">Saved by
+        <input type="text" id="whoami" placeholder="your name" maxlength="60"></label>
     </div>
     <span class="hintline" id="saved"></span></div>
   </section>
+
+  <div class="askbox" id="askbox" hidden>
+    <h3 id="asktitle"></h3>
+    <div id="askbody"></div>
+    <div class="ltools" style="margin-top:14px">
+      <button type="button" class="primary" id="askgo"></button>
+      <button type="button" id="askno">Cancel</button>
+    </div>
+  </div>
 
   <section class="panel" data-step="2">
     <div class="phead"><span class="n">2</span><h2>What you hold now</h2>
@@ -7055,7 +7086,7 @@ function libNote(gss, report, fy0, extra){
   ix.unshift(Object.assign({
     k: libKey(gss, report, fy0), gss, report, fy0,
     n: (LB[gss] && LB[gss].n) || S.otherName || "your authority",
-    at: new Date().toISOString()
+    at: new Date().toISOString(), by: whoAmI()
   }, extra || {}));
   libWrite(ix);
 }
@@ -7252,13 +7283,13 @@ function libExport(){
   const versions = mine.map(e => {
     const raw = localStorage.getItem(e.k);
     return raw ? {report:e.report, fy0:e.fy0, issued:!!e.issued, at:e.at,
-                  body:JSON.parse(raw)} : null;
+                  by: e.by || "", body:JSON.parse(raw)} : null;
   }).filter(Boolean);
   return JSON.stringify({
     f: "pwlbreport", v: FILE_V,
     n: (LB[S.gss] || {}).n || S.otherName || "",
     gss: S.gss,
-    at: new Date().toISOString(),
+    at: new Date().toISOString(), by: whoAmI(),
     versions
   }, null, 1);
 }
@@ -7289,9 +7320,10 @@ function libImport(text){
     catch(e){ return; }
     const at = ix.findIndex(y => y.k === key);
     if(at >= 0) ix.splice(at, 1);
+    // Keep whoever saved it; opening someone's file does not make it yours.
     ix.unshift({k:key, gss, report:x.report, fy0:x.fy0,
                 n: d.n || "your authority", at: x.at || d.at || new Date().toISOString(),
-                issued: !!x.issued, hra: x.body.hra});
+                by: x.by || d.by || "", issued: !!x.issued, hra: x.body.hra});
     n++; if(x.issued) issued++;
   });
   if(!n) return {ok:false, note:"Nothing in that file could be stored — storage may be full."};
@@ -7314,6 +7346,59 @@ function libIssue(k, on){
 function libIsIssued(){
   const e = libRead().find(x => x.k === libKey(S.gss, S.report, S.fy0));
   return !!(e && e.issued);
+}
+
+/* ===========================================================================
+ * Whose work is this, and what am I about to lose?
+ *
+ * Once a file goes on a shared drive, three people have it and the questions
+ * change. Not "is it saved" — it always is — but "whose version is this",
+ * "what am I replacing", and "whose work am I writing over".
+ *
+ * WHAT THIS CAN AND CANNOT DO. Every version now carries who last saved it
+ * and when, so a colleague opening the file can see it. What no amount of
+ * care here can detect is the concurrent edit: if Jane saves the file at
+ * three o'clock and I opened it at ten, my file simply does not contain her
+ * afternoon. Only a shared server could see that, and we deliberately do not
+ * have one. So the tool does the honest half — it shows whose work is in
+ * front of you, and says plainly that changes made elsewhere since you opened
+ * the file are not in what you are about to write.
+ * ======================================================================== */
+const WHO_KEY = "lb:who";
+function whoAmI(){ try { return localStorage.getItem(WHO_KEY) || ""; } catch(e){ return ""; } }
+function setWho(n){ try { localStorage.setItem(WHO_KEY, (n||"").slice(0,60)); } catch(e){} }
+const byLine = e => (e && e.by) ? esc(e.by) : "not named";
+function whenLine(iso){
+  if(!iso) return "unknown";
+  try { return new Date(iso).toLocaleString("en-GB",
+    {dateStyle:"medium", timeStyle:"short"}); } catch(e){ return iso; }
+}
+
+/* What opening this file would do, report by report, before it does it. */
+function libInspect(text){
+  let d;
+  try { d = JSON.parse(text); } catch(e){ return {ok:false, note:"That file is not readable."}; }
+  if(!d || d.f !== "pwlbreport") return {ok:false, note:"That is not a PWLBreports file."};
+  if(d.v > FILE_V) return {ok:false, note:"That file was written by a newer version of the tool."};
+  const list = Array.isArray(d.versions) ? d.versions
+             : d.body ? [{report:d.report, fy0:d.fy0, issued:!!d.issued, at:d.at,
+                          by:d.by, body:d.body}] : [];
+  if(!list.length) return {ok:false, note:"That file contains no reports."};
+  const held = libRead();
+  const rows = list.map(x => {
+    const gss = (x.body && x.body.gss) || d.gss;
+    const mine = held.find(y => y.k === libKey(gss, x.report, x.fy0));
+    const rep = (REPORTS.find(r => r.k === x.report) || {}).t || x.report;
+    const fAt = x.at || d.at, mAt = mine && mine.at;
+    return {label: `${rep} · ${fy(x.fy0)}`,
+            fileBy: x.by || d.by || "", fileAt: fAt,
+            mineBy: mine && mine.by, mineAt: mAt,
+            state: !mine ? "new" : (fAt && mAt && fAt < mAt) ? "older" : "newer"};
+  });
+  return {ok:true, d, rows, n:list.length,
+          who: d.n || "that authority",
+          replacing: rows.filter(r => r.state !== "new").length,
+          older: rows.filter(r => r.state === "older").length};
 }
 
 /* ===========================================================================
@@ -8836,6 +8921,10 @@ function stampSaved(word){
       $("saved").textContent = "Save a version first, then the file has something to carry.";
       return; }
     const name = libFileName();
+    const held = libFor(S.gss);
+    const mine = whoAmI();
+    const others = held.filter(e => e.by && e.by !== mine);
+    const doSave = async () => {
     if(DOWNLOADS){
       try{ await DOWNLOADS.save({filename:name, data});
            $("saved").textContent = `Saved ${nv} report${nv===1?"":"s"} as ${name}.`; }
@@ -8849,15 +8938,78 @@ function stampSaved(word){
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
     $("saved").textContent = `Downloading ${name} — ${nv} report${nv===1?"":"s"}.`;
+    };
+    /* WHOSE WORK IS IN THIS FILE. The honest limit is stated rather than
+       hidden: without a shared server nothing here can see a colleague's
+       edits made since this file was opened, so the file about to be written
+       does not contain them. Naming who last touched each report is what lets
+       a person notice. */
+    ask(`Save ${nv} report${nv===1?"":"s"} to a file`,
+      `<p>This writes everything held here for ${esc((LB[S.gss]||{}).n || S.otherName
+         || "this authority")}. If a colleague has saved the shared file since you opened
+        it, their changes are <b>not</b> in this one — there is no server to see them,
+        which is also why nothing you enter ever leaves your browser.</p>
+       ${askRows(held.map(e => ({
+          label: `${esc((REPORTS.find(r=>r.k===e.report)||{}).t || e.report)} · ${fy(e.fy0)}`,
+          line: `last saved by ${byLine(e)} ${whenLine(e.at)}`,
+          tag: (e.by && e.by !== mine) ? "older" : "",
+          tagText: e.issued ? "issued" : ""})))}
+       ${others.length ? `<p><b>${others.length} of these was last saved by someone
+         else.</b> Writing this file hands your copy of their work on.</p>` : ""}`,
+      "Save to a file", doSave);
   });
+  /* One panel, used by both file actions. It stops and shows exactly what is
+     about to happen, per report, before it happens. */
+  function ask(title, bodyHTML, goLabel, onGo){
+    $("asktitle").textContent = title;
+    $("askbody").innerHTML = bodyHTML;
+    $("askgo").textContent = goLabel;
+    $("askbox").hidden = false;
+    const veil = document.createElement("div");
+    veil.className = "pvveil askveil";
+    document.body.appendChild(veil);
+    const close = () => { $("askbox").hidden = true;
+      document.querySelectorAll(".askveil").forEach(v=>v.remove()); };
+    $("askgo").onclick = () => { close(); onGo(); };
+    $("askno").onclick = close;
+    veil.onclick = close;
+  }
+  const askRows = rows => `<div class="asklist">${rows.map(r => `<div class="askrow">
+      <span><b>${esc(r.label)}</b><span>${r.line}</span></span>
+      <span class="asktag ${r.tag}">${esc(r.tagText)}</span></div>`).join("")}</div>`;
+
+  $("whoami").value = whoAmI();
+  $("whoami").addEventListener("input", e=>{ setWho(e.target.value); });
+
   $("libopen").addEventListener("change", e=>{
     const f = e.target.files && e.target.files[0];
     if(!f) return;
     const rd = new FileReader();
     rd.onload = () => {
-      const r = libImport(String(rd.result));
-      $("saved").innerHTML = r.note;
-      if(r.ok) libFill();
+      const text = String(rd.result);
+      const look = libInspect(text);
+      if(!look.ok){ $("saved").textContent = look.note; return; }
+      /* WHAT WILL BE LOST, NAMED. A generic "this will overwrite your data"
+         is a warning nobody can act on; this says which report, whose it is,
+         and whether the copy in the file is older than the one here. */
+      const rows = look.rows.map(r => ({
+        label: r.label,
+        line: r.state === "new"
+          ? `not held here · in the file, saved by ${byLine({by:r.fileBy})} ${whenLine(r.fileAt)}`
+          : `here: ${byLine({by:r.mineBy})} ${whenLine(r.mineAt)} · `
+            + `file: ${byLine({by:r.fileBy})} ${whenLine(r.fileAt)}`,
+        tag: r.state, tagText: r.state === "new" ? "adds"
+             : r.state === "older" ? "replaces with older" : "replaces"}));
+      ask(`Open ${esc(look.who)} — ${look.n} report${look.n===1?"":"s"}`,
+        `<p>This replaces what is in the browser for each report below. Anything on
+          screen now that you have not saved to a file will be gone.</p>
+         ${askRows(rows)}
+         ${look.older ? `<p style="color:var(--alert)"><b>${look.older} of them is older
+           than the copy here.</b> Opening the file will put the earlier version back.</p>` : ""}`,
+        `Open and replace ${look.replacing || look.n}`,
+        () => { const r = libImport(text);
+                $("saved").innerHTML = r.note;
+                if(r.ok){ libFill(); location.reload(); } });
     };
     rd.onerror = () => { $("saved").textContent = "That file could not be read."; };
     rd.readAsText(f);
