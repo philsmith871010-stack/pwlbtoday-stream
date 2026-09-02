@@ -6566,11 +6566,29 @@ function inlineColours(html){
   });
 }
 
-/* Under a two-pool approach the Code wants LB2, LB3 and LB4 for each fund,
-   and recommends a further series on each: General Fund lending to, or
-   borrowing from, the HRA. Where the HRA's external loans sit below its own
-   benchmark the difference has been lent by the General Fund; where they sit
-   above it, the HRA has lent to the General Fund. */
+/* THE INTER-FUND POSITION IS A POSITION, AND ONLY AT THE START.
+ *
+ * The consultation defines series (f) as the difference between the HRA's net
+ * treasury position and its external loan commitments: below its benchmark,
+ * the difference has been lent by the General Fund; above it, the HRA has lent
+ * to the General Fund.
+ *
+ * That reads correctly at the latest balance sheet date, where both sides are
+ * facts. It does NOT survive being run across fifty years. Existing loan
+ * commitments run off, so by year ten the same subtraction is mostly the
+ * HRA's future borrowing REQUIREMENT — and calling that "General Fund lending
+ * to the HRA" asserts something nobody has decided.
+ *
+ * The demonstration shows how wrong it can look: at 2032/33 the General Fund
+ * is £192m short of its own benchmark and the HRA £242m short of its, and we
+ * were drawing "General Fund lending to the HRA £242m". Two funds that are
+ * both short cannot be lending to one another, and a number that says they
+ * are is worse than no number.
+ *
+ * So the series keeps the Code's own name, is drawn as the position it is
+ * rather than as a line, and says on the chart that beyond the first year it
+ * is the HRA's requirement — to be met from the General Fund or by the HRA's
+ * own new borrowing, which is a decision, not an arithmetic result. */
 function crossFund(gf, hra){
   return gf.map((g,i)=>{
     const h = hra[i] || {lb:0, el:0};
@@ -6595,8 +6613,9 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
    * should also be shown on each LB3 chart". LB4 is defined as "a single data
    * series" in terms, so a second line on it is not a garnish, it is a
    * contradiction. */
-  const XF = hraSet ? [{k:"cross", t:"General Fund lending to / borrowing from the HRA",
-                        c:"var(--l-strat)", w:1.6, dash:"2 3"}] : [];
+  const XF = hraSet ? [{k:"cross",
+    t:"GF lending to / borrowing from the HRA (first year); HRA requirement thereafter",
+    c:"var(--l-strat)"}] : [];
   /* The chart commences with the most recent actual year-end; the tables and
      every readout still start at the current year, which is what they mean. */
   const AF = O.fund || (fundLabel === "HRA" ? "hra" : (fundLabel ? "gf" : "all"));
@@ -6625,11 +6644,12 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
      P({xlab:fy, label:"LB3", h:280,
        // Investments below the line, as the consultation's own table
        // brackets them; the figure in our tables keeps its sign.
-       bars:[{k:"el",t:"Existing loans",c:"var(--l-debt)"},
-             {k:"ei",t:"Existing investments",c:"var(--l-ei)",neg:true}],
+       // A position stacks with the other positions; the benchmarks stay lines.
+       bars:[{k:"el",t:"Existing loans",c:"var(--l-debt)"}].concat(XF).concat([
+             {k:"ei",t:"Existing investments",c:"var(--l-ei)",neg:true}]),
        lines:[{k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.2},
               {k:"tib",t:"Investment benchmark",c:"var(--l-inv)",w:2.2,neg:true},
-              {k:"ntp",t:"Net",c:"var(--l-ntp)",w:2.2}].concat(XF)})
+              {k:"ntp",t:"Net",c:"var(--l-ntp)",w:2.2}]})
      + otable(d,[{l:"Existing loan commitments",k:"el"},{l:"Liability benchmark",k:"lb",cls:"lb"},
                  {l:"Existing investment commitments",k:"ei"}])
      + readoutHTML("LB3", d, fundLabel))}
@@ -6645,11 +6665,22 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
      P({data:d, label:"LB5", h:240, xlab:fy,
        // Every series on LB5 is an investment, and the consultation's table
        // brackets every one of them.
-       lines:[{k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:2.2,neg:true},
-              {k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:2,neg:true},
-              {k:"liq",t:"Liquidity allowance",c:"var(--muted)",w:1.8,neg:true},
-              {k:"strategic",t:"Strategic treasury investments",c:"var(--l-strat)",w:2,neg:true},
-              {k:"excess",t:"Excess treasury investments",c:"var(--l-exc)",w:2,neg:true}]})
+       /* Balances are columns; the benchmark they are measured against stays
+          a line. Five lines on one chart asked a reader to tell four kinds of
+          investment apart by colour alone. */
+       /* THE STACK IS A COMPOSITION AND NOTHING ELSE MAY JOIN IT.
+          Liquidity plus strategic plus excess IS the investment balance --
+          checked, they sum to it exactly -- so a column made of those three
+          is the balance broken into its parts. Existing investment
+          COMMITMENTS is a different measure, the contractual maturity of what
+          is already placed, and stacking it on top would count the same money
+          twice. It stays a line, beside the benchmark. */
+       bars:[{k:"liq",t:"Liquidity allowance",c:"var(--l-inv)",neg:true},
+             {k:"strategic",t:"Strategic treasury investments",c:"var(--l-strat)",neg:true},
+             {k:"excess",t:"Excess treasury investments",c:"var(--l-exc)",neg:true}],
+       lines:[{k:"tib",t:"Treasury investment benchmark",c:"var(--l-lb)",w:2.2,neg:true},
+              {k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:2,neg:true,
+               dash:"4 3"}]})
      + otable(d,[{l:"Treasury investment benchmark",k:"tib",cls:"inv"},{l:"Liquidity allowance",k:"liq"},
                  {l:"Strategic treasury investments",k:"strategic"},
                  {l:"Excess treasury investments",k:"excess"}])
