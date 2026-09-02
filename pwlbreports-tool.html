@@ -313,28 +313,168 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
 .blank{color:var(--yours);font-style:italic}
 /* Bank Rate steps. A rate path is read as levels and moves, so each box
    carries both, and the direction is in the glyph as well as the colour. */
+
+/* ---- counterparty policy --------------------------------------------------
+ * Every question sits beside what other authorities publish, so the benchmark
+ * is styled as a quiet annotation and never as an answer: same size as the
+ * hint text, muted, never bold except for the one figure being cited. A
+ * benchmark that looks like a recommendation is a recommendation.
+ */
+.cpnote{font-family:var(--sans);font-size:13px;line-height:1.6;color:var(--ink2);
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:11px 15px;border-radius:0 var(--r-sm) var(--r-sm) 0;margin:0 0 26px}
+.cph{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);
+  margin:30px 0 4px;padding-top:16px;border-top:1px solid var(--line);
+  display:flex;align-items:baseline;gap:9px}
+.cph:first-of-type{border-top:0;padding-top:0;margin-top:4px}
+.cpsub{font-family:var(--sans);font-size:12.5px;color:var(--muted);margin:0 0 14px;
+  line-height:1.55;max-width:60em}
+.cphint{font-family:var(--sans);font-size:12px;color:var(--muted);line-height:1.55;
+  margin:10px 2px 0;padding-left:11px;border-left:2px solid var(--line2);max-width:56em}
+.cpb{display:block;font-style:normal;font-family:var(--sans);font-size:10.5px;
+  color:var(--faint);line-height:1.4;margin-top:3px}
+.cpb b{font-weight:600;color:var(--muted)}
+.cpb.none{color:var(--faint);font-style:italic}
+
+.cptable{border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
+.cprow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);
+  gap:12px;padding:9px 13px;border-bottom:1px solid var(--line);align-items:start}
+.cprow:last-child{border-bottom:0}
+.cprow:nth-child(even){background:var(--sunken)}
+.cprow.cphead{background:var(--sunken);font-family:var(--sans);font-size:10.5px;
+  font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.cprow .cpt{font-family:var(--sans);font-size:13px;color:var(--ink);font-weight:500;
+  padding-top:5px}
+.cprow input{width:100%;max-width:110px;font-family:var(--mono);font-size:12.5px;
+  padding:5px 8px;border:1px solid var(--line2);border-radius:3px;
+  background:var(--card);color:var(--ink);text-align:right}
+.cprow input:focus{outline:2px solid var(--accent);outline-offset:-2px}
+@media (max-width:720px){.cprow{grid-template-columns:1fr}.cprow.cphead{display:none}}
+
+.cpchecks{display:grid;grid-template-columns:repeat(auto-fit,minmax(212px,1fr));gap:9px}
+.cpchk{display:flex;gap:9px;align-items:flex-start;padding:10px 12px;cursor:pointer;
+  border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);
+  transition:border-color .15s ease,background .15s ease}
+.cpchk:hover{border-color:var(--line2)}
+.cpchk.on{border-color:var(--good);background:var(--cell-ours)}
+.cpchk input{margin-top:2px;accent-color:var(--good)}
+.cpchk b{display:block;font-family:var(--sans);font-size:12.5px;font-weight:600;
+  color:var(--ink);line-height:1.35}
+.cpchk em{display:block;font-style:normal;font-family:var(--sans);font-size:11px;
+  color:var(--muted);line-height:1.4;margin-top:2px}
+
+.cpopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:9px}
+.cpopt{display:flex;gap:10px;align-items:flex-start;padding:12px 13px;cursor:pointer;
+  border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);
+  transition:border-color .15s ease,background .15s ease,box-shadow .15s ease}
+.cpopt:hover{border-color:var(--line2)}
+.cpopt.on{border-color:var(--accent);background:var(--accent-soft);
+  box-shadow:inset 0 0 0 1px var(--accent)}
+.cpopt input{margin-top:3px;accent-color:var(--accent)}
+.cpopt b{display:block;font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--ink)}
+.cpopt em{display:block;font-style:normal;font-family:var(--sans);font-size:11px;
+  color:var(--muted);line-height:1.45;margin-top:3px}
+
+.cpgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;
+  margin:14px 0 0}
+.cpgrid label{font-family:var(--sans);font-size:12px;color:var(--ink2);font-weight:600;
+  display:flex;flex-direction:column;gap:5px}
+.cpgrid label.cpwide{grid-column:1/-1}
+.cpgrid select,.cpgrid input[type=text]{font-family:var(--mono);font-size:12.5px;
+  padding:6px 8px;border:1px solid var(--line2);border-radius:3px;
+  background:var(--card);color:var(--ink)}
+.cpinline{display:flex;flex-wrap:wrap;gap:14px}
+.cpmini{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);
+  font-size:12px;font-weight:500;color:var(--ink2)}
+.cpmini .cpb{display:inline;margin:0 0 0 3px}
+
+.cpwords{display:grid;gap:12px;margin-top:6px}
+.cpwords blockquote{margin:0;padding:11px 0 11px 16px;border-left:2px solid var(--orange);
+  font-family:var(--serif);font-size:14.5px;line-height:1.55;color:var(--ink2)}
+.cpwords cite{display:block;font-family:var(--sans);font-size:11px;font-style:normal;
+  color:var(--muted);margin-top:6px;letter-spacing:.02em}
+
+
+/* The benchmark as a position rather than a sentence. The band is the middle
+   half of authorities, the line is the median, and the dot is you. */
+.cpbar{display:block;position:relative;height:5px;margin:5px 0 4px;
+  background:var(--line);border-radius:3px;overflow:visible}
+.cpiqr{position:absolute;top:0;height:100%;background:var(--accent);opacity:.22;
+  border-radius:3px}
+.cpmed{position:absolute;top:-2px;width:2px;height:9px;background:var(--accent);
+  border-radius:1px;transform:translateX(-1px)}
+.cpyou{position:absolute;top:-3.5px;width:11px;height:11px;border-radius:50%;
+  background:var(--orange);border:2px solid var(--card);transform:translateX(-5.5px);
+  box-shadow:0 1px 4px rgba(15,26,36,.28);transition:left .22s cubic-bezier(.4,0,.2,1)}
+.cpyou.over{border-radius:2px 50% 50% 2px;width:13px}
+.cptxt{display:block}
+.cpme{font-style:normal;color:var(--orange);font-weight:600}
+
+
+/* The one synthesis on the page: how many of your limits sit inside the middle
+   half, and how many outside it. Three colours because there are three
+   answers, and none of them is a failure. */
+.cpsum{display:flex;flex-direction:column;gap:9px;margin:0 0 22px;padding:14px 16px;
+  border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);
+  box-shadow:0 1px 3px rgba(15,26,36,.04)}
+.cpsum.empty{font-family:var(--sans);font-size:12.5px;color:var(--muted);
+  background:var(--sunken);box-shadow:none}
+.cpsumbar{display:flex;gap:3px;height:8px}
+.cpsumbar span{border-radius:2px}
+.cpsumbar .t{background:var(--accent)}
+.cpsumbar .m{background:var(--good)}
+.cpsumbar .l{background:var(--orange)}
+.cpsumtext{font-family:var(--sans);font-size:13px;color:var(--ink2);line-height:1.5}
+.cpsumtext b{color:var(--ink);font-weight:600}
+.cpsumtext b.t{color:var(--accent)}
+.cpsumtext b.m{color:var(--good)}
+.cpsumtext b.l{color:var(--orange)}
+/* Stronger than the first attempt: at 0.22 the band was almost invisible and
+   the bar read as a single line rather than as a range. */
+.cpiqr{opacity:.32}
+.cph{position:relative;padding-left:0}
+.cph::first-letter{color:var(--accent);font-weight:700}
+
 /* ---- the step rail --------------------------------------------------------
  * Sticky, because the one question it answers — where am I, and what is left
  * — is the question you have while you are in the middle of a step, not the
  * one you have at the top of the page.
  */
-.railwrap{position:sticky;top:0;z-index:40;background:var(--paper);
-  border-bottom:1px solid var(--line);margin:0 0 18px;padding:0 0 9px}
-.railtrack{height:2px;background:var(--line);border-radius:2px;overflow:hidden;margin:0 0 11px}
-.railbar{height:100%;width:0;background:var(--good);border-radius:2px;
-  transition:width .45s cubic-bezier(.4,0,.2,1)}
-.rail{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}
-.rstep{display:flex;align-items:flex-start;gap:9px;text-align:left;cursor:pointer;
-  background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);
-  padding:9px 11px;font-family:var(--sans);min-width:0;
-  transition:border-color .15s ease, background .15s ease}
-.rstep:hover{border-color:var(--line2)}
-.rstep.on{border-color:var(--accent);background:var(--accent-soft);
-  box-shadow:inset 0 0 0 1px var(--accent)}
-.rstep .rn{flex:0 0 auto;width:19px;height:19px;border-radius:50%;
+.railwrap{position:sticky;top:0;z-index:40;
+  background:linear-gradient(180deg,var(--paper) 78%,transparent);
+  border-bottom:1px solid var(--line);margin:0 0 18px;padding:10px 0 11px;
+  backdrop-filter:saturate(1.4) blur(6px)}
+/* The track is the whole journey and the bar is how much of it is real. It
+   carries a gradient rather than one flat green because the steps are not
+   interchangeable: the early ones are facts about the authority, the later
+   ones are judgement, and the colour moves with that. */
+.railtrack{height:3px;background:var(--line);border-radius:3px;overflow:hidden;
+  margin:0 0 12px;position:relative}
+.railbar{height:100%;width:0;border-radius:3px;
+  background:linear-gradient(90deg,var(--accent),var(--good));
+  transition:width .5s cubic-bezier(.4,0,.2,1)}
+.rail{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.rstep{position:relative;display:flex;align-items:flex-start;gap:9px;text-align:left;
+  cursor:pointer;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:9px 10px 10px;font-family:var(--sans);min-width:0;
+  transition:border-color .16s ease, background .16s ease, transform .16s ease,
+             box-shadow .16s ease}
+.rstep:hover{border-color:var(--line2);transform:translateY(-1px);
+  box-shadow:0 3px 10px rgba(15,26,36,.07)}
+/* The current step is the only one that gets the accent bar. Marking state
+   AND position with the same device made it impossible to see which step you
+   were actually on once three were done. */
+.rstep::before{content:"";position:absolute;left:0;top:0;bottom:0;width:0;
+  border-radius:var(--r-sm) 0 0 var(--r-sm);background:var(--accent);
+  transition:width .16s ease}
+.rstep.on::before{width:3px}
+.rstep.on{border-color:var(--accent);background:var(--accent-soft)}
+.rstep .rn{flex:0 0 auto;width:21px;height:21px;border-radius:50%;
   display:grid;place-items:center;font-family:var(--mono);font-size:10.5px;font-weight:600;
-  background:var(--line);color:var(--muted);margin-top:1px}
-.rstep.on .rn{background:var(--accent);color:var(--on-accent)}
+  background:var(--line);color:var(--muted);margin-top:1px;
+  transition:background .18s ease, color .18s ease, box-shadow .18s ease}
+.rstep.on .rn{background:var(--accent);color:var(--on-accent);
+  box-shadow:0 0 0 3px var(--accent-soft)}
 .rstep.done .rn{background:var(--good);color:#fff}
 .rstep.part .rn{background:var(--orange);color:#fff}
 .rstep .rt{min-width:0;display:block}
@@ -343,6 +483,9 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
 .rstep .rt i{display:block;font-style:normal;font-size:11px;color:var(--muted);
   line-height:1.35;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rstep.on .rt i{color:var(--ink2)}
+.rstep.done .rt i{color:var(--good)}
+.rstep.part .rt i{color:var(--orange)}
+@media (max-width:1100px){.rail{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .railfoot{display:flex;align-items:baseline;gap:14px;margin:9px 2px 0;
   font-family:var(--sans);font-size:11.5px;color:var(--muted)}
 .railfoot .sp{flex:1}
@@ -742,7 +885,14 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
   </section>
 
   <section class="panel" data-step="5">
-    <div class="phead"><span class="n">5</span><h2>The rest of the strategy</h2>
+    <div class="phead"><span class="n">5</span><h2>Counterparty policy</h2>
+      <span class="why">Who you will lend to, for how long, and how much — set against what
+        145 authorities publish in their own current strategies.</span></div>
+    <div class="pbody"><div id="cpbody"></div></div>
+  </section>
+
+  <section class="panel" data-step="6">
+    <div class="phead"><span class="n">6</span><h2>The rest of the strategy</h2>
       <span class="why">The sections a TMS needs beyond the indicators. We fill what we can and
         leave you the commentary only you can write.</span></div>
     <div class="pbody"><div class="secgrid">
@@ -751,8 +901,8 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
     </div></div>
   </section>
 
-  <section class="panel" data-step="6">
-    <div class="phead"><span class="n">6</span><h2>The draft</h2>
+  <section class="panel" data-step="7">
+    <div class="phead"><span class="n">7</span><h2>The draft</h2>
       <span class="why">Your commentary and our figures, assembled. Sections not yet written
         appear as gaps.</span></div>
     <div class="pbody"><div class="ltools" style="margin-top:0">
@@ -761,7 +911,7 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
       <span class="sp"></span><span class="hintline" id="dhint"></span>
     </div></div>
   </section>
-  <section class="panel doc" id="doc" data-step="6" aria-live="polite"></section>
+  <section class="panel doc" id="doc" data-step="7" aria-live="polite"></section>
   </div>
 </div>
 <script>
@@ -3660,6 +3810,592 @@ function autoNote(k){
 }
 
 /* ===========================================================================
+ * COUNTERPARTY POLICY — designed here, evidenced from what councils publish.
+ *
+ * The tool had no counterparty section at all, which is a real hole: it is the
+ * part of a treasury strategy an authority is most often asked about and the
+ * part with the most local variation.
+ *
+ * WHY EVERY QUESTION CARRIES A NUMBER. Asking "what is your limit for
+ * unsecured banks" is a form. Asking it beside "145 councils publish one; the
+ * median is £5m, the middle half £3.8m to £15m" is a decision with a context,
+ * and the reader can see immediately whether they are ordinary. Those figures
+ * are read from councils' own current strategies, not from guidance.
+ *
+ * WHAT IT REFUSES TO DO. It does not recommend a limit. The benchmark says
+ * what is common, never what is right — an authority's appetite is a function
+ * of its balances, its liquidity and its members' view, none of which this
+ * page knows. Where a policy has genuinely different SHAPES rather than
+ * different levels (country policy is the clearest case) the alternatives are
+ * offered as postures with real wording behind each, and the choice is left
+ * where it belongs.
+ * ======================================================================== */
+const CPB = {
+ "councils": 143,
+ "rows": 1220,
+ "sectors": {
+  "UK Government / DMADF": {
+   "cash": {
+    "n": 25,
+    "p25": 9.0,
+    "med": 15.0,
+    "p75": 25.0,
+    "max": 60.0
+   },
+   "months": {
+    "n": 166,
+    "p25": 6.0,
+    "med": 12.1,
+    "p75": 60.0,
+    "max": 600.0
+   }
+  },
+  "Other local authorities": {
+   "cash": {
+    "n": 102,
+    "p25": 5.0,
+    "med": 10.0,
+    "p75": 15.0,
+    "max": 65.0
+   },
+   "months": {
+    "n": 112,
+    "p25": 12.0,
+    "med": 36.0,
+    "p75": 138.0,
+    "max": 600.0
+   }
+  },
+  "Banks \u2014 unsecured": {
+   "cash": {
+    "n": 105,
+    "p25": 3.8,
+    "med": 5.0,
+    "p75": 15.0,
+    "max": 60.0
+   },
+   "months": {
+    "n": 89,
+    "p25": 12.0,
+    "med": 13.0,
+    "p75": 13.0,
+    "max": 60.0
+   }
+  },
+  "Banks \u2014 secured": {
+   "cash": {
+    "n": 26,
+    "p25": 5.0,
+    "med": 8.5,
+    "p75": 15.0,
+    "max": 65.0
+   },
+   "months": {
+    "n": 30,
+    "p25": 60.0,
+    "med": 120.0,
+    "p75": 120.0,
+    "max": 120.0
+   }
+  },
+  "Building societies": {
+   "cash": {
+    "n": 105,
+    "p25": 5.0,
+    "med": 7.5,
+    "p75": 15.0,
+    "max": 40.0
+   },
+   "months": {
+    "n": 103,
+    "p25": 12.0,
+    "med": 13.0,
+    "p75": 13.0,
+    "max": 72.0
+   }
+  },
+  "Money market funds": {
+   "cash": {
+    "n": 112,
+    "p25": 5.0,
+    "med": 10.0,
+    "p75": 18.8,
+    "max": 65.0
+   },
+   "months": {
+    "n": 10,
+    "p25": 12.0,
+    "med": 12.0,
+    "p75": 12.1,
+    "max": 60.0
+   }
+  },
+  "Pooled / bond funds": {
+   "cash": {
+    "n": 76,
+    "p25": 5.0,
+    "med": 10.0,
+    "p75": 15.0,
+    "max": 65.0
+   },
+   "months": {
+    "n": 11,
+    "p25": 24.0,
+    "med": 60.0,
+    "p75": 120.0,
+    "max": 300.0
+   }
+  },
+  "Registered providers": {
+   "cash": {
+    "n": 46,
+    "p25": 3.0,
+    "med": 5.0,
+    "p75": 8.5,
+    "max": 32.5
+   },
+   "months": {
+    "n": 41,
+    "p25": 36.0,
+    "med": 60.0,
+    "p75": 60.0,
+    "max": 60.0
+   }
+  },
+  "Corporates": {
+   "cash": {
+    "n": 19,
+    "p25": 3.0,
+    "med": 5.0,
+    "p75": 7.5,
+    "max": 50.0
+   },
+   "months": {
+    "n": 20,
+    "p25": 12.0,
+    "med": 12.1,
+    "p75": 60.0,
+    "max": 60.0
+   }
+  },
+  "The council's own bank": {
+   "cash": {
+    "n": 19,
+    "p25": 2.5,
+    "med": 7.0,
+    "p75": 15.0,
+    "max": 50.0
+   },
+   "months": null
+  }
+ },
+ "basis": {
+  "per counterparty": 134,
+  "per sector": 55,
+  "per group": 9,
+  "per manager": 12
+ },
+ "geography": {
+  "capped as a share of funds": 12,
+  "sovereign rating floor": 51,
+  "permitted, other conditions": 19,
+  "excluded outright": 2
+ },
+ "ratings": {
+  "fitch": 46,
+  "moodys": 29,
+  "sp": 16,
+  "tiered": 22,
+  "sovereign": 32
+ },
+ "structure": {
+  "group_limits": 42,
+  "specified_split": 36,
+  "credit_bands": 6
+ },
+ "instruments": {
+  "treasury bills / gilts": 48,
+  "certificates of deposit": 31,
+  "property funds": 28,
+  "supranational / MDB bonds": 24,
+  "corporate bonds": 21,
+  "notice / call accounts": 8,
+  "covered bonds / repo": 8,
+  "REITs": 7,
+  "floating rate notes": 5,
+  "municipal bonds agency": 1
+ },
+ "wording": [
+  {
+   "topic": "non-UK counterparties",
+   "posture": "capped as a share of funds",
+   "text": "\"NB No more than 25% of funds shall be invested in Non-UK financial institutions whether by term deposits, except that this limit may be breached for liquidity purposes for up to 1 week at any time.\" Named non-UK counterparties are given wi"
+  },
+  {
+   "topic": "non-UK counterparties",
+   "posture": "sovereign rating floor",
+   "text": "The Council has determined that it will only use approved counterparties from the UK and from countries with a minimum sovereign credit rating of AA+. The list of countries that qualify using this credit criteria as at the date of this repo"
+  },
+  {
+   "topic": "credit criteria",
+   "posture": "more than one floor",
+   "text": "Money Market Funds: Long term Issuer Default rating AAA (Fitch), Aaa (Moody's), AAA (S&P). Any other body: Long term Issuer Default rating A+ (Fitch), A3 (Moody's), BBB+ (S&P); Short term Issuer Default rating F1 (Fitch), P-2 (Moody's), A-2"
+  },
+  {
+   "topic": "non-UK counterparties",
+   "posture": "permitted, other conditions",
+   "text": "The Council will only use banks which are UK banks. When setting minimum sovereign debt ratings, this Authority will not set a minimum rating for the UK."
+  },
+  {
+   "topic": "non-UK counterparties",
+   "posture": "excluded outright",
+   "text": "No non-UK counterparty policy is stated; the document restricts investments by currency instead \u2014 \"Specified Investments \u2013 all such investments will be sterling denominated\" and fund managers must keep \"All investments restricted to sterlin"
+  }
+ ]
+};
+
+/* The sectors, in the order a strategy states them. `k` keys the answer,
+   `b` matches the benchmark's own sector label. */
+const CP_SECTORS = [
+  {k:"gov",   t:"UK Government, DMADF, T-bills and gilts", b:"UK Government / DMADF"},
+  {k:"la",    t:"Other local authorities",                 b:"Other local authorities"},
+  {k:"bank",  t:"Banks — unsecured",                       b:"Banks — unsecured"},
+  {k:"banksec",t:"Banks — secured (covered bonds, repo)",  b:"Banks — secured"},
+  {k:"bs",    t:"Building societies",                      b:"Building societies"},
+  {k:"mmf",   t:"Money market funds",                      b:"Money market funds"},
+  {k:"pool",  t:"Pooled and bond funds",                   b:"Pooled / bond funds"},
+  {k:"rp",    t:"Registered providers of social housing",  b:"Registered providers"},
+  {k:"corp",  t:"Corporates",                              b:"Corporates"},
+  {k:"own",   t:"The authority's own bank",                b:"The council's own bank"}
+];
+
+/* The controls that are NOT a per-counterparty limit. Forty-two councils cap
+   by ownership group, and that is the control deciding whether two deposits
+   with sister banks are one exposure or two. */
+const CP_BASIS = [
+  {k:"per_counterparty", t:"Per counterparty", d:"the most with any one institution",
+   n:() => CPB.basis && CPB.basis["per counterparty"]},
+  {k:"per_sector", t:"Per sector", d:"the most across a whole category",
+   n:() => CPB.basis && CPB.basis["per sector"]},
+  {k:"per_group", t:"Per ownership group", d:"a parent and its subsidiaries counted as one name",
+   n:() => CPB.basis && CPB.basis["per group"]},
+  {k:"per_manager", t:"Per fund manager", d:"funds run by one house counted together",
+   n:() => CPB.basis && CPB.basis["per manager"]}
+];
+
+const CP_COUNTRY = [
+  {k:"sovereign", t:"A sovereign rating floor",
+   d:"counterparties only in countries rated at or above a stated level",
+   w:"The authority will use approved counterparties from the UK and from countries with a minimum sovereign credit rating of [[FLOOR]]."},
+  {k:"share", t:"A cap as a share of funds",
+   d:"a proportion of the portfolio, whatever the country",
+   w:"No more than [[PCT]]% of funds shall be invested in non-UK financial institutions, except that this limit may be breached for liquidity purposes for up to one week."},
+  {k:"conditions", t:"Permitted, on stated conditions",
+   d:"not ruled out, but qualified in the text",
+   w:"The authority does not expect to use counterparties outside the United Kingdom, but will consider them where the country of origin carries a sovereign rating of not lower than [[FLOOR]]."},
+  {k:"excluded", t:"Not used at all",
+   d:"UK counterparties only",
+   w:"The authority will not place investments with counterparties outside the United Kingdom."}
+];
+
+const CP_INSTRUMENTS = [
+  ["tbills","Treasury bills and gilts"], ["cds","Certificates of deposit"],
+  ["property","Property funds"], ["supra","Supranational and MDB bonds"],
+  ["corpbond","Corporate bonds"], ["notice","Notice and call accounts"],
+  ["covered","Covered bonds and repo"], ["reits","REITs"],
+  ["frn","Floating rate notes"], ["mba","Municipal Bonds Agency"]
+];
+
+const CP_POOL_TYPES = [["bond","Bond funds"],["prop","Property funds"],
+  ["multi","Multi-asset / diversified"],["equity","Equity funds"]];
+
+function cpState(){
+  if(!S.cp) S.cp = {sec:{}, basis:{per_counterparty:true}, instr:{}, pool:{},
+                    country:"", floor:"AA-", pct:"25", agencies:{},
+                    ltrating:"A-", tiered:false, mmfrating:"AAA", split:false,
+                    nonspec:"", groupnote:""};
+  return S.cp;
+}
+
+/* The benchmark line under a question. Deliberately a RANGE and a count, not
+   a single "typical" figure: a median presented alone reads as a target. */
+function cpBench(sectorLabel, which, mine){
+  const s = (CPB.sectors || {})[sectorLabel];
+  const b = s && s[which];
+  if(!b) return `<i class="cpb none">too few councils publish this to compare</i>`;
+  const unit = which === "cash" ? "£" : "";
+  const suf  = which === "cash" ? "m" : "mo";
+  // The scale runs to the 75th percentile plus a margin rather than to the
+  // maximum: one council with a £65m limit would otherwise squash every other
+  // authority into the left-hand tenth of the bar and the picture would say
+  // nothing. Values beyond the scale are pinned and marked, not hidden.
+  const top = Math.max(b.p75 * 1.35, b.med * 2, 1);
+  const pos = v => Math.max(0, Math.min(100, (v / top) * 100));
+  const v = parseFloat(mine);
+  const has = isFinite(v) && v > 0;
+  const over = has && v > top;
+  return `<i class="cpb">
+    <span class="cpbar" role="img" aria-label="${b.n} councils, middle half ${unit}${b.p25} to ${unit}${b.p75}, median ${unit}${b.med}">
+      <span class="cpiqr" style="left:${pos(b.p25)}%;width:${pos(b.p75)-pos(b.p25)}%"></span>
+      <span class="cpmed" style="left:${pos(b.med)}%"></span>
+      ${has ? `<span class="cpyou ${over?"over":""}" style="left:${over?100:pos(v)}%"></span>` : ""}
+    </span>
+    <span class="cptxt"><b>${b.n}</b> councils · ${unit}${b.p25}–${unit}${b.p75}${suf} ·
+      median <b>${unit}${b.med}${suf}</b>${has ? ` · <em class="cpme">you ${unit}${v}${suf}</em>` : ""}</span>
+  </i>`;
+}
+
+/* Where this authority sits overall. Not a score: it counts how many of the
+   limits actually set fall inside, below or above the middle half of what
+   other authorities publish, and says so in those words. A single "you are
+   tighter than average" number would flatten ten separate decisions into one
+   and imply there is a right answer. */
+function cpStanding(){
+  const c = cpState();
+  let tighter = 0, typical = 0, looser = 0, set = 0;
+  CP_SECTORS.forEach(s => {
+    const b = ((CPB.sectors||{})[s.b]||{}).cash;
+    const v = parseFloat((c.sec[s.k]||{}).cash);
+    if(!b || !isFinite(v) || v <= 0) return;
+    set++;
+    if(v < b.p25) tighter++; else if(v > b.p75) looser++; else typical++;
+  });
+  return {set, tighter, typical, looser};
+}
+
+function cpSummary(){
+  const st = cpStanding(), c = cpState();
+  if(!st.set) return `<div class="cpsum empty">Set a limit and this will show where you
+    stand against the ${CPB.councils || 0} authorities in the survey.</div>`;
+  const bits = [];
+  if(st.tighter) bits.push(`<b class="t">${st.tighter}</b> tighter than most`);
+  if(st.typical) bits.push(`<b class="m">${st.typical}</b> within the middle half`);
+  if(st.looser)  bits.push(`<b class="l">${st.looser}</b> looser than most`);
+  const done = [c.country && "country policy",
+                Object.keys(c.agencies).some(a=>c.agencies[a]) && "credit criteria",
+                Object.keys(c.instr).some(k=>c.instr[k]) && "instruments",
+                Object.keys(c.pool).some(k=>c.pool[k]) && "pooled funds"].filter(Boolean);
+  return `<div class="cpsum">
+    <div class="cpsumbar">
+      ${st.tighter?`<span class="t" style="flex:${st.tighter}"></span>`:""}
+      ${st.typical?`<span class="m" style="flex:${st.typical}"></span>`:""}
+      ${st.looser?`<span class="l" style="flex:${st.looser}"></span>`:""}
+    </div>
+    <div class="cpsumtext"><b>${st.set}</b> of ${CP_SECTORS.length} sectors limited —
+      ${bits.join(", ")}.${done.length ? ` Also set: ${done.join(", ")}.` : ""}</div>
+  </div>`;
+}
+
+function cpRender(){
+  const host = $("cpbody");
+  if(!host) return;
+  const c = cpState();
+  const num = (k, f, ph) => `<input type="text" inputmode="decimal" data-cp="${k}"
+      data-f="${f}" value="${esc(String((c.sec[k]||{})[f] ?? ""))}" placeholder="${ph}">`;
+
+  host.innerHTML = cpSummary() + `
+    <div class="cpnote">Every figure below is set against what
+      <b>${CPB.councils || 0} authorities</b> publish in their current strategies.
+      The comparison says what is common. It does not say what is right for you.</div>
+
+    <h3 class="cph">1 · Limits by sector</h3>
+    <p class="cpsub">A cash limit is the most that may sit with any one name in that
+      sector. A duration is the longest it may sit there.</p>
+    <div class="cptable">
+      <div class="cprow cphead"><span>Sector</span><span>Cash limit £m</span>
+        <span>Maximum duration</span></div>
+      ${CP_SECTORS.map(s => `
+        <div class="cprow">
+          <span class="cpt">${esc(s.t)}</span>
+          <span>${num(s.k,"cash","—")}${cpBench(s.b,"cash",(c.sec[s.k]||{}).cash)}</span>
+          <span>${num(s.k,"months","—")}${cpBench(s.b,"months",(c.sec[s.k]||{}).months)}</span>
+        </div>`).join("")}
+    </div>
+    <p class="cphint">Unsecured bank and building society duration sits at 13 months at the
+      25th, the median and the 75th percentile — the sector has converged on one answer.
+      Secured exposure to the same institutions runs to a median of 120 months.</p>
+
+    <h3 class="cph">2 · What the limit applies to</h3>
+    <p class="cpsub">A per-counterparty cap and a per-group cap control different things.</p>
+    <div class="cpchecks">
+      ${CP_BASIS.map(b => `<label class="cpchk ${c.basis[b.k]?"on":""}">
+        <input type="checkbox" data-cpb="${b.k}" ${c.basis[b.k]?"checked":""}>
+        <span><b>${esc(b.t)}</b><em>${esc(b.d)}</em>
+        <i class="cpb">${b.n() || 0} councils</i></span></label>`).join("")}
+    </div>
+
+    <h3 class="cph">3 · Credit criteria</h3>
+    <p class="cpsub">${CPB.ratings ? CPB.ratings.tiered : 0} authorities hold some
+      counterparties to a higher bar than others — typically AAA of a money market fund
+      and a lower floor for a bank.</p>
+    <div class="cpgrid">
+      <label>Minimum long-term rating
+        <select data-cps="ltrating">${["AAA","AA+","AA","AA-","A+","A","A-","BBB+"]
+          .map(r=>`<option ${c.ltrating===r?"selected":""}>${r}</option>`).join("")}</select></label>
+      <label>Money market funds
+        <select data-cps="mmfrating">${["AAA","AA+","AA","same as above"]
+          .map(r=>`<option ${c.mmfrating===r?"selected":""}>${r}</option>`).join("")}</select></label>
+      <label class="cpwide">Rating agencies used
+        <span class="cpinline">${["Fitch","Moody's","S&P"].map(a=>`
+          <label class="cpmini"><input type="checkbox" data-cpa="${a}"
+            ${c.agencies[a]?"checked":""}> ${a}
+            <i class="cpb">${CPB.ratings ? (a==="Fitch"?CPB.ratings.fitch:
+              a==="Moody's"?CPB.ratings.moodys:CPB.ratings.sp) : 0}</i></label>`).join("")}
+        </span></label>
+    </div>
+
+    <h3 class="cph">4 · Counterparties outside the UK</h3>
+    <p class="cpsub">Four postures, and they are different policies rather than different
+      levels of the same one. Only ${(CPB.geography||{})["excluded outright"] || 0} of
+      ${CPB.councils || 0} authorities rule it out entirely.</p>
+    <div class="cpopts">
+      ${CP_COUNTRY.map(o => `<label class="cpopt ${c.country===o.k?"on":""}">
+        <input type="radio" name="cpcountry" data-cpc="${o.k}" ${c.country===o.k?"checked":""}>
+        <span><b>${esc(o.t)}</b><em>${esc(o.d)}</em>
+        <i class="cpb">${(CPB.geography||{})[
+          o.k==="sovereign"?"sovereign rating floor":
+          o.k==="share"?"capped as a share of funds":
+          o.k==="conditions"?"permitted, other conditions":"excluded outright"] || 0} councils</i>
+        </span></label>`).join("")}
+    </div>
+    <div class="cpgrid">
+      <label>Sovereign floor <select data-cps="floor">${["AAA","AA+","AA","AA-","A+"]
+        .map(r=>`<option ${c.floor===r?"selected":""}>${r}</option>`).join("")}</select></label>
+      <label>Or a cap, % of funds <input type="text" data-cps="pct"
+        value="${esc(c.pct)}" inputmode="decimal"></label>
+    </div>
+
+    <h3 class="cph">5 · Pooled funds</h3>
+    <p class="cpsub">The one class where the usual framework does not apply: these funds
+      have no maturity date, so a duration limit means nothing and the control moves to the
+      manager and the sector cap.</p>
+    <div class="cpchecks">
+      ${CP_POOL_TYPES.map(([k,t]) => `<label class="cpchk ${c.pool[k]?"on":""}">
+        <input type="checkbox" data-cpp="${k}" ${c.pool[k]?"checked":""}>
+        <span><b>${esc(t)}</b></span></label>`).join("")}
+    </div>
+
+    <h3 class="cph">6 · Structure and instruments</h3>
+    <div class="cpgrid">
+      <label class="cpwide"><span class="cpinline">
+        <label class="cpmini"><input type="checkbox" data-cps="split" ${c.split?"checked":""}>
+          Specified / non-specified split
+          <i class="cpb">${(CPB.structure||{}).specified_split || 0} councils</i></label>
+        </span></label>
+      <label>Aggregate limit on non-specified investments £m
+        <input type="text" data-cps="nonspec" value="${esc(c.nonspec)}" inputmode="decimal"></label>
+    </div>
+    <div class="cpchecks">
+      ${CP_INSTRUMENTS.map(([k,t]) => `<label class="cpchk ${c.instr[k]?"on":""}">
+        <input type="checkbox" data-cpi="${k}" ${c.instr[k]?"checked":""}>
+        <span><b>${esc(t)}</b><i class="cpb">${(CPB.instruments||{})[
+          {tbills:"treasury bills / gilts",cds:"certificates of deposit",
+           property:"property funds",supra:"supranational / MDB bonds",
+           corpbond:"corporate bonds",notice:"notice / call accounts",
+           covered:"covered bonds / repo",reits:"REITs",frn:"floating rate notes",
+           mba:"municipal bonds agency"}[k]] || 0} councils</i></span></label>`).join("")}
+    </div>
+
+    ${(CPB.wording||[]).length ? `<h3 class="cph">How others have written it</h3>
+      <div class="cpwords">${CPB.wording.map(w=>`<blockquote>${esc(w.text)}
+        <cite>${esc(w.topic)} — ${esc(w.posture||"")}</cite></blockquote>`).join("")}</div>` : ""}
+  `;
+}
+
+/* One place that reads the form back into state, so a field added to the
+   markup cannot be silently forgotten here. */
+function cpWire(){
+  const host = $("cpbody");
+  if(!host) return;
+  host.addEventListener("input", e => {
+    const c = cpState(), el = e.target;
+    if(el.dataset.cp){
+      (c.sec[el.dataset.cp] = c.sec[el.dataset.cp] || {})[el.dataset.f] = el.value;
+      // Redraw only the bar beside the field being typed in. Re-rendering the
+      // whole step would take the focus out of the input mid-keystroke.
+      const cell = el.parentElement, b = cell && cell.querySelector(".cpb");
+      const sec = CP_SECTORS.find(x => x.k === el.dataset.cp);
+      if(b && sec) b.outerHTML = cpBench(sec.b, el.dataset.f === "cash" ? "cash" : "months", el.value);
+      const sum = host.querySelector(".cpsum");
+      if(sum) sum.outerHTML = cpSummary();
+    }
+    else if(el.dataset.cps){ c[el.dataset.cps] = el.type === "checkbox" ? el.checked : el.value; }
+    else return;
+    save(); renderRail();
+  });
+  host.addEventListener("change", e => {
+    const c = cpState(), el = e.target;
+    if(el.dataset.cpb){ c.basis[el.dataset.cpb] = el.checked; }
+    else if(el.dataset.cpi){ c.instr[el.dataset.cpi] = el.checked; }
+    else if(el.dataset.cpp){ c.pool[el.dataset.cpp] = el.checked; }
+    else if(el.dataset.cpa){ c.agencies[el.dataset.cpa] = el.checked; }
+    else if(el.dataset.cpc){ c.country = el.dataset.cpc; }
+    else if(el.dataset.cps){ c[el.dataset.cps] = el.type === "checkbox" ? el.checked : el.value; }
+    else return;
+    save(); cpRender(); renderRail();
+  });
+}
+
+/* What the policy says, in the report. Built from the answers, in the order a
+   strategy states them, and silent about anything left blank rather than
+   asserting a limit the authority has not set. */
+function cpSectionHTML(){
+  const c = cpState();
+  const rows = CP_SECTORS.filter(s => (c.sec[s.k]||{}).cash || (c.sec[s.k]||{}).months);
+  if(!rows.length && !c.country) return "";
+  const basis = CP_BASIS.filter(b => c.basis[b.k]).map(b => b.t.toLowerCase());
+  const ags = Object.keys(c.agencies).filter(a => c.agencies[a]);
+  const instr = CP_INSTRUMENTS.filter(([k]) => c.instr[k]).map(([,t]) => t.toLowerCase());
+  const pools = CP_POOL_TYPES.filter(([k]) => c.pool[k]).map(([,t]) => t.toLowerCase());
+  const country = CP_COUNTRY.find(o => o.k === c.country);
+
+  let out = "";
+  if(rows.length){
+    out += `<table class="dtab"><thead><tr><th>Counterparty</th>
+      <th>Cash limit</th><th>Maximum duration</th></tr></thead><tbody>` +
+      rows.map(s => {
+        const v = c.sec[s.k] || {};
+        return `<tr><td>${esc(s.t)}</td>
+          <td>${v.cash ? "£" + esc(v.cash) + "m" : "—"}</td>
+          <td>${v.months ? esc(v.months) + " months" : "—"}</td></tr>`;
+      }).join("") + `</tbody></table>`;
+  }
+  if(basis.length)
+    out += `<p>Limits are applied ${basis.join(", ")}.` +
+      (c.basis.per_group ? ` Institutions under common ownership are treated as a single
+        counterparty.` : "") + `</p>`;
+  if(ags.length)
+    out += `<p>Counterparties are assessed on ratings from ${ags.join(", ")}, with a minimum
+      long-term rating of ${esc(c.ltrating)}` +
+      (c.mmfrating && c.mmfrating !== "same as above"
+        ? ` and a minimum of ${esc(c.mmfrating)} for money market funds` : "") + `.</p>`;
+  if(country)
+    out += `<p>${esc(natText(country.w.replace("[[FLOOR]]", c.floor)
+                                      .replace("[[PCT]]", c.pct)))}</p>`;
+  if(pools.length)
+    out += `<p>The authority may hold ${pools.join(", ")}. These funds have no defined
+      maturity date, so no duration limit is applied to them; exposure is controlled by the
+      cash limit and, where stated, by fund manager.</p>`;
+  if(c.split)
+    out += `<p>Investments are classified as specified or non-specified in accordance with
+      the statutory guidance` + (c.nonspec ? `, with non-specified investments limited in
+      aggregate to £${esc(c.nonspec)}m` : "") + `.</p>`;
+  if(instr.length)
+    out += `<p>The instruments approved for use are ${instr.join(", ")}.</p>`;
+  return out;
+}
+
+/* How complete the policy is, for the rail. Counts what has actually been
+   answered, never whether the step was opened. */
+function cpProgress(){
+  const c = cpState();
+  const limits = CP_SECTORS.filter(s => (c.sec[s.k]||{}).cash).length;
+  const parts = [limits > 0, !!c.country, Object.keys(c.agencies).some(a=>c.agencies[a]),
+                 Object.keys(c.instr).some(k=>c.instr[k])];
+  return {limits, done: parts.filter(Boolean).length, of: parts.length};
+}
+
+/* ===========================================================================
  * The assembled strategy. Sections in the order a TMS runs, the authority's
  * own commentary in place, our figures where we have them, and the five
  * indicators sitting in section 7 where the Code puts them.
@@ -3683,6 +4419,9 @@ function docSections(){
     return !sec || !sec.in || sec.in.indexOf(S.report) >= 0;
   };
   const all = [
+   {k:"counterparty", n:"CP", t:"Investment counterparty policy",
+    b: cpSectionHTML() || gap("the counterparty limits, credit criteria and country policy")},
+
    {k:"intro", n:"1", t:"Introduction",
     b: clausesFor("1") + (t("intro_body") ? para(t("intro_body")) : "")},
 
@@ -4161,8 +4900,9 @@ const STEPS = [
   {n:2, k:"portfolio", t:"What you hold", s:"debt and investments"},
   {n:3, k:"figures",   t:"Your figures", s:"the projection"},
   {n:4, k:"choices",   t:"Choices",      s:"which clauses apply"},
-  {n:5, k:"wording",   t:"Wording",      s:"the commentary"},
-  {n:6, k:"draft",     t:"The draft",    s:"read and export"}
+  {n:5, k:"counterparty", t:"Counterparty policy", s:"who you will lend to"},
+  {n:6, k:"wording",   t:"Wording",      s:"the commentary"},
+  {n:7, k:"draft",     t:"The draft",    s:"read and export"}
 ];
 let STEP = 1;
 
@@ -4189,6 +4929,18 @@ function stepStatus(k){
     if(nInv)   bits.push(`${nInv} investment holding${nInv===1?"":"s"}`);
     return {state: nLoans && nInv ? "done" : "part", note: bits.join(" · "),
             need: nInv ? null : "An investment portfolio is optional, but it fills the investment tables."};
+  }
+
+  if(k === "counterparty"){
+    const p = cpProgress();
+    if(!p.limits && !p.done) return {state:"", note:"No policy set",
+      need:"Set your counterparty limits — every question shows what 145 authorities publish."};
+    const bits = [];
+    if(p.limits) bits.push(`${p.limits} sector${p.limits===1?"":"s"} limited`);
+    if(S.cp && S.cp.country) bits.push("country policy set");
+    return {state: p.done === p.of ? "done" : "part",
+            note: bits.join(" · ") || "Partly set",
+            need: p.done === p.of ? null : "Credit criteria, country policy and instruments complete the section."};
   }
 
   if(k === "figures"){
@@ -4266,6 +5018,9 @@ function renderRail(){
 }
 
 function showStep(n){
+  // The policy step renders from state, so it is built on arrival rather than
+  // held in the DOM for six steps that never look at it.
+  if(n === 5 && typeof cpRender === "function") cpRender();
   STEP = Math.max(1, Math.min(STEPS.length, n));
   document.querySelectorAll("[data-step]").forEach(el => {
     el.hidden = (+el.dataset.step !== STEP);
@@ -4997,6 +5752,9 @@ function stampSaved(word){
 
   $("stamp").textContent = `${keys.length} authorities · loan book 3 Aug 2026`;
   fundTabs(); buildLedger(); loanRows(); renderSections(); render();
+  // The counterparty form is delegated from its container, so it is wired once
+  // here and survives every re-render of its own contents.
+  cpRender(); cpWire();
   wireSteps();
 })();
 
