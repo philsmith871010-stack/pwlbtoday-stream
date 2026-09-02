@@ -939,6 +939,11 @@ svg.ctip .hits rect{cursor:crosshair}
    Nobody starts a strategy from a blank page; they start from last year's.
    The offer names the operation before it runs, because a seed that silently
    replaces forty fields is a surprise rather than a convenience. */
+.issuedbox{margin-left:4px}
+.filebtn{padding:7px 12px;border-radius:var(--r-sm);border:1px solid var(--line2);
+  background:var(--paper);font-family:var(--sans);font-size:12.5px;cursor:pointer;
+  display:inline-block;line-height:1.25}
+.filebtn:hover{border-color:var(--accent)}
 .libbox{grid-column:1/-1;margin-top:14px;padding:14px 16px;border:1px solid var(--accent);
   border-radius:var(--r-sm);background:color-mix(in srgb, var(--accent) 4%, var(--card))}
 .libbox label{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--ink);
@@ -1207,8 +1212,14 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
     <div class="ltools" style="margin-top:12px">
       <button type="button" id="save">Save this version</button>
       <button type="button" id="restore">Restore</button>
-      <span class="sp"></span><span class="saved" id="saved"></span>
-    </div></div>
+      <label class="cpmini issuedbox"><input type="checkbox" id="issued">
+        Issued to members</label>
+      <span class="sp"></span>
+      <button type="button" id="libfile">Save to a file</button>
+      <label class="filebtn" for="libopen">Open a file</label>
+      <input type="file" id="libopen" accept=".json,application/json" hidden>
+    </div>
+    <span class="hintline" id="saved"></span></div>
   </section>
 
   <section class="panel" data-step="2">
@@ -1678,7 +1689,28 @@ function chart(d, spec){
   }
   const X=i=>P.l+iw*i/Math.max(1,d.length-1),
         Y=v=>P.t+ih-ih*(v-AXLO)/Math.max(1e-9,AXHI-AXLO);
-  const path=k=>d.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(V(p,k)).toFixed(1)).join(" ");
+  /* A MISSING POINT BREAKS THE LINE; IT DOES NOT DRAW A ZERO.
+   *
+   * The actual year-end prepended to each chart genuinely has no value for
+   * some series — the cross-fund position is computed over the projection,
+   * and an authorised limit is not something a closed year has. Mapping
+   * straight over the rows fed undefined into Y, which produced "M70.0,NaN"
+   * and made the browser discard the whole path: one missing point at the
+   * front silently deleted an entire series from the chart.
+   *
+   * A gap starts a new subpath, so the line simply begins where the data
+   * does. Drawing it down to zero instead would be worse than the crash —
+   * it would assert a figure nobody entered. */
+  const path=k=>{
+    let out = "", pen = false;
+    d.forEach((p,i)=>{
+      const v = V(p,k);
+      if(v == null || !isFinite(v)){ pen = false; return; }
+      out += (pen ? " L" : (out ? " M" : "M")) + X(i).toFixed(1) + "," + Y(v).toFixed(1);
+      pen = true;
+    });
+    return out;
+  };
   const gl=[];
   const ticks = [];
   if(gstep) for(let v = AXLO; v <= AXHI + gstep*1e-6; v += gstep) ticks.push(v);
@@ -1812,7 +1844,7 @@ function chart(d, spec){
       l.dash?` stroke-dasharray="${l.dash}"`:""}/>`).join("")}
     ${spec.lines.filter(l=>(l.w||2)>=2).map(l=>{
       const last=d[d.length-1];
-      return last && last[l.k]!=null
+      return last && last[l.k]!=null && isFinite(V(last,l.k))
         ? `<circle cx="${X(d.length-1).toFixed(1)}" cy="${Y(V(last,l.k)).toFixed(1)}" r="2.6"
              fill="${l.c}" stroke="var(--card)" stroke-width="1.4"/>` : "";}).join("")}
     ${tx.map(i=>`<text x="${X(i).toFixed(1)}" y="${H-7}" text-anchor="middle"
@@ -7135,6 +7167,94 @@ function priorLine(d){
 }
 
 /* ===========================================================================
+ * A version as a file, and a version that is finished.
+ *
+ * WHY A FILE AND NOT A DATABASE. The library holds 20KB a version against
+ * 12.8MB of headroom -- 642 reports fit, so capacity was never the problem.
+ * What browser storage cannot do is leave the browser: a team of three cannot
+ * share a draft, the section 151 officer cannot see what the accountant
+ * wrote, a new laptop starts empty, and clearing site data throws away a
+ * year of negotiated wording with no warning and nothing to restore from.
+ *
+ * A server would fix all of that and cost the thing the page currently
+ * promises in its first line -- no account, nothing leaves your browser --
+ * which is a real asset against advisers and not one to spend casually. It
+ * would also make us the controller of 300 councils' unpublished financial
+ * plans, which is a serious undertaking to enter by accident.
+ *
+ * A file fixes the same three problems and costs none of it. The council puts
+ * it on its own network drive, where its retention policy and its backups
+ * already apply, and mails it to a colleague like any other working paper.
+ *
+ * AND A VERSION THAT IS FINISHED IS DIFFERENT FROM ONE THAT IS SAVED. The
+ * report that went to committee is the one next year should start from and
+ * the one an outturn is measured against; a Tuesday-afternoon save of a
+ * half-finished draft is neither. Marking it issued says which is which, and
+ * the library offers an issued version ahead of a working one.
+ * ======================================================================== */
+const FILE_V = 1;
+
+function libFileName(){
+  const c = LB[S.gss] || {};
+  const who = (c.n || S.otherName || "authority").replace(/\W+/g, "-").toLowerCase();
+  return `${who}-${S.report}-${S.fy0}.pwlbreport.json`;
+}
+
+/* The whole version, plus enough to recognise it without opening it. */
+function libExport(){
+  const raw = localStorage.getItem(libKey(S.gss, S.report, S.fy0));
+  const body = raw ? JSON.parse(raw) : null;
+  const e = libFor(S.gss).find(x => x.k === libKey(S.gss, S.report, S.fy0)) || {};
+  return JSON.stringify({
+    f: "pwlbreport", v: FILE_V,
+    n: (LB[S.gss] || {}).n || S.otherName || "",
+    report: S.report, fy0: S.fy0, issued: !!e.issued,
+    at: new Date().toISOString(),
+    body: body
+  }, null, 1);
+}
+
+/* Read one back. Refuses anything that is not one of ours rather than
+   half-loading it: a file that silently produces an empty report is worse
+   than one that is turned away. */
+function libImport(text){
+  let d;
+  try { d = JSON.parse(text); }
+  catch(e){ return {ok:false, note:"That file is not readable as a saved report."}; }
+  if(!d || d.f !== "pwlbreport" || !d.body)
+    return {ok:false, note:"That is not a PWLBreports version file."};
+  if(d.v > FILE_V)
+    return {ok:false, note:"That file was written by a newer version of the tool."};
+  const gss = d.body.gss || S.gss;
+  const key = libKey(gss, d.report, d.fy0);
+  try { localStorage.setItem(key, JSON.stringify(d.body)); }
+  catch(e){ return {ok:false, note:"Browser storage refused it — it may be full."}; }
+  const ix = libRead().filter(x => x.k !== key);
+  ix.unshift({k:key, gss, report:d.report, fy0:d.fy0,
+              n: d.n || "your authority", at: d.at || new Date().toISOString(),
+              issued: !!d.issued, hra: d.body.hra});
+  libWrite(ix);
+  const rep = (REPORTS.find(r => r.k === d.report) || {}).t || d.report;
+  return {ok:true, gss, report:d.report, fy0:d.fy0,
+          note: `Loaded ${esc(d.n || "a report")} — ${esc(rep)} ${fy(d.fy0)}`
+              + (d.issued ? ", marked as issued" : "") + ". It is in the list above."};
+}
+
+/* Issued: the version that actually went to members. */
+function libIssue(k, on){
+  const ix = libRead();
+  const e = ix.find(x => x.k === k);
+  if(!e) return;
+  e.issued = !!on;
+  e.issuedAt = on ? new Date().toISOString() : null;
+  libWrite(ix);
+}
+function libIsIssued(){
+  const e = libRead().find(x => x.k === libKey(S.gss, S.report, S.fy0));
+  return !!(e && e.issued);
+}
+
+/* ===========================================================================
  * The check.
  *
  * A read-only pass over the draft you have actually built, against the
@@ -7946,7 +8066,8 @@ function saveVersion(){
       logo:S.logo, asAt:S.asAt, minliq:S.minliq, cp:S.cp, prior:S.prior,
       otherName:S.otherName, natOverride:S.natOverride,
       at:new Date().toISOString()}));
-    libNote(S.gss, S.report, S.fy0, {hra:S.hra});
+    // Saving again does not un-issue what was already issued.
+    libNote(S.gss, S.report, S.fy0, {hra:S.hra, issued: libIsIssued()});
     if(typeof libFill === "function") libFill();
     stampSaved("Saved");
   }catch(e){ $("saved").textContent = "Could not save — browser storage is unavailable."; }
@@ -8078,7 +8199,8 @@ function stampSaved(word){
     if(c && c.l) S.loans.unshift({pwlb:true,name:"PWLB",amt:c.o,profile:"actual"});
     if(S.gss === "other") S.natOverride = $("otherreg").value;
     else S.natOverride = null;
-    otherShown(); loanRows(); applyLoans(); renderSections(); libFill(); });
+    otherShown(); loanRows(); applyLoans(); renderSections(); libFill();
+    $("issued").checked = libIsIssued(); });
   $("othername").addEventListener("input", e=>{
     LB.other.n = e.target.value.trim(); S.otherName = LB.other.n; render(); });
   $("otherreg").addEventListener("change", e=>{
@@ -8579,11 +8701,15 @@ function stampSaved(word){
   function libFill(){
     const box = $("libbox"), pick = $("libpick");
     if(!box || !pick) return;
-    const mine = libFor(S.gss).filter(e => !(e.report === S.report && e.fy0 === S.fy0));
+    /* An issued version is offered ahead of a working save of the same
+       report: the one that went to members is the one to start from. */
+    const mine = libFor(S.gss).filter(e => !(e.report === S.report && e.fy0 === S.fy0))
+      .sort((a,b) => (b.issued?1:0) - (a.issued?1:0));
     box.hidden = !mine.length;
     if(!mine.length){ $("libwhat").textContent = ""; return; }
     pick.innerHTML = mine.map(e =>
-      `<option value="${esc(e.k)}">${esc(libOffer(e).label)}</option>`).join("");
+      `<option value="${esc(e.k)}">${esc(libOffer(e).label)}${
+        e.issued ? " · issued" : ""}</option>`).join("");
     libSay();
   }
   function libSay(){
@@ -8603,6 +8729,52 @@ function stampSaved(word){
   });
   window.libFill = libFill;
 
+  /* A version as a file: the council's own network drive, its own retention
+     policy, its own backups — and a colleague can open it. */
+  $("libfile").addEventListener("click", async ()=>{
+    const data = libExport();
+    if(!JSON.parse(data).body){
+      $("saved").textContent = "Save this version first, then it can go to a file."; return; }
+    const name = libFileName();
+    if(DOWNLOADS){
+      try{ await DOWNLOADS.save({filename:name, data});
+           $("saved").textContent = `Saved as ${name}.`; }
+      catch(err){ $("saved").textContent = (err && err.code) === "declined"
+        ? "Save cancelled." : "Saving is not available here."; }
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([data], {type:"application/json"}));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+    $("saved").textContent = `Downloading ${name}.`;
+  });
+  $("libopen").addEventListener("change", e=>{
+    const f = e.target.files && e.target.files[0];
+    if(!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      const r = libImport(String(rd.result));
+      $("saved").innerHTML = r.note;
+      if(r.ok) libFill();
+    };
+    rd.onerror = () => { $("saved").textContent = "That file could not be read."; };
+    rd.readAsText(f);
+    e.target.value = "";
+  });
+  $("issued").addEventListener("change", e=>{
+    const k = KEY();
+    if(!localStorage.getItem(k)){
+      e.target.checked = false;
+      $("saved").textContent = "Save this version before marking it issued."; return;
+    }
+    libIssue(k, e.target.checked);
+    $("saved").textContent = e.target.checked
+      ? "Marked as issued. Next year's report will start from this one."
+      : "No longer marked as issued.";
+    libFill();
+  });
   $("save").addEventListener("click", saveVersion);
   $("restore").addEventListener("click", restoreVersion);
   // The indicator picker lives inside the rendered draft, so it is delegated.
