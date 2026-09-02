@@ -7339,6 +7339,52 @@ const CHECKS = [
        : {v:"yours", note:"No earlier report is saved in this browser to compare with. Save "
           + "this one and the next will start from it."};
    }},
+  {k:"actual", src:"PC S7 / TMC LB", g:"Indicators", in:CK_ALL,
+   t:"The tables and charts commence with the most recent actual year-end",
+   run(){
+     const a = (typeof actualRow === "function")
+       ? actualRow(S, S.hra === "no" ? "gf" : "all") : null;
+     return a
+       ? {v:"met", note:`${fy(a.fy)} is entered, so every chart starts there. `
+          + `Taken from the statement of accounts, which is where the Code asks for it.`}
+       : {v:"gap", go:6, note:`Not entered, so the charts commence at ${fy(S.fy0)} — the `
+          + `first projected year. The consultation asks that they start at the most recent `
+          + `actual year-end, with the figures from the statement of accounts.`};
+   }},
+  {k:"pi", src:"PC S5", g:"Indicators", in:CK_ALL,
+   t:"The four prudential indicators carry a previous-year actual beside the estimates",
+   run(){
+     const a = (typeof actualRow === "function")
+       ? actualRow(S, S.hra === "no" ? "gf" : "all") : null;
+     const d = buildModel(S, S.hra === "no" ? "gf" : "all");
+     const est = d.filter(r => r.cfr || r.capex).length;
+     if(!a) return {v:"gap", go:6, note:"Capital expenditure, the capital financing "
+       + "requirement and both ratios are shown, but with no previous year beside them. "
+       + "Section 5 asks for the actual total for the previous year and then estimates "
+       + "for this year, the next and at least the two after."};
+     return est >= 4
+       ? {v:"met", note:"An actual and four estimates, split by fund where there is an HRA."}
+       : {v:"gap", go:3, note:`Only ${est} estimated year${est===1?"":"s"} are entered; the `
+          + `Code asks for the current year, the forthcoming year and at least the two after.`};
+   }},
+  {k:"group", src:"PC S4", g:"Indicators", in:CK_ALL,
+   t:"Group undertakings are considered, and reported where they are significant",
+   run(){
+     if(typeof groupOn !== "function") return {v:"yours", note:"Not assessed."};
+     if(!groupOn()) return {v:"yours", note:"No significant group undertakings are declared, "
+       + "so no separate suite is produced. Whether an authority HAS significant group "
+       + "undertakings — particularly where there is on-lending to subsidiaries — is its "
+       + "own judgement, and the tool cannot make it."};
+     const c = groupCalc(buildModel(S, "gf"));
+     const weak = c.cos.filter(x => (+x.intra || 0) > 0
+                               && (+x.income || 0) / (+x.intra || 1) < 1);
+     return {v:"met", note:`${c.cos.length} compan${c.cos.length===1?"y":"ies"} reported`
+       + (weak.length ? `. ${weak.length} ${weak.length===1?"is":"are"} not covering what `
+          + `${weak.length===1?"it pays":"they pay"} the authority from ${weak.length===1
+          ?"its":"their"} own operations — which is the position the separate suite exists `
+          + `to surface.` : `, all covering what they pay the authority from their own `
+          + `operations.`)};
+   }},
   {k:"wording", src:"TMC", g:"The document", in:CK_ALL,
    t:"Every section this report needs has been written",
    run(){
@@ -8326,6 +8372,41 @@ function stampSaved(word){
           S.perf[k].hra = r1(S.perf[k].actual * sh);
       });
     }
+    /* THE ACTUAL YEAR-END, WHICH THE CHARTS NOW COMMENCE FROM.
+     *
+     * Without it the demonstration shows the one thing the consultation is
+     * most explicit about — "the table and charts should commence with the
+     * most recent actual year-end position" — as an empty table, and every
+     * chart starts at the projected year exactly as it did before the work.
+     * A demonstration that does not demonstrate the newest half of the tool
+     * is worse than none: it says the feature is not there.
+     *
+     * Derived from the first projected year rather than typed, so it moves
+     * with whichever authority is picked: a year further back on the CFR, a
+     * little less debt, and the same shape of revenue account. */
+    const back = (k, f) => r1((S.g[f] ? S.g[f][k][0] : 0) * 0.95);
+    S.actual = {gf: {
+      cfr: back("cfr","gf"), obs: back("obs","gf"), loans: back("loans","gf"),
+      inv: r1(pot), liq: S.g.gf.liq[0] || 0, capex: r1((S.g.gf.capex[1]||0) * 0.9),
+      mrp: r1((S.g.gf.mrp[1]||0) * 0.95), intpay: r1(dbt * 0.039),
+      intinc: r1(pot * 0.036), nrs: r1((S.g.gf.nrs[0]||0) * 0.97),
+      comminc: r1((S.g.gf.comminc[0]||0) * 0.95)}};
+    if(S.hra !== "no") S.actual.hra = {
+      cfr: back("cfr","hra"), obs: back("obs","hra"), loans: back("loans","hra"),
+      capex: r1((S.g.hra.capex[1]||0) * 0.9), mrp: r1((S.g.hra.mrp[1]||0) * 0.95),
+      intpay: r1((S.g.hra.intpay[1]||0) * 0.95), nrs: r1((S.g.hra.nrs[0]||0) * 0.97)};
+
+    /* And a group, because a demonstration of the group indicators needs a
+       company that is NOT covering what it pays the authority. Annex 1's
+       whole argument is invisible if every subsidiary is healthy. */
+    S.group = {on:true, cos:[
+      {n:"Housing Development Company", intra: r1(pot*0.14), income: r1(pot*0.21),
+       debtcost: r1(pot*0.05)},
+      {n:"Energy Services Ltd",         intra: r1(pot*0.07), income: r1(pot*0.03),
+       debtcost: 0},
+      {n:"Regeneration LLP",            intra: r1(pot*0.05), income: r1(pot*0.09),
+       debtcost: r1(pot*0.02)}]};
+
     S.minliq = S.g.gf.liq[0] || null;
     if($("minliq")) $("minliq").value = S.minliq == null ? "" : S.minliq;
 
