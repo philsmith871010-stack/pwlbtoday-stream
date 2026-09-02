@@ -1032,7 +1032,38 @@ svg.ctip .hits rect{cursor:crosshair}
 .pbtn.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .picker .pnote{flex:1 1 100%;font-family:var(--sans);font-size:11.5px;color:var(--muted);
   margin-top:2px}
-@media print{.no-print{display:none}}
+/* ---- PRINT ----------------------------------------------------------------
+ * This document goes to a committee on paper. What was here was one rule
+ * hiding .no-print, no page-break control at all, and a step rail that
+ * printed at the top of the first page.
+ *
+ * A treasury report printed with a chart split across a page break, or a
+ * five-year indicator table with its heading on one sheet and its figures on
+ * the next, is not a document anybody wants to hand round a table.
+ */
+@media print{
+  .no-print{display:none !important}
+  /* The workspace is not the document. Only the draft prints. */
+  .railwrap, .rail, .stepnav, .phead, .pv, .askbox, .pvveil, .libbox,
+  .cpsurv-modal, .toast, .ltools, .picker, #stepwrap > .panel:not(.doc){display:none !important}
+  .shell{max-width:none;padding:0}
+  .panel.doc{border:0;box-shadow:none;padding:0;background:transparent}
+  .doc .toc, .doc .warn{display:none}
+
+  /* Nothing that has to be read as one piece may be cut in half. */
+  .chartwrap, .legend, .otable, .readout, .barwrap, .cptable,
+  .perfwrap, .asklist{break-inside:avoid; page-break-inside:avoid}
+  .dsec{break-inside:auto}
+  h2, h3, h4, .dsec > h3{break-after:avoid; page-break-after:avoid}
+  tr, .barrow, .cprow{break-inside:avoid; page-break-inside:avoid}
+  thead{display:table-header-group}
+
+  /* A chart is mostly colour. Browsers drop backgrounds when printing unless
+     told not to, which would take the shaded bands and every bar with them. */
+  *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  body{background:#fff}
+  @page{margin:16mm 14mm}
+}
 /* A message you cannot miss. The step you are on decides which notes are on
    screen, so anything worth saying goes here as well. */
 .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:120;
