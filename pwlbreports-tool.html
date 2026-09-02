@@ -7192,25 +7192,43 @@ function priorLine(d){
  * half-finished draft is neither. Marking it issued says which is which, and
  * the library offers an issued version ahead of a working one.
  * ======================================================================== */
-const FILE_V = 1;
+const FILE_V = 2;
 
+/* ONE FILE FOR THE COUNCIL, NOT ONE PER REPORT.
+ *
+ * A file per version means a growing pile on the network drive and a
+ * colleague having to be sent four of them — and, worse, opening one gives
+ * you a library of exactly one report, so there is nothing for the next
+ * report to start FROM. The point of keeping versions was that last year's
+ * seeds this year's, and a single-version file quietly takes that away.
+ *
+ * So the file is the authority's whole treasury reporting history: every
+ * strategy, outturn, mid-year and monitoring report it has written here. Open
+ * it on any machine and the library is back, with the roll-forward and
+ * monitor-against offers already available.
+ *
+ * A version 1 file — a single report — is still read, because some may exist.
+ * It arrives as a library of one rather than being refused.
+ */
 function libFileName(){
   const c = LB[S.gss] || {};
   const who = (c.n || S.otherName || "authority").replace(/\W+/g, "-").toLowerCase();
-  return `${who}-${S.report}-${S.fy0}.pwlbreport.json`;
+  return `${who}-treasury-reports.json`;
 }
 
-/* The whole version, plus enough to recognise it without opening it. */
 function libExport(){
-  const raw = localStorage.getItem(libKey(S.gss, S.report, S.fy0));
-  const body = raw ? JSON.parse(raw) : null;
-  const e = libFor(S.gss).find(x => x.k === libKey(S.gss, S.report, S.fy0)) || {};
+  const mine = libFor(S.gss);
+  const versions = mine.map(e => {
+    const raw = localStorage.getItem(e.k);
+    return raw ? {report:e.report, fy0:e.fy0, issued:!!e.issued, at:e.at,
+                  body:JSON.parse(raw)} : null;
+  }).filter(Boolean);
   return JSON.stringify({
     f: "pwlbreport", v: FILE_V,
     n: (LB[S.gss] || {}).n || S.otherName || "",
-    report: S.report, fy0: S.fy0, issued: !!e.issued,
+    gss: S.gss,
     at: new Date().toISOString(),
-    body: body
+    versions
   }, null, 1);
 }
 
@@ -7221,23 +7239,36 @@ function libImport(text){
   let d;
   try { d = JSON.parse(text); }
   catch(e){ return {ok:false, note:"That file is not readable as a saved report."}; }
-  if(!d || d.f !== "pwlbreport" || !d.body)
-    return {ok:false, note:"That is not a PWLBreports version file."};
-  if(d.v > FILE_V)
-    return {ok:false, note:"That file was written by a newer version of the tool."};
-  const gss = d.body.gss || S.gss;
-  const key = libKey(gss, d.report, d.fy0);
-  try { localStorage.setItem(key, JSON.stringify(d.body)); }
-  catch(e){ return {ok:false, note:"Browser storage refused it — it may be full."}; }
-  const ix = libRead().filter(x => x.k !== key);
-  ix.unshift({k:key, gss, report:d.report, fy0:d.fy0,
-              n: d.n || "your authority", at: d.at || new Date().toISOString(),
-              issued: !!d.issued, hra: d.body.hra});
+  if(!d || d.f !== "pwlbreport") return {ok:false, note:"That is not a PWLBreports file."};
+  if(d.v > FILE_V) return {ok:false, note:"That file was written by a newer version of the tool."};
+
+  // A version 1 file is a single report; a version 2 file is the whole history.
+  const list = Array.isArray(d.versions) ? d.versions
+             : d.body ? [{report:d.report, fy0:d.fy0, issued:!!d.issued, at:d.at, body:d.body}]
+             : null;
+  if(!list || !list.length) return {ok:false, note:"That file contains no reports."};
+
+  const ix = libRead();
+  let n = 0, issued = 0;
+  list.forEach(x => {
+    if(!x || !x.body) return;
+    const gss = x.body.gss || d.gss || S.gss;
+    const key = libKey(gss, x.report, x.fy0);
+    try { localStorage.setItem(key, JSON.stringify(x.body)); }
+    catch(e){ return; }
+    const at = ix.findIndex(y => y.k === key);
+    if(at >= 0) ix.splice(at, 1);
+    ix.unshift({k:key, gss, report:x.report, fy0:x.fy0,
+                n: d.n || "your authority", at: x.at || d.at || new Date().toISOString(),
+                issued: !!x.issued, hra: x.body.hra});
+    n++; if(x.issued) issued++;
+  });
+  if(!n) return {ok:false, note:"Nothing in that file could be stored — storage may be full."};
   libWrite(ix);
-  const rep = (REPORTS.find(r => r.k === d.report) || {}).t || d.report;
-  return {ok:true, gss, report:d.report, fy0:d.fy0,
-          note: `Loaded ${esc(d.n || "a report")} — ${esc(rep)} ${fy(d.fy0)}`
-              + (d.issued ? ", marked as issued" : "") + ". It is in the list above."};
+  return {ok:true, n,
+          note: `Loaded ${n} report${n===1?"":"s"} for ${esc(d.n || "that authority")}`
+              + (issued ? `, ${issued} marked as issued` : "")
+              + ". They are in the list above, ready to start from."};
 }
 
 /* Issued: the version that actually went to members. */
@@ -8733,12 +8764,14 @@ function stampSaved(word){
      policy, its own backups — and a colleague can open it. */
   $("libfile").addEventListener("click", async ()=>{
     const data = libExport();
-    if(!JSON.parse(data).body){
-      $("saved").textContent = "Save this version first, then it can go to a file."; return; }
+    const nv = (JSON.parse(data).versions || []).length;
+    if(!nv){
+      $("saved").textContent = "Save a version first, then the file has something to carry.";
+      return; }
     const name = libFileName();
     if(DOWNLOADS){
       try{ await DOWNLOADS.save({filename:name, data});
-           $("saved").textContent = `Saved as ${name}.`; }
+           $("saved").textContent = `Saved ${nv} report${nv===1?"":"s"} as ${name}.`; }
       catch(err){ $("saved").textContent = (err && err.code) === "declined"
         ? "Save cancelled." : "Saving is not available here."; }
       return;
@@ -8748,7 +8781,7 @@ function stampSaved(word){
     a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
-    $("saved").textContent = `Downloading ${name}.`;
+    $("saved").textContent = `Downloading ${name} — ${nv} report${nv===1?"":"s"}.`;
   });
   $("libopen").addEventListener("change", e=>{
     const f = e.target.files && e.target.files[0];
