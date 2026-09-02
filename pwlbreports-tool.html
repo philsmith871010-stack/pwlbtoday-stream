@@ -1183,6 +1183,17 @@ const NATIONS = {
     mrpGuidance:"the statutory guidance on minimum revenue provision",
     invGuidance:"the statutory guidance on local government investments issued under section 15(1)(a) of that Act"
   },
+  combined: {
+    n:"England",
+    officer:"section 73 officer",
+    act:"the Local Government Act 2003",
+    regs:"the Local Authorities (Capital Finance and Accounting) (England) Regulations 2003",
+    mrp:"minimum revenue provision",
+    mrpCap:"Minimum revenue provision",
+    mrpTitle:"Minimum revenue provision",
+    mrpGuidance:"the statutory guidance on minimum revenue provision",
+    invGuidance:"the statutory guidance on local government investments issued under section 15(1)(a) of that Act"
+  },
   wales: {
     n:"Wales",
     officer:"section 151 officer",
@@ -1209,8 +1220,27 @@ const NATIONS = {
 
 /* The GSS code carries the country in its first letter, and it is the only
    thing about an authority we can be certain of without asking. */
+/* A combined authority is in England but its finance officer is not a section
+   151 officer: the duty reaches it through section 73 of the Local Government
+   Act 1985, which is why the sector says "section 73 officer" for combined and
+   joint authorities. Their GSS codes begin E47, so the test is on the code
+   rather than on the name.
+
+   VERIFIED FOR THREE OF THE FOUR. Across the papers held, English and Welsh
+   authorities cite section 151 in 656 documents and none cites section 95;
+   Scottish authorities cite section 95 and never section 151. The E47 case is
+   NOT verified against the corpus, because it holds no combined authority
+   papers at all -- the sweep covers councils. It is written from the statute
+   and should be checked against a real combined authority strategy before
+   anyone relies on it.
+
+   Nor can it arise yet: the loan book ships E06 to E10, W06 and S12 only, so
+   no combined authority is selectable. This is here so that adding them is a
+   data change rather than a law change. */
 function nationOf(gss){
-  const c = String(gss||"").charAt(0).toUpperCase();
+  const g = String(gss||"").toUpperCase();
+  if(g.startsWith("E47")) return "combined";
+  const c = g.charAt(0);
   if(c === "S") return "scotland";
   if(c === "W") return "wales";
   return "england";
