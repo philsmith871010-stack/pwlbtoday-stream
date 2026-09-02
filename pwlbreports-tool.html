@@ -4984,11 +4984,21 @@ function renderSections(){
     }));
   const gon = $("secbody").querySelector("#groupon");
   if(gon) gon.addEventListener("change", e=>{
-    S.group = S.group || {}; S.group.on = e.target.checked; renderSections(); render(); });
-  $("secbody").querySelectorAll("[data-gp]").forEach(el=>
+    S.group = S.group || {}; S.group.on = e.target.checked;
+    if(S.group.on && !(S.group.cos||[]).length)
+      S.group.cos = [{n:"",intra:null,income:null,debtcost:null}];
+    renderSections(); render(); });
+  const gadd = $("secbody").querySelector("#groupadd");
+  if(gadd) gadd.addEventListener("click", ()=>{
+    S.group.cos = (S.group.cos||[]).concat([{n:"",intra:null,income:null,debtcost:null}]);
+    renderSections(); render(); });
+  $("secbody").querySelectorAll("[data-grm]").forEach(b=>
+    b.addEventListener("click", e=>{
+      S.group.cos.splice(+e.target.dataset.grm, 1); renderSections(); render(); }));
+  $("secbody").querySelectorAll("[data-gc]").forEach(el=>
     el.addEventListener("input", e=>{
-      const v=e.target.value.trim();
-      S.group[e.target.dataset.gp] = (v==="") ? null : num(v);
+      const k=e.target.dataset.gc, i=+e.target.dataset.gi, v=e.target.value;
+      S.group.cos[i][k] = (k === "n") ? v : (v.trim()==="" ? null : num(v));
       clearTimeout(S._g); S._g=setTimeout(()=>{ renderSections(); render(); }, 600);
     }));
   $("secbody").querySelectorAll("[data-p]").forEach(el=>
@@ -6167,7 +6177,12 @@ function docSections(){
   // Keep only what this report type carries, then renumber so the draft reads
   // 1, 2, 3 rather than skipping to 3b — a numbering gap looks like a mistake
   // even when it is a deliberate omission.
-  const kept = all.filter(x => (!x.k || IN(x.k)) && WANT(x));
+  /* A NUMBERED HEADING WITH NOTHING UNDER IT IS WORSE THAN NO SECTION. The
+     group section returns nothing at all where an authority has no group
+     undertakings, and it was still being numbered and printed — an empty
+     "13 Group indicators" that a reader has to interpret. */
+  const kept = all.filter(x => (!x.k || IN(x.k)) && WANT(x)
+                            && String(x.b || "").trim() !== "");
   // Recommendations, the summary and the implications tail are not numbered
   // sections of the strategy: they are the report that carries it. Numbering
   // them would put "1. Recommendations" above "2. Introduction" and shift
@@ -6689,25 +6704,43 @@ function piTable(d, fund){
       <b>not</b> netted off.</p>`;
 }
 
-/* ---- the group ---------------------------------------------------------- */
+/* ---- the group ----------------------------------------------------------
+ * SEVERAL COMPANIES, NOT ONE.
+ *
+ * The first version asked for three totals: income from your subsidiaries,
+ * their income from third parties, and the cost of their debt. An authority
+ * with four companies would have had to add them up by hand — and adding them
+ * up destroys the thing the indicator exists to show. Annex 1's whole point
+ * is that ONE subsidiary can stop performing while the group total still
+ * looks tolerable; a single blended row hides exactly what the separate suite
+ * was proposed to reveal.
+ *
+ * So the authority names each company and enters its figures, the indicators
+ * are computed on the sum as the Code requires, and the companies are listed
+ * beneath so a reader can see which one carries the risk.
+ */
 function groupOn(){ const G = S.group || {}; return !!G.on; }
+function groupCos(){ return ((S.group || {}).cos || []).filter(c => c && (c.n || c.intra
+  || c.income || c.debtcost)); }
 
-/* Annex 1, exactly. Council financing costs plus any third-party subsidiary
-   debt the authority stands behind; the net revenue stream with intra-group
-   income taken out and the subsidiaries' own external income put in. */
+/* Annex 1, exactly, summed over however many companies there are. Council
+   financing costs plus any third-party subsidiary debt the authority stands
+   behind; the net revenue stream with intra-group income taken out and the
+   subsidiaries' own external income put in. */
 function groupCalc(d){
-  const G = S.group || {}, y = d[0] || {};
-  const n = k => +G[k] || 0;
-  const single = {
-    fin: y.fincost, nrs: y.nrs, sc: y.comminc,
-    finR: y.afford, scR: y.commratio
-  };
-  const fin = (y.fincost || 0) + n("subdebtcost");
-  const nrs = (y.nrs || 0) - n("intra") + n("subincome");
-  const sc  = n("subincome") + Math.max(0, (y.comminc || 0) - n("intra"));
-  return {single, group: {fin, nrs, sc,
-    finR: nrs > 0 ? fin / nrs * 100 : null,
-    scR:  nrs > 0 ? sc  / nrs * 100 : null}};
+  const y = d[0] || {};
+  const cos = groupCos();
+  const sum = k => cos.reduce((a, c) => a + (+c[k] || 0), 0);
+  const intra = sum("intra"), income = sum("income"), debtcost = sum("debtcost");
+  const single = {fin: y.fincost, nrs: y.nrs, sc: y.comminc,
+                  finR: y.afford, scR: y.commratio};
+  const fin = (y.fincost || 0) + debtcost;
+  const nrs = (y.nrs || 0) - intra + income;
+  const sc  = income + Math.max(0, (y.comminc || 0) - intra);
+  return {single, cos, intra, income, debtcost,
+    group: {fin, nrs, sc,
+      finR: nrs > 0 ? fin / nrs * 100 : null,
+      scR:  nrs > 0 ? sc  / nrs * 100 : null}};
 }
 
 function groupTable(d){
@@ -6727,12 +6760,36 @@ function groupTable(d){
       <tr class="key"><td class="w">Service and commercial income to net revenue stream</td>
           <td>${pc(c.single.scR)}</td><td>${pc(c.group.scR)}</td></tr>
     </tbody></table></div>
+    ${groupCoTable(c)}
     <p class="note">Income the authority receives from its own subsidiaries is an
       intra-group transfer and is excluded from the group figures; the subsidiaries'
       income from third parties is included, as is any third-party debt held by a
       subsidiary for which the authority is ultimately responsible. Where a subsidiary
       stops performing, the group ratio moves and the single-entity ratio does not —
       which is what the separate suite is for.</p>`;
+}
+
+/* The companies behind the total. The indicators are the group's, but the
+   risk sits in a particular company, and a reader who cannot see which one
+   has been given a number instead of an answer. */
+function groupCoTable(c){
+  if(c.cos.length < 2) return "";
+  const m = v => "£" + m1(+v || 0) + "m";
+  return `<div style="overflow-x:auto"><table class="otable"><thead><tr>
+      <th>Company</th><th>Paid to the authority</th><th>Income from third parties</th>
+      <th>Cover</th><th>Third-party debt cost</th></tr></thead>
+    <tbody>${c.cos.map(x => {
+      const paid = +x.intra || 0, ext = +x.income || 0;
+      const cover = paid > 0 ? ext / paid : null;
+      return `<tr><td class="w">${esc(x.n || "Unnamed company")}</td>
+        <td>${m(paid)}</td><td>${m(ext)}</td>
+        <td${cover != null && cover < 1 ? ' class="bad"' : ""}>${
+          cover == null ? "–" : cover.toFixed(2) + "\u00d7"}</td>
+        <td>${m(x.debtcost)}</td></tr>`;
+    }).join("")}</tbody></table></div>
+    <p class="note">Cover is what a company earns from third parties against what it pays
+      the authority. Below 1.0 it is not covering that payment from its own operations,
+      which is the position Annex 1 of the consultation illustrates.</p>`;
 }
 
 /* ---- the inputs ---------------------------------------------------------
@@ -6774,16 +6831,32 @@ function actualPanel(){
 
 function groupPanel(){
   const G = S.group || (S.group = {});
-  return `<label class="cpmini"><input type="checkbox" id="groupon" ${G.on?"checked":""}>
+  G.cos = G.cos || [];
+  if(!G.on) return `<label class="cpmini"><input type="checkbox" id="groupon">
       This authority has significant group undertakings</label>
-    ${!G.on ? `<p class="cpsub">The Code asks for a separate suite of indicators only where
-      there are. Most authorities have none, and are not asked.</p>` : `
+    <p class="cpsub">The Code asks for a separate suite of indicators only where there are.
+      Most authorities have none, and are not asked.</p>`;
+  return `<label class="cpmini"><input type="checkbox" id="groupon" checked>
+      This authority has significant group undertakings</label>
+    <p class="cpsub">One row per company. The indicators are computed on the group as a
+      whole, as the Code requires, and the companies are listed beneath them in the report
+      so a reader can see which one carries the risk — a single blended row would hide
+      exactly what the separate suite is for.</p>
     <div class="perfwrap"><table class="perf">
-      <tbody>${GROUP_IN.map(x => `<tr>
-        <td class="pl"><b>${esc(x.l)}</b><span>${esc(x.s)}</span></td>
-        <td><input type="text" inputmode="decimal" data-gp="${x.k}"
-          value="${G[x.k] == null ? "" : G[x.k]}" placeholder="£m"
-          aria-label="${esc(x.l)}"></td></tr>`).join("")}</tbody></table></div>`}`;
+      <thead><tr><th>Company</th><th>Paid to the authority</th>
+        <th>Income from third parties</th><th>Third-party debt cost</th><th></th></tr></thead>
+      <tbody>${G.cos.map((c, i) => `<tr>
+        <td><input type="text" data-gc="n" data-gi="${i}" value="${esc(c.n || "")}"
+          placeholder="name" aria-label="Company name"></td>
+        ${["intra","income","debtcost"].map(k => `<td><input type="text" inputmode="decimal"
+          data-gc="${k}" data-gi="${i}" value="${c[k] == null ? "" : c[k]}"
+          placeholder="£m" aria-label="${k}"></td>`).join("")}
+        <td><button type="button" class="rm" data-grm="${i}" aria-label="Remove">\u00d7</button></td>
+      </tr>`).join("")}</tbody></table></div>
+    <div class="ltools"><button type="button" id="groupadd">Add a company</button>
+      <span class="hintline">"Paid to the authority" is the intra-group transfer that comes
+        out of the group figures. "Income from third parties" is what the group actually
+        earns from outside itself.</span></div>`;
 }
 
 /* ===========================================================================
