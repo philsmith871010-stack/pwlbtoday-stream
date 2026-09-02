@@ -745,6 +745,8 @@ table.pwlbtab td.num,table.pwlbtab th.num{text-align:right}
   color:var(--ink);padding:12px 2px 4px;letter-spacing:.002em}
 .legend span{display:flex;align-items:center;gap:6px}
 .legend i{width:18px;height:3px;border-radius:2px;flex:none}
+.legend i.lfill{width:20px;height:10px;border-radius:2px}
+.legend .lsw{flex:none}
 .otable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;
   font-variant-numeric:tabular-nums;margin-top:8px}
 .otable th,.otable td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--hair);
@@ -815,8 +817,19 @@ svg.ctip .hits rect{cursor:crosshair}
    .otable and .readout wholesale — it is the report's own block, not a
    lookalike — so there is nothing here but the frame around it and the
    enlarged state. */
-.ltop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.ltop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .ltop .sp{flex:1;min-width:8px}
+/* The two Excel buttons. They were bare <button>s taking the browser's own
+   styling next to a styled fund tab, which read as unfinished. A pair, in the
+   direction the data moves: an arrow in, an arrow out. Paste carries the
+   accent because it is the way in -- almost nobody types fifty years. */
+.xb{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans);font-size:12.5px;
+  font-weight:600;padding:7px 13px;border-radius:var(--r-sm);border:1px solid var(--line2);
+  background:var(--card);color:var(--ink2);cursor:pointer;white-space:nowrap}
+.xb:hover{border-color:var(--accent);color:var(--accent)}
+.xb .ar{font-size:13px;line-height:1;opacity:.75}
+.xb.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.xb.on:hover{color:var(--on-accent);opacity:.92}
 .hintline:empty{display:none}
 .pv{margin-top:26px;border-top:1px solid var(--line);padding-top:18px}
 .pvhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
@@ -1099,8 +1112,8 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
       <div class="ltop">
         <div class="fundtabs" id="fundtabs" role="group" aria-label="Fund"></div>
         <span class="sp"></span>
-        <button type="button" id="pastex">Paste from Excel</button>
-        <button type="button" id="copyx">Copy for Excel</button>
+        <button type="button" class="xb on" id="pastex"><span class="ar">↓</span>Paste from Excel</button>
+        <button type="button" class="xb" id="copyx"><span class="ar">↑</span>Copy for Excel</button>
       </div>
       <span class="hintline" id="xhint"></span>
       <div class="pastebox" id="xpaste" hidden>
@@ -1567,8 +1580,33 @@ function chart(d, spec){
   document.addEventListener("mouseleave", kill, true);
   window.addEventListener("scroll", kill, {passive:true});
 })();
+/* A LEGEND MUST LOOK LIKE THE LINE IT NAMES.
+ *
+ * Every swatch was a solid bar, so four dashed series on one chart -- other
+ * balance sheet items, the authorised limit, existing investments, the
+ * cross-fund line -- were indistinguishable in the key from the solid ones
+ * they sit beside. Colour alone does not carry it: two of those are drawn in
+ * near neighbours on purpose, and the dash is what separates them.
+ *
+ * The swatch is now the same stroke, dash and all, so it matches by
+ * construction rather than by somebody remembering to. A fill gets a block,
+ * because a shaded band is not a line and should not claim to be. */
+const swatch = x => x.fill
+  // A band at 9% covers a large area and reads fine on the chart; the same 9%
+  // in a 20 by 10 swatch is invisible. The swatch stands for the fill, so it
+  // is floored at a legible opacity rather than matched exactly.
+  ? `<i class="lfill" style="background:${x.c};opacity:${
+       Math.max(0.28, x.o == null ? .16 : x.o)};border:1px solid ${x.c}"></i>`
+  : `<svg class="lsw" width="20" height="6" aria-hidden="true"><line x1="0" y1="3" x2="20"
+       y2="3" stroke="${x.c}" stroke-width="${Math.max(2, x.w || 2)}"${
+       x.dash ? ` stroke-dasharray="${x.dash}"` : ""}/></svg>`;
 const legend = items => `<div class="legend">${items.map(x=>
-  `<span><i style="background:${x.c}"></i>${esc(x.t)}</span>`).join("")}</div>`;
+  `<span>${swatch(x)}${esc(x.t)}</span>`).join("")}</div>`;
+/* Built FROM what was drawn. The two lists used to be written out separately
+   and had already drifted: LB3 draws five lines and named three of them. */
+const legendFor = spec => legend(
+  (spec.fill || []).filter(f => f.t).map(f => Object.assign({fill:true}, f))
+    .concat((spec.lines || []).filter(l => l.t)));
 function otable(d, rows, n){
   const cols=d.slice(0, n||10);
   return `<div style="overflow-x:auto"><table class="otable">
@@ -2952,10 +2990,10 @@ function debtHoldings(){
   const out = [];
   (S.loans||[]).forEach(L => {
     if(L.pwlb){ const c = LB[S.gss], p = pwlbSummary();
-      // The book knows its own rate loan by loan; there is no reason to make
-      // them enter what we already hold.
+      // The book knows its own rate loan by loan, so it fills itself in; an
+      // entered rate is the authority's and takes precedence.
       out.push({name:"PWLB", type:"PWLB", amt: L.amt != null ? L.amt : (c?c.o:0),
-                rate: p ? p.wavg : null}); }
+                rate: L.rate != null ? +L.rate : (p ? p.wavg : null)}); }
     else out.push(L);
   });
   return out.filter(x=>x.amt);
@@ -3046,7 +3084,17 @@ function pwlbLoanTable(){
 function debtCost(){
   const rows = [];
   const p = pwlbSummary();
-  if(p) rows.push({name:"PWLB", amt:p.tot, rate:p.wavg});
+  /* THE ROW WINS OVER THE BOOK. Both the PWLB amount and its rate are the
+     authority's to amend -- they may have repaid or drawn since the book was
+     published -- and this read p.tot and p.wavg regardless, so an amended
+     amount changed every chart and left the blended cost saying the old
+     total. What we hold is the DEFAULT, not the answer. */
+  (S.loans||[]).forEach(L => {
+    if(!L.pwlb) return;
+    const amt = L.amt != null ? L.amt : (p ? p.tot : 0);
+    const rate = L.rate != null ? +L.rate : (p ? p.wavg : null);
+    if(amt) rows.push({name:"PWLB", amt, rate: isFinite(rate) ? rate : null});
+  });
   (S.loans||[]).forEach(L => { if(!L.pwlb && L.amt) rows.push(
     {name:L.name || "Other debt", amt:L.amt, rate:(L.rate==null?null:+L.rate)}); });
   const tot = rows.reduce((a,b)=>a+b.amt, 0);
@@ -5603,57 +5651,69 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
   const skipLB5 = !!O.skipLB5;
   const only = O.only || null;
   const want = tag => !only || only.indexOf(tag) >= 0;
-  const L=(items)=>legend(items);
   const tag = fundLabel ? ` — ${esc(fundLabel)}` : "";
   // "In addition, for those authorities it is recommended that a further
   // series be included on EACH output: (f) General Fund lending to/borrowing
   // from Housing Revenue Account." A separate chart was my first reading and
   // it was wrong — it belongs on every one of them.
   const D = hraSet ? crossFund(d, hraSet) : d;
-  const XF = hraSet ? [{k:"cross",t:"General Fund lending to the HRA", c:"var(--l-strat)", w:1.6, dash:"2 3"}] : [];
-  const XL = hraSet ? [{c:"var(--l-strat)", t:"GF lending to / borrowing from the HRA"}] : [];
+  const XF = hraSet ? [{k:"cross",t:"General Fund lending to / borrowing from the HRA",
+                        c:"var(--l-strat)", w:1.6, dash:"2 3"}] : [];
+  /* ONE SPEC, DRAWN AND THEN NAMED.
+   *
+   * The lines and the legend used to be two lists written out beside each
+   * other, and they had drifted: LB3 draws five lines and named three, LB4
+   * named none at all, and every dashed series was given a solid swatch. The
+   * spec is now built once, handed to chart(), and handed to legendFor(),
+   * which cannot describe a line that was not drawn or miss one that was. */
+  const P = (spec, body) => `<div class="chartwrap">${chart(
+    spec.data || D, spec)}${legendFor(spec)}</div>${body || ""}`;
+
   return `
    ${!want("LB1") ? "" : IND("LB1","Net treasury position",
-     `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB1",lines:[
-       {k:"cfr",t:"Capital financing requirement",c:"var(--l-cfr)",w:2},{k:"obs",t:"Other balance sheet items",c:"var(--l-obs)",w:1.8,dash:"5 3"},
-       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:2.4}].concat(XF)})}${L([{c:"var(--l-cfr)",t:"Capital financing requirement"},
-       {c:"var(--l-obs)",t:"Other balance sheet items"},{c:"var(--l-ntp)",t:"Net treasury position"}].concat(XL))}</div>
-      ${readoutHTML("LB1", d, fundLabel)}`)}
+     P({xlab:fy, label:"LB1", lines:[
+       {k:"cfr",t:"Capital financing requirement",c:"var(--l-cfr)",w:2},
+       {k:"obs",t:"Other balance sheet items",c:"var(--l-obs)",w:1.8,dash:"5 3"},
+       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:2.4}].concat(XF)})
+     + readoutHTML("LB1", d, fundLabel))}
    ${!want("LB2") ? "" : IND("LB2","Treasury benchmarks"+tag,
-     `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB2",lines:[
-       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:1.8},{k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:1.8},
-       {k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.4},{k:"al",t:"Authorised limit for external debt",c:"var(--l-al)",w:1.6,dash:"7 4"}].concat(XF)})}
-       ${L([{c:"var(--l-ntp)",t:"Net treasury position"},{c:"var(--l-inv)",t:"Treasury investment benchmark"},
-            {c:"var(--l-lb)",t:"Liability benchmark"},{c:"var(--l-al)",t:"Authorised limit for external debt"}].concat(XL))}</div>
-      ${otable(d,[{l:"Net treasury position",k:"ntp"},{l:"Treasury investment benchmark",k:"tib"},
-                  {l:"Liability benchmark",k:"lb",cls:"lb"},{l:"Authorised limit",k:"al",cls:"key"}])}
-      ${readoutHTML("LB2", d, fundLabel)}`)}
+     P({xlab:fy, label:"LB2", lines:[
+       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:1.8},
+       {k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:1.8},
+       {k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.4},
+       {k:"al",t:"Authorised limit for external debt",c:"var(--l-al)",w:1.6,dash:"7 4"}].concat(XF)})
+     + otable(d,[{l:"Net treasury position",k:"ntp"},{l:"Treasury investment benchmark",k:"tib"},
+                 {l:"Liability benchmark",k:"lb",cls:"lb"},{l:"Authorised limit",k:"al",cls:"key"}])
+     + readoutHTML("LB2", d, fundLabel))}
    ${!want("LB3") ? "" : IND("LB3","Treasury commitments against the benchmarks"+tag,
-     `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB3",h:280,fill:[{k:"lb",to:"el",c:"var(--l-lb)",o:.09}],
-       lines:[{k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.4},{k:"el",t:"Existing loan commitments",c:"var(--l-debt)",w:2.2},
-              {k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:1.8,dash:"3 3"},{k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:1.6},
-              {k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:1.6,dash:"4 3"}].concat(XF)})}
-       ${L([{c:"var(--l-lb)",t:"Liability benchmark"},{c:"var(--l-debt)",t:"Existing loan commitments"},
-            {c:"var(--l-ei)",t:"Existing investment commitments"}].concat(XL))}</div>
-      ${otable(d,[{l:"Existing loan commitments",k:"el"},{l:"Liability benchmark",k:"lb",cls:"lb"},
-                  {l:"Existing investment commitments",k:"ei"}])}
-      ${readoutHTML("LB3", d, fundLabel)}`)}
+     P({xlab:fy, label:"LB3", h:280,
+       fill:[{k:"lb",to:"el",t:"The gap between them",c:"var(--l-lb)",o:.09}],
+       lines:[{k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.4},
+              {k:"el",t:"Existing loan commitments",c:"var(--l-debt)",w:2.2},
+              {k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:1.8,dash:"3 3"},
+              {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:1.6},
+              {k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:1.6,dash:"4 3"}].concat(XF)})
+     + otable(d,[{l:"Existing loan commitments",k:"el"},{l:"Liability benchmark",k:"lb",cls:"lb"},
+                 {l:"Existing investment commitments",k:"ei"}])
+     + readoutHTML("LB3", d, fundLabel))}
    ${!want("LB4") ? "" : IND("LB4","Borrowing requirement / overborrowing"+tag,
-     `<div class="chartwrap">${chart(D,{xlab:fy,label:"LB4",h:220,fill:[{k:"br",t:"Borrowing requirement",c:"var(--l-lb)",o:.14}],
-       lines:[{k:"br",t:"Borrowing requirement",c:"var(--l-lb)",w:2.4}].concat(XF)})}</div>
-      ${otable(d,[{l:"Borrowing requirement",k:"need"},{l:"Above-benchmark borrowing",k:"over"}])}
-      ${readoutHTML("LB4", d, fundLabel)}`)}
+     P({xlab:fy, label:"LB4", h:220,
+       fill:[{k:"br",t:"Borrowing requirement",c:"var(--l-lb)",o:.14}],
+       lines:[{k:"br",t:"Borrowing requirement",c:"var(--l-lb)",w:2.4}].concat(XF)})
+     + otable(d,[{l:"Borrowing requirement",k:"need"},{l:"Above-benchmark borrowing",k:"over"}])
+     + readoutHTML("LB4", d, fundLabel))}
    ${(skipLB5 || !want("LB5")) ? "" : IND("LB5","Treasury investment projection",
-     `<div class="chartwrap">${chart(d,{label:"LB5",h:240,fill:[{k:"liq",t:"Liquidity allowance",c:"var(--l-inv)",o:.16}],
-       lines:[{k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:2.4},{k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:1.8,dash:"3 3"},
-              {k:"liq",t:"Liquidity allowance",c:"var(--muted)",w:1.6},{k:"strategic",t:"Strategic investments",c:"var(--l-strat)",w:1.8},
-              {k:"excess",t:"Excess investments",c:"var(--l-exc)",w:1.8}]})}
-       ${L([{c:"var(--l-inv)",t:"Treasury investment benchmark"},{c:"var(--muted)",t:"Liquidity allowance"},
-            {c:"var(--l-strat)",t:"Strategic investments"},{c:"var(--l-exc)",t:"Excess investments"}])}</div>
-      ${otable(d,[{l:"Treasury investment benchmark",k:"tib",cls:"inv"},{l:"Liquidity allowance",k:"liq"},
-                  {l:"Strategic treasury investments",k:"strategic"},
-                  {l:"Excess treasury investments",k:"excess"}])}
-      ${readoutHTML("LB5", d, fundLabel)}`)}`;
+     P({data:d, label:"LB5", h:240,
+       fill:[{k:"liq",t:"Liquidity allowance",c:"var(--l-inv)",o:.16}],
+       lines:[{k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:2.4},
+              {k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:1.8,dash:"3 3"},
+              {k:"liq",t:"Liquidity allowance",c:"var(--muted)",w:1.6},
+              {k:"strategic",t:"Strategic investments",c:"var(--l-strat)",w:1.8},
+              {k:"excess",t:"Excess investments",c:"var(--l-exc)",w:1.8}]})
+     + otable(d,[{l:"Treasury investment benchmark",k:"tib",cls:"inv"},{l:"Liquidity allowance",k:"liq"},
+                 {l:"Strategic treasury investments",k:"strategic"},
+                 {l:"Excess treasury investments",k:"excess"}])
+     + readoutHTML("LB5", d, fundLabel))}`;
 }
 
 function caveat(){
@@ -6012,11 +6072,10 @@ function loanRows(){
       :`<select data-f="profile" data-i="${ix}" aria-label="Profile">
          <option value="amort"${L.profile==="amort"?" selected":""}>Amortising</option>
          <option value="bullet"${L.profile==="bullet"?" selected":""}>Bullet</option></select>`}</td>
-    <td class="num">${L.pwlb
-      ? `<span class="qt">${(() => { const s = pwlbSummary();
-           return s ? s.wavg.toFixed(2) + "%" : "–"; })()}</span>`
-      : `<input type="text" inputmode="decimal" data-f="rate" data-i="${ix}"
-           value="${L.rate == null ? "" : L.rate}" placeholder="—" aria-label="Rate">`}</td>
+    <td class="num"><input type="text" inputmode="decimal" data-f="rate" data-i="${ix}"
+        value="${L.rate == null ? "" : L.rate}"
+        placeholder="${L.pwlb ? (() => { const s = pwlbSummary();
+          return s ? s.wavg.toFixed(2) : "—"; })() : "—"}" aria-label="Rate"></td>
     <td>${L.pwlb?"":`<button type="button" class="rm" data-rm="${ix}" aria-label="Remove">×</button>`}</td>
   </tr>`).join("");
   $("loanrows").querySelectorAll("input,select").forEach(el=>
