@@ -10,6 +10,16 @@
   --hair:#eef2f5;
   --accent:#0a2540; --accent-soft:#e8eef5; --on-accent:#ffffff;
   --orange:#c25708; --good:#1a7f4b; --alert:#b3352a;
+  /* THE SEVEN STEPS HAVE THEIR OWN COLOURS, and they are ordered rather than
+     assorted. A treasury report is written in one direction — the authority
+     and what it holds are facts, the figures are arithmetic on those facts,
+     the choices and wording are judgement, and the draft is the result — so
+     the hues run in one direction too, deep blue through teal to green. A
+     reader learns where they are from the colour before reading the number.
+     Assigning seven unrelated colours would look busier and say less. */
+  --s1:#1b4f8a; --s2:#1a6b8f; --s3:#177f86; --s4:#1a8a72;
+  --s5:#2a8f5c; --s6:#4a9247; --s7:#1a7f4b;
+
   /* Series colours are fixed by MEANING, not by chart. Net treasury position
      is the same navy in LB1, LB2 and LB3; the benchmark is the same red
      everywhere. A reader should learn the key once. */
@@ -44,6 +54,12 @@
     --hair:#1c2732;
     --accent:#8fb6de; --accent-soft:#1c2b3a; --on-accent:#0e151d;
     --orange:#e8974a; --good:#4cb583; --alert:#e0776a;
+  --s1:#6ea8dd; --s2:#5cb3d1; --s3:#4fc0bd; --s4:#4fc4a2;
+  --s5:#5ec98a; --s6:#7fcb72; --s7:#4cb583;
+
+    --s1:#6ea8dd; --s2:#5cb3d1; --s3:#4fc0bd; --s4:#4fc4a2;
+    --s5:#5ec98a; --s6:#7fcb72; --s7:#4cb583;
+
     --l-debt:#c8d8e8; --l-cfr:#6fa4d8; --l-obs:#8d9aa8; --l-ntp:#c8d8e8;
     --l-lb:#e0776a; --l-al:#b795e0; --l-inv:#4cb583; --l-ei:#4fc2b5;
     --l-strat:#a99ae8; --l-exc:#e8974a;
@@ -560,6 +576,7 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 .cptable.wide .cprow:not(.on) input[type=text],
 .cptable.wide .cprow:not(.on) select{opacity:.62}
 
+
 /* ---- the step rail --------------------------------------------------------
  * Sticky, because the one question it answers — where am I, and what is left
  * — is the question you have while you are in the middle of a step, not the
@@ -852,6 +869,53 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
   font-weight:600}
 .toc a:hover b{color:var(--accent)}
 .dsec{scroll-margin-top:96px}
+
+/* ---- colour as position ---------------------------------------------------
+ * Each step owns a hue (--s1..--s7, set inline from the step number). The
+ * badge, the active border and the panel header all read from --sc, so the
+ * rail and the panel below it agree without either knowing the other's rules.
+ * State still overrides: a done step is green and a part-done step amber
+ * wherever it sits, because "where am I" and "what is finished" are different
+ * questions and must not share a signal.
+ */
+.rstep{--sc:var(--accent)}
+.rstep .rn{background:color-mix(in srgb, var(--sc) 16%, var(--card));
+  color:var(--sc);font-weight:700}
+.rstep.on .rn{background:var(--sc);color:#fff;box-shadow:0 0 0 3px
+  color-mix(in srgb, var(--sc) 20%, transparent)}
+.rstep.done .rn{background:var(--good);color:#fff;box-shadow:none}
+.rstep.part .rn{background:var(--orange);color:#fff;box-shadow:none}
+.rstep::before{background:var(--sc)}
+.rstep.on{border-color:color-mix(in srgb, var(--sc) 55%, var(--line));
+  background:color-mix(in srgb, var(--sc) 7%, var(--card))}
+.rstep:hover{border-color:color-mix(in srgb, var(--sc) 40%, var(--line))}
+
+/* The track fills with the colours already passed, so progress is the journey
+   rather than a bar. */
+.railtrack{height:4px}
+.railbar{background:linear-gradient(90deg,var(--s1),var(--s2),var(--s3),
+  var(--s4),var(--s5),var(--s6),var(--s7))}
+
+/* The panel wears its step's colour in the header rule and the number. */
+.panel[data-step]{--sc:var(--accent)}
+.phead{position:relative;border-bottom:1px solid var(--line)}
+.phead::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:linear-gradient(90deg,var(--sc),
+    color-mix(in srgb, var(--sc) 12%, transparent) 62%)}
+.phead .n{background:var(--sc)}
+.phead h2{color:var(--ink)}
+
+/* Section headings inside a step pick the same hue, so a long panel keeps
+   saying which step it belongs to. */
+.cph{border-top-color:color-mix(in srgb, var(--sc) 22%, var(--line))}
+.cph::first-letter{color:var(--sc)}
+.cpnote{border-left-color:var(--sc);
+  background:color-mix(in srgb, var(--sc) 6%, var(--card))}
+.cpopt.on{border-color:color-mix(in srgb, var(--sc) 60%, var(--line));
+  background:color-mix(in srgb, var(--sc) 8%, var(--card));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--sc) 45%, transparent)}
+
+
 </style>
 
 <div class="shell">
@@ -3174,6 +3238,23 @@ const CHOICES = [
    nat:["scotland"],
    opts:[["equal","Equal instalments of principal"],["annuity","Annuity"],
          ["asset","Asset life"],["other","Other / mixed"]]},
+  /* THE COMMITTEE WRAPPER IS LOCAL, NOT STANDARD. Of 669 current strategies,
+     74% carry recommendations and nothing else comes close: consultation 45%,
+     financial implications 36%, executive summary 36%, risk 31%, background
+     papers 30%, equality 20%, legal 19%. Those sections are set by each
+     authority's own constitution and democratic services template, not by the
+     treasury Code, so they are offered rather than assumed. Emitting all of
+     them would impose one council's house style on every other. */
+  {k:"wrapsummary", l:"Include an executive summary?", type:"yesno"},
+  {k:"wrapfin",     l:"Include a financial implications heading?", type:"yesno"},
+  {k:"wraplegal",   l:"Include a legal implications heading?", type:"yesno"},
+  {k:"wraprisk",    l:"Include a risk implications heading?", type:"yesno"},
+  {k:"wrapequality",l:"Include an equality impact heading?", type:"yesno"},
+  {k:"wrapclimate", l:"Include a climate or environmental heading?", type:"yesno"},
+  {k:"wrapconsult", l:"Include consultation and background papers?", type:"yesno"},
+  {k:"wrapoptions", l:"Include options considered?", type:"yesno"},
+  {k:"wrapauthor",  l:"Report author and contact", type:"text",
+   ph:"name, job title, email — appears at the foot of the report"},
   {k:"vrp",       l:"Voluntary revenue provision made?", type:"yesno"},
   {k:"advance",   l:"Borrow in advance of need?", type:"yesno"},
   {k:"resched",   l:"Rescheduling or premature repayment considered?", type:"yesno"},
@@ -4615,6 +4696,28 @@ function cpProgress(){
  * silence. A report that looks finished when it is not is worse than one that
  * plainly says what is outstanding.
  * ======================================================================== */
+/* The report in one paragraph, built from the figures rather than written.
+   An executive summary that has to be typed is one that stays empty; this one
+   states what the numbers already say and leaves the judgement to the body. */
+function execSummary(d, hra){
+  const a = d[0], z = d[d.length-1];
+  const peak = d.reduce((x,y)=> y.need > x.need ? y : x, d[0]);
+  return `<p>This strategy covers ${fy(S.fy0)} to ${fy(z.fy)}. The authority's capital
+    financing requirement is <b>£${m1(a.cfr)}m</b>, against external loans of
+    <b>£${m1(a.el)}m</b>, so it is
+    <b>${a.el < a.ntp ? "internally borrowed" : "externally financed"}</b> at the start of
+    the period.</p>
+    <p>The liability benchmark ${peak.need > a.el
+      ? `rises to <b>£${m1(peak.need)}m</b> in ${fy(peak.fy)}, which is
+         <b>£${m1(peak.need - a.el)}m</b> above loans currently held`
+      : `remains below the loans currently held throughout the period`}.
+    ${z.over > 0.05 ? `By ${fy(z.fy)} loans exceed the benchmark by
+      <b>£${m1(z.over)}m</b>.` : ""}</p>
+    <p>The counterparty policy, the prudential indicators and the
+    ${esc(natText("[[mrpTitle]]").toLowerCase())} are set out below and are recommended
+    for approval together.</p>`;
+}
+
 function docSections(){
   const d = buildModel(S,"gf");
   const hra = S.hra!=="no" ? buildModel(S,"hra") : null;
@@ -4625,11 +4728,36 @@ function docSections(){
   const peakNeed = d.reduce((a,b)=>b.need>a.need?b:a,d[0]);
   const peakInv  = d.reduce((a,b)=>b.inv>a.inv?b:a,d[0]);
 
+  const IN2 = k => {
+    const sec = SECTIONS.find(x=>x.k===k);
+    return !sec || !sec.in || sec.in.indexOf(S.report) >= 0;
+  };
+  // A tail section appears only where the authority's own template calls for
+  // it. `only` names the choice that turns it on.
+  const WANT = sec => !sec.only || S.choices[sec.only] === "yes";
   const IN = k => {
     const sec = SECTIONS.find(x=>x.k===k);
     return !sec || !sec.in || sec.in.indexOf(S.report) >= 0;
   };
   const all = [
+   /* RECOMMENDATIONS COME FIRST because a committee report is read by someone
+      deciding something. 74% of current strategies carry them and they are the
+      only part of the wrapper that is near-universal, so they are not
+      optional. The wording is the decision the Code actually requires: the
+      strategy, the indicators and the MRP statement are approved together. */
+   {k:"recommend", n:"", t:"Recommendations",
+    b: `<p>Members are asked to:</p><ol class="recs">
+        <li>approve the ${esc(natText("[[reportName]]"))} for ${fy(S.fy0)};</li>
+        <li>approve the prudential and treasury management indicators set out in it;</li>
+        ${IN2("mrp") ? `<li>approve the ${esc(natText("[[mrpTitle]]").toLowerCase())};</li>` : ""}
+        <li>note the counterparty policy and investment limits it contains.</li>
+        </ol>` + (S.choices.wrapoptions === "yes"
+        ? `<h4>Options considered</h4><p class="gap">To be written: the alternatives
+           considered and why this strategy is recommended.</p>` : "")},
+
+   {k:"summary", n:"", t:"Executive summary", only:"wrapsummary",
+    b: execSummary(d, hra)},
+
    {k:"intro", n:"1", t:"Introduction",
     b: clausesFor("1") + (t("intro_body") ? para(t("intro_body")) : "")},
 
@@ -4744,16 +4872,84 @@ function docSections(){
    {k:"training", n:"10b", t:"Knowledge, skills and training",
     b: clausesFor("10b") + (t("training_body")?para(t("training_body")):"")},
 
+   /* THE CODE'S OWN GOVERNANCE REQUIREMENTS, not committee boilerplate. The
+      TM Code asks a strategy to state who may do what and who is responsible;
+      only 20% and 13% of current strategies do, which makes their absence an
+      easy hit for a reviewer rather than a safe omission. These are written,
+      not offered. */
+   {k:"delegation", n:"10c", t:"Treasury management scheme of delegation",
+    b: `<p>Full Council approves the ${esc(natText("[[reportName]]").toLowerCase())},
+        the prudential and treasury management indicators within it, and any in-year
+        change to them.</p>
+        <p>The ${esc(natText("[[committee]]"))} receives the mid-year review and the
+        outturn report, and scrutinises the treasury management function on behalf of
+        members.</p>
+        <p>The ${esc(natText("[[officer]]"))} is responsible for the execution and
+        administration of treasury management decisions within the policy and limits
+        approved, and may delegate day-to-day operation to named officers.</p>`},
+
+   {k:"s151role", n:"10d", t:"The treasury management role of the [[officer]]",
+    b: `<p>The ${esc(natText("[[officer]]"))} is responsible for:</p>
+        <ul>
+          <li>recommending clauses, treasury management policy and practices for approval,
+              reviewing them regularly, and monitoring compliance;</li>
+          <li>submitting budgets and budget variations relating to treasury management;</li>
+          <li>receiving and reviewing management information reports;</li>
+          <li>reviewing the performance of the treasury management function;</li>
+          <li>ensuring the adequacy of treasury management resources and skills, and the
+              effective division of responsibilities within it;</li>
+          <li>ensuring the adequacy of internal audit, and liaising with external audit;</li>
+          <li>recommending the appointment of external service providers;</li>
+          <li>preparing a capital strategy that sets out long-term context, risk appetite
+              and the affordability and sustainability of what is planned;</li>
+          <li>ensuring that members are adequately informed and understand the risk
+              exposures the authority is taking on.</li>
+        </ul>`},
+
    {k:"governance", n:"10", t:"Governance and reporting",
     b: clausesFor("10")
      + (t("gov_body")?para(t("gov_body")):"")
-     + (t("advisers")?`<h4>Treasury advisers</h4>${para(t("advisers"))}`:"")}
+     + (t("advisers")?`<h4>Treasury advisers</h4>${para(t("advisers"))}`:"")},
+
+   {k:"wfin", n:"", t:"Financial implications", only:"wrapfin",
+    b: `<p>The costs of borrowing and the income from investments are provided for in the
+        budget. The indicators in this strategy set the limits within which those costs
+        are contained.</p>` + gap("any further financial implications your template requires")},
+
+   {k:"wlegal", n:"", t:"Legal implications", only:"wraplegal",
+    b: `<p>${esc(natText("[[act]]"))} requires the authority to determine and keep under
+        review how much it can afford to borrow, and to have regard to the CIPFA
+        Prudential Code and Treasury Management Code and to
+        ${esc(natText("[[regs]]"))}.</p>` + gap("any further legal implications your template requires")},
+
+   {k:"wrisk", n:"", t:"Risk implications", only:"wraprisk",
+    b: `<p>Treasury management carries credit, liquidity, interest rate, refinancing and
+        legal and regulatory risk. The counterparty policy, the indicators and the
+        liability benchmark in this strategy are the controls applied to them.</p>`
+        + gap("any further risk implications your template requires")},
+
+   {k:"wequality", n:"", t:"Equality implications", only:"wrapequality",
+    b: gap("the equality impact of this strategy, in your authority's own terms")},
+
+   {k:"wclimate", n:"", t:"Climate and environmental implications", only:"wrapclimate",
+    b: gap("the climate or environmental implications, and any ESG position taken on investments")},
+
+   {k:"wconsult", n:"", t:"Consultation and background papers", only:"wrapconsult",
+    b: `<p>This strategy has been prepared with advice from
+        ${S.choices.adviser ? esc(S.choices.adviser) : "the authority's treasury adviser"}.</p>`
+        + gap("who was consulted, and the background papers relied on")},
   ];
   // Keep only what this report type carries, then renumber so the draft reads
   // 1, 2, 3 rather than skipping to 3b — a numbering gap looks like a mistake
   // even when it is a deliberate omission.
-  const kept = all.filter(x => !x.k || IN(x.k));
-  return kept.map((x,i) => Object.assign({}, x, {n:String(i+1)}));
+  const kept = all.filter(x => (!x.k || IN(x.k)) && WANT(x));
+  // Recommendations, the summary and the implications tail are not numbered
+  // sections of the strategy: they are the report that carries it. Numbering
+  // them would put "1. Recommendations" above "2. Introduction" and shift
+  // every cross-reference an authority has ever made to a section number.
+  let i = 0;
+  return kept.map(x => Object.assign({}, x,
+    {n: x.n === "" ? "" : String(++i)}));
 }
 
 /* Export: a clean HTML document. Word opens it with headings, tables and the
@@ -5216,6 +5412,7 @@ function renderRail(){
   rail.innerHTML = STEPS.map(s => {
     const st = stepStatus(s.k);
     return `<button type="button" class="rstep ${STEP===s.n?"on":""} ${st.state}"
+      style="--sc:var(--s${s.n})"
       data-go="${s.n}" aria-current="${STEP===s.n?"step":"false"}">
       <span class="rn">${st.state==="done" ? "&#10003;" : s.n}</span>
       <span class="rt"><b>${esc(s.t)}</b><i>${esc(st.note || s.s)}</i></span>
@@ -5229,6 +5426,11 @@ function renderRail(){
 }
 
 function showStep(n){
+  // The visible panel takes its step's colour, so the header, the rail and
+  // the progress all say the same thing at once.
+  document.querySelectorAll("[data-step]").forEach(el => {
+    el.style.setProperty("--sc", `var(--s${el.dataset.step})`);
+  });
   // The policy step renders from state, so it is built on arrival rather than
   // held in the DOM for six steps that never look at it.
   if(n === 5 && typeof cpRender === "function") cpRender();
