@@ -28,15 +28,21 @@
   /* Series colours are fixed by MEANING, not by chart. Net treasury position
      is the same navy in LB1, LB2 and LB3; the benchmark is the same red
      everywhere. A reader should learn the key once. */
-  --l-cfr:#2f6fb0;    /* capital financing requirement        */
-  --l-obs:#7a8794;    /* other balance sheet items            */
-  --l-ntp:#0a2540;    /* net treasury position                */
-  --l-lb:#b3352a;     /* liability benchmark                  */
-  --l-al:#8a4bbd;     /* authorised limit                     */
-  --l-inv:#1a7f4b;    /* treasury investment benchmark        */
-  --l-debt:#0f3059;   /* existing loan commitments            */
-  --l-ei:#0f9b8e;     /* existing investment commitments      */
-  --l-strat:#5b4bb3;  /* strategic investments / cross-fund   */
+  /* THESE ARE CIPFA'S COLOURS, SAMPLED FROM THE CONSULTATION'S OWN CHARTS.
+     A reader who has the consultation open beside the report should see the
+     same line in the same colour; ours were a house palette that happened to
+     be legible, which made every chart a translation exercise. Taken from the
+     published images pixel by pixel, not matched by eye. */
+  --l-cfr:#1f5879;    /* capital financing requirement   blue   */
+  --l-obs:#ed7d31;    /* other balance sheet items       orange */
+  --l-ntp:#316826;    /* net treasury position           green  */
+  --l-lb:#1f5879;     /* liability benchmark             blue   */
+  --l-al:#e4341d;     /* authorised limit                red, dashed */
+  --l-inv:#ed7d31;    /* treasury investment benchmark   orange */
+  --l-debt:#4899c9;   /* existing loan commitments       light blue bars */
+  --l-ei:#403868;     /* existing investment commitments purple bars */
+  --l-br:#275e7f;     /* borrowing requirement           steel bars */
+  --l-strat:#7f6fbf;  /* strategic investments / cross-fund   */
   --l-exc:#c25708;    /* excess investments                   */
   --ours:#1a7f4b; --yours:#c25708; --derived:#5b4bb3;
   --seq1:#a8c8e8; --seq2:#7fb0dd; --seq3:#5695d1; --seq4:#2f6fb0;
@@ -65,9 +71,9 @@
     --s1:#6ea8dd; --s2:#5cb3d1; --s3:#4fc0bd; --s4:#4fc4a2;
     --s5:#5ec98a; --s6:#7fcb72; --s7:#9ccb6a; --s8:#4cb583;
 
-    --l-debt:#c8d8e8; --l-cfr:#6fa4d8; --l-obs:#8d9aa8; --l-ntp:#c8d8e8;
-    --l-lb:#e0776a; --l-al:#b795e0; --l-inv:#4cb583; --l-ei:#4fc2b5;
-    --l-strat:#a99ae8; --l-exc:#e8974a;
+    --l-debt:#6fb5e0; --l-cfr:#5b9ec9; --l-obs:#f0955a; --l-ntp:#6fae5c;
+    --l-lb:#5b9ec9; --l-al:#ef6a55; --l-inv:#f0955a; --l-ei:#8a7fc0;
+    --l-br:#5b9ec9; --l-strat:#a99ae8; --l-exc:#e8974a;
     --ours:#4cb583; --yours:#e8974a; --derived:#a99ae8;
   --seq1:#2b4566; --seq2:#33587f; --seq3:#4a7bab; --seq4:#6fa4d8;
   --seq5:#9cc4e8; --seq6:#c8dcf0;
@@ -85,9 +91,9 @@
   --hair:#1c2732;
   --accent:#8fb6de; --accent-soft:#1c2b3a; --on-accent:#0e151d;
   --orange:#e8974a; --good:#4cb583; --alert:#e0776a;
-  --l-debt:#c8d8e8; --l-cfr:#6fa4d8; --l-obs:#8d9aa8; --l-ntp:#c8d8e8;
-  --l-lb:#e0776a; --l-al:#b795e0; --l-inv:#4cb583; --l-ei:#4fc2b5;
-  --l-strat:#a99ae8; --l-exc:#e8974a;
+  --l-debt:#6fb5e0; --l-cfr:#5b9ec9; --l-obs:#f0955a; --l-ntp:#6fae5c;
+  --l-lb:#5b9ec9; --l-al:#ef6a55; --l-inv:#f0955a; --l-ei:#8a7fc0;
+  --l-br:#5b9ec9; --l-strat:#a99ae8; --l-exc:#e8974a;
   --ours:#4cb583; --yours:#e8974a; --derived:#a99ae8;
   --seq1:#2b4566; --seq2:#33587f; --seq3:#4a7bab; --seq4:#6fa4d8;
   --seq5:#9cc4e8; --seq6:#c8dcf0;
@@ -751,6 +757,7 @@ table.pwlbtab td.num,table.pwlbtab th.num{text-align:right}
 .legend span{display:flex;align-items:center;gap:6px}
 .legend i{width:18px;height:3px;border-radius:2px;flex:none}
 .legend i.lfill{width:20px;height:10px;border-radius:2px}
+.legend i.lbar{width:11px;height:13px;border-radius:1px}
 .legend .lsw{flex:none}
 .otable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;
   font-variant-numeric:tabular-nums;margin-top:8px}
@@ -920,6 +927,22 @@ svg.ctip .hits rect{cursor:crosshair}
   background:color-mix(in srgb, var(--muted) 20%, var(--card));color:var(--muted)}
 .cpix.on i{background:var(--good);color:#fff}
 .cpindex .sp{flex:1;min-width:8px}
+/* ---- the library --------------------------------------------------------
+   Nobody starts a strategy from a blank page; they start from last year's.
+   The offer names the operation before it runs, because a seed that silently
+   replaces forty fields is a surprise rather than a convenience. */
+.libbox{grid-column:1/-1;margin-top:14px;padding:14px 16px;border:1px solid var(--accent);
+  border-radius:var(--r-sm);background:color-mix(in srgb, var(--accent) 4%, var(--card))}
+.libbox label{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--ink);
+  display:block;margin-bottom:8px}
+.librow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.librow select{flex:1;min-width:220px}
+.librow button{padding:7px 14px;border-radius:var(--r-sm);border:1px solid var(--line2);
+  background:var(--paper);font-family:var(--sans);font-size:12.5px;cursor:pointer}
+.librow button.primary{background:var(--accent);border-color:var(--accent);
+  color:var(--on-accent);font-weight:600}
+.libwhat{font-family:var(--sans);font-size:12px;line-height:1.55;color:var(--ink2);
+  margin:9px 0 0;max-width:78ch}
 .ltop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .ltop .sp{flex:1;min-width:8px}
 /* Once the row wraps, the spacer stops separating two groups and starts
@@ -1164,6 +1187,14 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
         <select id="horizon"></select></div>
       <div><label for="logo">Council logo</label>
         <input type="file" id="logo" accept="image/png,image/jpeg,image/svg+xml"></div>
+    </div>
+    <div class="libbox" id="libbox" hidden>
+      <label for="libpick">Start from a report you have already written</label>
+      <div class="librow">
+        <select id="libpick"></select>
+        <button type="button" class="primary" id="libgo">Use it</button>
+      </div>
+      <p class="libwhat" id="libwhat"></p>
     </div>
     <div class="ltools" style="margin-top:12px">
       <button type="button" id="save">Save this version</button>
@@ -1518,7 +1549,7 @@ const COLS = [
   // and left the question members actually ask — what does this cost us as a
   // share of what we raise — to prose.
   {k:"intpay",  l:"Interest<br>payable",  s:"on borrowing and leases", mtfp:true},
-  {k:"intinc",  l:"Investment<br>income", s:"netted off", gf:true, mtfp:true},
+  {k:"intinc",  l:"Investment<br>income", s:"not netted off", gf:true, mtfp:true},
   {k:"nrs",     l:"Net revenue<br>stream", s:"grants and local taxpayers", mtfp:true},
   {k:"comminc", l:"Non-treasury<br>investment income", s:"net, if any", gf:true, mtfp:true}
 ];
@@ -1586,32 +1617,76 @@ const num = v => { const n=parseFloat(String(v).replace(/[£,\s]/g,"")); return 
 function chart(d, spec){
   const W=900, H=(spec.h||260)+14, P={t:18,r:18,b:32,l:70};
   const iw=W-P.l-P.r, ih=H-P.t-P.b;
-  const keys=spec.lines.map(l=>l.k).concat((spec.fill||[]).map(f=>f.k));
+  const keys=spec.lines.map(l=>l.k).concat((spec.fill||[]).map(f=>f.k))
+    .concat((spec.bars||[]).map(b=>b.k));
+  // A series drawn below the axis has to be measured below it too, or the
+  // column is clipped at the floor of a range computed from positives.
+  const negK = (spec.bars||[]).concat(spec.lines||[]).filter(b=>b.neg).map(b=>b.k);
+  // A series drawn below the axis is drawn from the negated value everywhere:
+  // the path, the range, the end dot and the hover.
+  const V = (p, k) => { const v = p[k];
+    return (v == null || !isFinite(v)) ? v : (negK.indexOf(k) >= 0 ? -Math.abs(v) : v); };
   // Zero is folded into the range only when the axis is meant to include it.
   // Concatenating it unconditionally made `tight` compute 0 − pad and put a
   // negative floor under a chart of interest rates.
-  const raw = d.flatMap(x=>keys.map(k=>x[k])).filter(v=>v!=null && isFinite(v));
+  const raw = d.flatMap(x=>keys.map(k=>x[k])).filter(v=>v!=null && isFinite(v))
+    .concat(d.flatMap(x=>negK.map(k=>x[k]==null?null:-Math.abs(x[k])))
+             .filter(v=>v!=null && isFinite(v)));
   const vals = spec.zero === "tight" ? raw : raw.concat([0]);
   const hi=Math.max(...vals), lo=Math.min(...vals), pad=(hi-lo)*0.08||1;
   // spec.zero: "always" forces the axis through zero (money, where crossing
   // zero changes the meaning); "tight" never does (rates, where it destroys
   // the resolution). Default keeps the old behaviour.
   const tight = spec.zero === "tight";
-  const HI = hi+pad;
-  const LO = tight ? lo-pad : (Math.min(0,lo)-(lo<0?pad:0));
-  const X=i=>P.l+iw*i/Math.max(1,d.length-1), Y=v=>P.t+ih-ih*(v-LO)/Math.max(1e-9,HI-LO);
-  const path=k=>d.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(p[k]).toFixed(1)).join(" ");
-  const gl=[]; for(let n=0;n<=4;n++){const v=LO+(HI-LO)*n/4;
+  /* ZERO IS ALWAYS ON THE AXIS FOR A MONEY CHART, and the x-axis is the zero
+     line rather than the floor of the plot. Debt above the line and
+     investments below it only mean anything if the reader can see where the
+     line is; a chart whose baseline is £87m and whose "zero" is somewhere in
+     the middle invites exactly the wrong reading. */
+  const HI = Math.max(0, hi) + (hi > 0 ? pad : 0);
+  const LO = tight ? lo-pad : (Math.min(0,lo) - (lo < 0 ? pad : 0));
+  /* ROUND NUMBERS ON THE VALUE AXIS.
+   *
+   * Four equal slices of the data range gave 658.6, 468.2, 277.8, 87.5 — an
+   * axis nobody reads, because the labels are an artefact of the maximum
+   * rather than quantities anyone thinks in. Choose a step from 1, 2, 2.5 or
+   * 5 times a power of ten, snap the ends outward to it, and the axis lands
+   * on £600m, £400m, £200m, £0m as the consultation's own charts do. Zero
+   * falls on a gridline by construction, which is why it can be the axis. */
+  const nice = (span, want) => {
+    const raw0 = span / Math.max(1, want);
+    const mag = Math.pow(10, Math.floor(Math.log10(Math.max(raw0, 1e-9))));
+    return [1, 2, 2.5, 5, 10].map(m => m * mag).find(v => v >= raw0) || mag * 10;
+  };
+  let AXHI = HI, AXLO = LO, gstep = null;
+  if(!tight && isFinite(HI) && isFinite(LO) && HI > LO){
+    gstep = nice(HI - LO, 4);
+    AXHI = Math.ceil(HI / gstep) * gstep;
+    AXLO = Math.floor(LO / gstep) * gstep;
+    // Snapping can leave one blank band at an end; five is as many as this
+    // height carries legibly.
+    while((AXHI - AXLO) / gstep > 6){ gstep *= 2;
+      AXHI = Math.ceil(HI/gstep)*gstep; AXLO = Math.floor(LO/gstep)*gstep; }
+  }
+  const X=i=>P.l+iw*i/Math.max(1,d.length-1),
+        Y=v=>P.t+ih-ih*(v-AXLO)/Math.max(1e-9,AXHI-AXLO);
+  const path=k=>d.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+","+Y(V(p,k)).toFixed(1)).join(" ");
+  const gl=[];
+  const ticks = [];
+  if(gstep) for(let v = AXLO; v <= AXHI + gstep*1e-6; v += gstep) ticks.push(v);
+  else for(let n=0;n<=4;n++) ticks.push(LO+(HI-LO)*n/4);
+  ticks.forEach(v0=>{const v = Math.abs(v0) < gstep*1e-9 ? 0 : v0;
     gl.push(`<line x1="${P.l}" y1="${Y(v).toFixed(1)}" x2="${W-P.r}" y2="${Y(v).toFixed(1)}"
       stroke="var(--hair)" stroke-width="1"/><text x="${P.l-9}" y="${(Y(v)+3.4).toFixed(1)}"
       text-anchor="end" font-family="var(--mono)" font-size="11.5" letter-spacing="-0.1"
-      fill="var(--ink2)">${spec.fmt ? spec.fmt(v) : m1(v)}</text>`);}
+      fill="var(--ink2)">${spec.fmt ? spec.fmt(v) : m1(v)}</text>`);});
   // A left rule and a baseline: the plot reads as a framed field rather than
   // as lines floating on the page.
   gl.push(`<line x1="${P.l}" y1="${P.t}" x2="${P.l}" y2="${P.t+ih}"
     stroke="var(--line2)" stroke-width="1"/>`);
-  const zero = (LO<0 && HI>0) ? `<line x1="${P.l}" y1="${Y(0).toFixed(1)}" x2="${W-P.r}" y2="${Y(0).toFixed(1)}"
-    stroke="var(--line2)" stroke-width="1.5"/>` : "";
+  // Drawn whenever zero is inside the field, which for money it now always is.
+  const zero = (AXLO<=0 && AXHI>=0) ? `<line x1="${P.l}" y1="${Y(0).toFixed(1)}" x2="${W-P.r}"
+    y2="${Y(0).toFixed(1)}" stroke="var(--ink2)" stroke-width="1.25"/>` : "";
   const fills=(spec.fill||[]).map(f=> f.to!=null
     ? `<path d="${path(f.k)} ${d.slice().reverse().map((p,i)=>"L"+X(d.length-1-i).toFixed(1)+","+Y(p[f.to]).toFixed(1)).join(" ")} Z"
         fill="${f.c}" opacity="${f.o||.1}"/>`
@@ -1624,8 +1699,20 @@ function chart(d, spec){
       stroke-dasharray="2 4" opacity=".5"/>
     <text x="${(X(MTFP)+5).toFixed(1)}" y="${P.t+11}" font-family="var(--sans)"
       font-size="9.5" fill="var(--faint)">beyond the MTFP</text>` : "";
-  const step=Math.max(1,Math.round(d.length/9)), tx=[];
+  /* LABEL THE YEARS ON A ROUND INTERVAL. Dividing the row count by nine gave
+     a step of 6 over 51 years, so the axis read 2026, 2032, 2038 — arithmetic
+     that is correct and years nobody thinks in. Pick from 1, 2, 5, 10, 20,
+     25: the consultation labels every second year, and a longer horizon
+     should land on decades. */
+  const NICE = [1,2,5,10,20,25,50];
+  const step = NICE.find(n => d.length / n <= 14) || 50;
+  const tx=[];
   for(let i=0;i<d.length;i+=step) tx.push(i);
+  // Always name the last year: a run-off that ends in 2076/77 should say so.
+  if(tx[tx.length-1] !== d.length-1 && d.length > 1){
+    if((d.length-1) - tx[tx.length-1] < step*0.55) tx.pop();
+    tx.push(d.length-1);
+  }
   /* THE NUMBERS, CARRIED WITH THE PICTURE.
    *
    * A line chart says shape and hides value. Everything here is money to one
@@ -1660,19 +1747,65 @@ function chart(d, spec){
     <line class="xhair" x1="0" y1="${P.t}" x2="0" y2="${P.t+ih}" stroke="var(--ink2)"
       stroke-width="1" stroke-dasharray="3 3" opacity="0"/>
     <g class="xdots"></g>`;
+  /* BARS, BECAUSE THE CONSULTATION DRAWS THEM AS BARS.
+   *
+   * LB3 shows existing loans and existing investments as columns against the
+   * benchmark LINES, and LB4 is a column chart outright. We drew all five as
+   * lines, which reads as a different picture of the same numbers — a reader
+   * with the consultation open beside the report was translating rather than
+   * comparing.
+   *
+   * A column sits on the zero line and runs to its value, so a negative one
+   * hangs below it, which is exactly how the over-borrowed years in LB4 and
+   * the investment balances in LB3 are meant to read. Several bar series on
+   * one chart share the slot rather than overlapping. */
+  /* STACKED, AND ALMOST TOUCHING.
+   *
+   * Side by side was my own invention. In the consultation's LB3 the columns
+   * occupy the whole slot with only a hairline between them, and the two
+   * series do not sit beside each other: loans rise from the zero line and
+   * investments hang below it, because the consultation carries every
+   * investment figure as a negative — its table brackets each one.
+   *
+   * So: one full-width column per year, positives stacked upward from zero
+   * and negatives stacked downward. `neg` draws a series on the other side of
+   * the axis without touching the arithmetic behind it, which stays in the
+   * sign the model and the tables use. */
+  const bars = !(spec.bars||[]).length ? "" : (() => {
+    const slot = Math.max(1.2, (iw / Math.max(1, d.length)) * 0.94);
+    const y0 = Y(0);
+    let out = "";
+    d.forEach((p, i) => {
+      let up = 0, dn = 0;
+      spec.bars.forEach(b => {
+        let v = p[b.k];
+        if(v == null || !isFinite(v) || v === 0) return;
+        if(b.neg) v = -Math.abs(v);
+        const base = v >= 0 ? up : dn;
+        const yA = Y(base), yB = Y(base + v);
+        const top = Math.min(yA, yB), h = Math.abs(yA - yB);
+        if(v >= 0) up += v; else dn += v;
+        if(h < 0.3) return;
+        out += `<rect x="${(X(i) - slot/2).toFixed(1)}" y="${top.toFixed(1)}"
+          width="${slot.toFixed(2)}" height="${h.toFixed(1)}" fill="${b.c}"${
+          b.o == null ? "" : ` opacity="${b.o}"`}/>`;
+      });
+    });
+    return out;
+  })();
   const mark = `<text x="${W-P.r}" y="${P.t+11}" text-anchor="end"
     font-family="var(--sans)" font-size="11" font-weight="600"
     fill="var(--muted)" opacity=".42" letter-spacing="0.5">PWLBtoday</text>`;
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
     class="ctip" data-tip="${esc(JSON.stringify(tip))}"
-    aria-label="${esc(spec.label)}">${gl.join("")}${fills}${zero}${mk}${mark}
+    aria-label="${esc(spec.label)}">${gl.join("")}${fills}${bars}${zero}${mk}${mark}
     ${spec.lines.map(l=>`<path d="${path(l.k)}" fill="none" stroke="${l.c}"
       stroke-width="${l.w||2}" stroke-linejoin="round" stroke-linecap="round"${
       l.dash?` stroke-dasharray="${l.dash}"`:""}/>`).join("")}
     ${spec.lines.filter(l=>(l.w||2)>=2).map(l=>{
       const last=d[d.length-1];
       return last && last[l.k]!=null
-        ? `<circle cx="${X(d.length-1).toFixed(1)}" cy="${Y(last[l.k]).toFixed(1)}" r="2.6"
+        ? `<circle cx="${X(d.length-1).toFixed(1)}" cy="${Y(V(last,l.k)).toFixed(1)}" r="2.6"
              fill="${l.c}" stroke="var(--card)" stroke-width="1.4"/>` : "";}).join("")}
     ${tx.map(i=>`<text x="${X(i).toFixed(1)}" y="${H-7}" text-anchor="middle"
       font-family="var(--mono)" font-size="11.5" fill="var(--ink2)">${esc(xlab(d[i].fy))}</text>`).join("")}
@@ -1737,7 +1870,9 @@ function chart(d, spec){
  * The swatch is now the same stroke, dash and all, so it matches by
  * construction rather than by somebody remembering to. A fill gets a block,
  * because a shaded band is not a line and should not claim to be. */
-const swatch = x => x.fill
+const swatch = x => x.bar
+  ? `<i class="lbar" style="background:${x.c}"></i>`
+  : x.fill
   // A band at 9% covers a large area and reads fine on the chart; the same 9%
   // in a 20 by 10 swatch is invisible. The swatch stands for the fill, so it
   // is floored at a legible opacity rather than matched exactly.
@@ -1752,6 +1887,7 @@ const legend = items => `<div class="legend">${items.map(x=>
    and had already drifted: LB3 draws five lines and named three of them. */
 const legendFor = spec => legend(
   (spec.fill || []).filter(f => f.t).map(f => Object.assign({fill:true}, f))
+    .concat((spec.bars || []).filter(b => b.t).map(b => Object.assign({bar:true}, b)))
     .concat((spec.lines || []).filter(l => l.t)));
 function otable(d, rows, n){
   const cols=d.slice(0, n||10);
@@ -2314,13 +2450,26 @@ function buildModel(S, fund){
     const tib = hraTwoPool ? 0 : Math.max(liq, -ntp);
     const lb  = hraTwoPool ? ntp : ntp + tib;
 
-    // Financing costs as the Prudential Code defines them, to the extent the
-    // ledger carries them: interest payable, plus the provision made for debt
-    // repayment, less investment income. Depreciation on finance leases and
-    // gains or losses on repurchase are not in the grid, so the figure is what
-    // the authority entered and nothing is imputed for what it did not.
+    /* FINANCING COSTS DO NOT NET OFF INVESTMENT INCOME.
+     *
+     * They used to here, and the ledger column said "netted off" in as many
+     * words. The 2026 consultation tightens the definition precisely to stop
+     * it: "Interest receivable for loans granted, treasury management
+     * investments or finance leases as a lessor should not be netted off
+     * financing costs" — because, in its own words, netting "may mask
+     * unsustainable or risky financing arrangements".
+     *
+     * The effect is not cosmetic. An authority earning £2m on investments
+     * against £35m of interest and MRP was reporting an affordability ratio
+     * some 6% lower than the proposals require. That is a wrong number in a
+     * committee paper, arrived at by following the old definition after a new
+     * one had been proposed.
+     *
+     * Investment income is still entered, still shown, and still used in the
+     * carry — it simply no longer reduces the cost of financing.
+     */
     const intpay = g.intpay[i] || 0, intinc = g.intinc[i] || 0, nrs = g.nrs[i] || 0;
-    const fincost = intpay + (g.mrp[i]||0) - intinc;
+    const fincost = intpay + (g.mrp[i]||0);
     const afford  = nrs > 0 ? (fincost / nrs) * 100 : null;
     // Proportionality: how much of what the authority raises depends on income
     // from investments it did not have to make. The Code asks whether services
@@ -2401,6 +2550,59 @@ function loanProfile(S, LB){
     }
   });
   return out.map(v => Math.round(v*10)/10);
+}
+
+/* ===========================================================================
+ * The most recent actual year-end, which the charts must start from.
+ *
+ * "The table and charts should commence with the most recent actual year-end
+ * position, with figures taken from the statement of accounts, where
+ * appropriate." Ours commenced with the first PROJECTED year, so every chart
+ * was missing the one column a reader trusts without qualification — and the
+ * consultation's own illustrative table has "Prev Year Actual" as its first
+ * column, ahead of "Current Year".
+ *
+ * IT IS PREPENDED AT DRAW TIME AND NOWHERE ELSE. There are 42 places that
+ * read d[0] meaning the current year — readouts, the affordability note, the
+ * seeding, the checks. Prepending a row inside buildModel would have made
+ * every one of them silently report the prior year instead, which is the
+ * exact failure this codebase has a test suite to prevent. So buildModel is
+ * untouched: d[0] still means what all 42 think it means, and the charts ask
+ * for the actual explicitly.
+ * ======================================================================== */
+const ACTUAL_COLS = ["cfr","obs","loans","inv","liq","capex","mrp","rec",
+                     "intpay","intinc","nrs","comminc"];
+
+function actualRow(S, fund){
+  const A = S.actual || {};
+  const f = (fund === "hra") ? (A.hra || {}) : (fund === "all")
+    ? ACTUAL_COLS.reduce((o,k) => (o[k] = (+(A.gf||{})[k] || 0) + (+(A.hra||{})[k] || 0), o), {})
+    : (A.gf || {});
+  if(!ACTUAL_COLS.some(k => +f[k])) return null;      // nothing entered: no row
+  const n = k => +f[k] || 0;
+  const cfr = n("cfr"), obs = n("obs"), liq = n("liq");
+  const el = n("loans"), ei = n("inv");
+  const ntp = cfr - obs;
+  const hraTwoPool = fund === "hra" && S.hra === "two";
+  const tib = hraTwoPool ? 0 : Math.max(liq, -ntp);
+  const lb  = hraTwoPool ? ntp : ntp + tib;
+  const fincost = n("intpay") + n("mrp");
+  const nrs = n("nrs");
+  const need = Math.max(0, lb - el), over = Math.max(0, el - lb);
+  return {fy: S.fy0 - 1, i: -1, actual: true,
+    cfr, obs, liq, el, ei, ntp, tib, lb,
+    intpay:n("intpay"), intinc:n("intinc"), nrs, fincost,
+    afford: nrs > 0 ? (fincost / nrs) * 100 : null,
+    comminc:n("comminc"), commratio: nrs > 0 ? (n("comminc") / nrs) * 100 : null,
+    mrp:n("mrp"), capex:n("capex"), rec:n("rec"),
+    br: need - over, need, over,
+    inv: ei, strategic: 0, excess: 0, al: null, netdebt: el - ei};
+}
+
+/* The series a chart draws: the actual year, then the projection. */
+function withActual(S, fund, d){
+  const a = actualRow(S, fund);
+  return a ? [a].concat(d) : d;
 }
 
 /* ---------------------------------------------------------------------------
@@ -4621,6 +4823,16 @@ const SECTIONS = [
         d:DRAFT.mrp_body, ph:"Method for each class of expenditure — asset life, annuity, or equal instalment. "
            +"Any voluntary provision. Whether the policy has changed, and the effect if so."}]},
 
+  {k:"priorpi", n:"6b", t:"Prudential indicators", kind:"auto", in:ALL,
+   lead:"The four the Code keeps, each with the previous year's actual beside the "
+       +"estimates — and the most recent actual year-end the charts start from.",
+   qs:[]},
+  {k:"group", n:"6c", t:"Group indicators", kind:"both", in:ALL,
+   lead:"Only where there are significant group undertakings. A subsidiary that stops "
+       +"performing disappears from single-entity reporting.",
+   qs:[{k:"group_body", l:"Commentary on the group position",
+        ph:"Whether income from subsidiaries is sustainable and based on their own "
+          +"operations, and what the authority is exposed to if it is not."}]},
   {k:"indicators", n:"7", t:"Treasury management prudential indicators", kind:"auto", in:ALL,
    lead:"LB1 to LB5 and the authorised limit, produced from your ledger."},
 
@@ -4763,6 +4975,22 @@ function renderSections(){
   // The period-performance grid and the limits panel: same arrows as the
   // ledger, so a figure is never more than a keypress away.
   if(typeof arrowNav === "function") arrowNav($("secbody"));
+  $("secbody").querySelectorAll("[data-ac]").forEach(el=>
+    el.addEventListener("input", e=>{
+      const k=e.target.dataset.ac, f=e.target.dataset.af, v=e.target.value.trim();
+      S.actual = S.actual || {}; S.actual[f] = S.actual[f] || {};
+      S.actual[f][k] = (v==="") ? null : num(v);
+      clearTimeout(S._a); S._a=setTimeout(()=>{ renderSections(); render(); }, 600);
+    }));
+  const gon = $("secbody").querySelector("#groupon");
+  if(gon) gon.addEventListener("change", e=>{
+    S.group = S.group || {}; S.group.on = e.target.checked; renderSections(); render(); });
+  $("secbody").querySelectorAll("[data-gp]").forEach(el=>
+    el.addEventListener("input", e=>{
+      const v=e.target.value.trim();
+      S.group[e.target.dataset.gp] = (v==="") ? null : num(v);
+      clearTimeout(S._g); S._g=setTimeout(()=>{ renderSections(); render(); }, 600);
+    }));
   $("secbody").querySelectorAll("[data-p]").forEach(el=>
     el.addEventListener("input", e=>{
       const k=e.target.dataset.p, c=e.target.dataset.pc, v=e.target.value.trim();
@@ -4847,6 +5075,11 @@ function autoNote(k){
       benchmark in LB5 wherever the authority is net indebted.`);
   if(k==="compliance")
     return box("Limits and actuals", limitsPanel()) + complianceTable();
+  if(k==="priorpi")
+    return box("The most recent actual year-end", actualPanel())
+         + piTable(d, S.hra === "no" ? "gf" : "all");
+  if(k==="group")
+    return box("Group undertakings", groupPanel()) + groupTable(d);
   if(k==="performance")
     return box("What the period actually did", perfPanel()) + perfTable();
   if(k==="training")
@@ -5737,7 +5970,10 @@ function docSections(){
         made about capital budgets not yet approved.</p>`
       + otable(d,[{l:"Capital financing requirement",k:"cfr"},
                   {l:"Other balance sheet items",k:"obs"},
-                  {l:"Net treasury position",k:"ntp",cls:"key"}])},
+                  {l:"Net treasury position",k:"ntp",cls:"key"}])
+      // Only where a previous report was actually loaded. It never invents a
+      // movement, and it says which report it is moving from.
+      + (typeof priorLine === "function" ? priorLine(d) : "")},
 
    {k:"portfolio", n:"3b", t:"Current portfolio position",
     b: `<p>Existing loan commitments are <b>£${m1(d[0].el)}m</b> at ${fy(S.fy0)}, against a
@@ -5821,6 +6057,24 @@ function docSections(){
    {k:"compliance", n:"7b", t:"Compliance with treasury and prudential limits",
     b: clausesFor("7b") + complianceTable()
       + (t("compliance_body")?para(t("compliance_body")):"")},
+
+   {k:"priorpi", n:"6b", t:"Prudential indicators",
+    b: `<p>The indicators below are those the Prudential Code requires, each shown with the
+        previous year's actual from the statement of accounts alongside the authority's own
+        estimates for this year, the year ahead and the two after it.</p>`
+      + piTable(d, S.hra === "no" ? "gf" : "all")},
+
+   {k:"group", n:"6c", t:"Group indicators",
+    b: !(typeof groupOn === "function" && groupOn()) ? "" :
+      `<p>The authority has significant group undertakings, and reports a separate suite of
+        indicators for them. Income the authority receives from its own subsidiaries is an
+        intra-group transfer and does not appear in the group figures; what the subsidiaries
+        earn from third parties does, as does any third-party debt held by a subsidiary for
+        which the authority is ultimately responsible.</p>`
+      + groupTable(d)
+      + (t("group_body") ? para(t("group_body"))
+                         : gap("whether income from the subsidiaries is sustainable and "
+                             + "based on their own operations"))},
 
    {k:"performance", n:"7d", t:"Performance against budget and against last year",
     b: `<p>The table below sets what the period actually cost and earned against the budget
@@ -6023,7 +6277,7 @@ function propBlock(have){
  */
 function indicatorPicker(hasHRA, twoPool){
   const V = S.view || {};
-  const inds = ["all","LB1","LB2","LB3","LB4","LB5"];
+  const inds = ["all","LB1","LB2","LB3","LB4","LB5"].concat(twoPool ? ["LB6"] : []);
   const funds = twoPool ? [["all","Whole authority"],["gf","General Fund"],["hra","HRA"]]
               : hasHRA  ? [["all","Whole authority"],["gf","General Fund"],["hra","HRA"]]
               : null;
@@ -6065,8 +6319,10 @@ function indicatorParts(gf, hra, all, hasHRA, twoPool){
      tags:["LB1","LB2","LB3","LB4"]},
     {model:hra, label:"HRA",          cross:null, fund:"hra", heading:"Housing Revenue Account",
      tags:["LB1","LB2","LB3","LB4"]},
-    {model:all, label:"",             cross:null, fund:"all", heading:"Whole authority",
-     tags:["LB5"]}];
+    // LB5 is never split, and LB6 exists only here: it is the chart of what
+    // one fund has lent the other, which a single pool does not have.
+    {model:all, label:"",             cross:hra,  fund:"all", heading:"Whole authority",
+     tags:["LB5","LB6"]}];
   // One pool. LB1 for each fund; everything else on the combined balance sheet.
   return [
     {model:gf,  label:"General Fund", cross:null, fund:"gf",  heading:"", tags:["LB1"]},
@@ -6089,7 +6345,7 @@ function indicatorSplit(gf, hra, all, hasHRA, twoPool, forExport){
     const keep = p.tags.filter(wantInd);
     if(!keep.length || (hasHRA && !wantFund(p.fund))) return "";
     return (p.heading ? H(p.heading) : "")
-         + indicatorBlock(p.model, p.label, p.cross, {only:keep});
+         + indicatorBlock(p.model, p.label, p.cross, {only:keep, fund:p.fund});
   }).join("");
 }
 
@@ -6115,7 +6371,8 @@ function indicatorSplit(gf, hra, all, hasHRA, twoPool, forExport){
 const PV_FUND = {gf:"General Fund", hra:"HRA", all:"Whole authority"};
 const PV_TITLE = {LB1:"Net treasury position", LB2:"Treasury benchmarks",
   LB3:"Treasury commitments against the benchmarks",
-  LB4:"Borrowing requirement / overborrowing", LB5:"Treasury investment projection"};
+  LB4:"Borrowing requirement / over-borrowing", LB5:"Treasury investment position",
+  LB6:"General Fund / HRA treasury position"};
 
 function previewHTML(){
   const V = S.pv || (S.pv = {ind:"LB3", fund:null});
@@ -6147,13 +6404,13 @@ function previewHTML(){
 
   const started = gf.some(r => r.cfr) || (hra || []).some(r => r.cfr);
   const body = started
-    ? indicatorBlock(pick.model, pick.label, pick.cross, {only:[V.ind]})
+    ? indicatorBlock(pick.model, pick.label, pick.cross, {only:[V.ind], fund:pick.fund})
     : `<p class="pvempty">Nothing to draw yet — enter a capital financing requirement
        above and the chart appears as you type.</p>`;
 
   return `<div class="picker no-print pvbar">
       <span class="pl">Chart</span>
-      ${["LB1","LB2","LB3","LB4","LB5"].map(k =>
+      ${["LB1","LB2","LB3","LB4","LB5"].concat(S.hra === "two" ? ["LB6"] : []).map(k =>
         btn(k === V.ind, "data-pi", k, k, PV_TITLE[k])).join("")}
       <span class="sp"></span>${funds}
     </div>${body}`;
@@ -6271,68 +6528,85 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
   const only = O.only || null;
   const want = tag => !only || only.indexOf(tag) >= 0;
   const tag = fundLabel ? ` — ${esc(fundLabel)}` : "";
-  // "In addition, for those authorities it is recommended that a further
-  // series be included on EACH output: (f) General Fund lending to/borrowing
-  // from Housing Revenue Account." A separate chart was my first reading and
-  // it was wrong — it belongs on every one of them.
   const D = hraSet ? crossFund(d, hraSet) : d;
-  const XF = hraSet ? [{k:"cross",t:"General Fund lending to / borrowing from the HRA",
-                        c:"var(--l-strat)", w:1.6, dash:"2 3"}] : [];
-  /* ONE SPEC, DRAWN AND THEN NAMED.
+
+  /* SERIES (f) BELONGS TO LB3, AND NOWHERE ELSE.
    *
-   * The lines and the legend used to be two lists written out beside each
-   * other, and they had drifted: LB3 draws five lines and named three, LB4
-   * named none at all, and every dashed series was given a solid swatch. The
-   * spec is now built once, handed to chart(), and handed to legendFor(),
-   * which cannot describe a line that was not drawn or miss one that was. */
+   * I put it on LB1, LB2 and LB4 as well, and left a comment saying a
+   * separate chart "was my first reading and it was wrong". The consultation
+   * is explicit twice over: Section 7 introduces (f) inside the paragraph
+   * about LB3, and Annex 2 says "this inter-GF/HRA treasury relationship
+   * should also be shown on each LB3 chart". LB4 is defined as "a single data
+   * series" in terms, so a second line on it is not a garnish, it is a
+   * contradiction. */
+  const XF = hraSet ? [{k:"cross", t:"General Fund lending to / borrowing from the HRA",
+                        c:"var(--l-strat)", w:1.6, dash:"2 3"}] : [];
+  /* The chart commences with the most recent actual year-end; the tables and
+     every readout still start at the current year, which is what they mean. */
+  const AF = O.fund || (fundLabel === "HRA" ? "hra" : (fundLabel ? "gf" : "all"));
   const P = (spec, body) => `<div class="chartwrap">${chart(
-    spec.data || D, spec)}${legendFor(spec)}</div>${body || ""}`;
+    withActual(S, AF, spec.data || D), spec)}${legendFor(spec)}</div>${body || ""}`;
 
   return `
-   ${!want("LB1") ? "" : IND("LB1","Net treasury position",
+   ${!want("LB1") ? "" : IND("LB1","Net treasury position"+tag,
      P({xlab:fy, label:"LB1", lines:[
-       {k:"cfr",t:"Capital financing requirement",c:"var(--l-cfr)",w:2},
-       {k:"obs",t:"Other balance sheet items",c:"var(--l-obs)",w:1.8,dash:"5 3"},
-       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:2.4}].concat(XF)})
+       {k:"cfr",t:"Capital financing requirement",c:"var(--l-cfr)",w:2.2},
+       {k:"obs",t:"Other balance sheet items",c:"var(--l-obs)",w:2.2},
+       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:2.2}]})
      + readoutHTML("LB1", d, fundLabel))}
    ${!want("LB2") ? "" : IND("LB2","Treasury benchmarks"+tag,
      P({xlab:fy, label:"LB2", lines:[
-       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:1.8},
-       {k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:1.8},
-       {k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.4},
-       {k:"al",t:"Authorised limit for external debt",c:"var(--l-al)",w:1.6,dash:"7 4"}].concat(XF)})
+       {k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.2},
+       {k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:2.2,neg:true},
+       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:2.2},
+       {k:"al",t:"Authorised limit",c:"var(--l-al)",w:2,dash:"7 4"}]})
      + otable(d,[{l:"Net treasury position",k:"ntp"},{l:"Treasury investment benchmark",k:"tib"},
                  {l:"Liability benchmark",k:"lb",cls:"lb"},{l:"Authorised limit",k:"al",cls:"key"}])
      + readoutHTML("LB2", d, fundLabel))}
-   ${!want("LB3") ? "" : IND("LB3","Treasury commitments against the benchmarks"+tag,
+   ${!want("LB3") ? "" : IND("LB3","Treasury commitments compared to the benchmarks"+tag,
+     /* Commitments are COLUMNS against benchmark LINES, as the consultation
+        draws them. The order here is the order of its own legend. */
      P({xlab:fy, label:"LB3", h:280,
-       fill:[{k:"lb",to:"el",t:"The gap between them",c:"var(--l-lb)",o:.09}],
-       lines:[{k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.4},
-              {k:"el",t:"Existing loan commitments",c:"var(--l-debt)",w:2.2},
-              {k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:1.8,dash:"3 3"},
-              {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:1.6},
-              {k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:1.6,dash:"4 3"}].concat(XF)})
+       // Investments below the line, as the consultation's own table
+       // brackets them; the figure in our tables keeps its sign.
+       bars:[{k:"el",t:"Existing loans",c:"var(--l-debt)"},
+             {k:"ei",t:"Existing investments",c:"var(--l-ei)",neg:true}],
+       lines:[{k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.2},
+              {k:"tib",t:"Investment benchmark",c:"var(--l-inv)",w:2.2,neg:true},
+              {k:"ntp",t:"Net",c:"var(--l-ntp)",w:2.2}].concat(XF)})
      + otable(d,[{l:"Existing loan commitments",k:"el"},{l:"Liability benchmark",k:"lb",cls:"lb"},
                  {l:"Existing investment commitments",k:"ei"}])
      + readoutHTML("LB3", d, fundLabel))}
-   ${!want("LB4") ? "" : IND("LB4","Borrowing requirement / overborrowing"+tag,
-     P({xlab:fy, label:"LB4", h:220,
-       fill:[{k:"br",t:"Borrowing requirement",c:"var(--l-lb)",o:.14}],
-       lines:[{k:"br",t:"Borrowing requirement",c:"var(--l-lb)",w:2.4}].concat(XF)})
+   ${!want("LB4") ? "" : IND("LB4","Borrowing requirement / over-borrowing"+tag,
+     // "as a single series", and a column chart: over-borrowed years hang
+     // below the zero line, which is the whole point of the picture.
+     P({xlab:fy, label:"LB4", h:240,
+       bars:[{k:"br",t:"Borrowing requirement / above-benchmark borrowing",c:"var(--l-br)"}],
+       lines:[]})
      + otable(d,[{l:"Borrowing requirement",k:"need"},{l:"Above-benchmark borrowing",k:"over"}])
      + readoutHTML("LB4", d, fundLabel))}
-   ${(skipLB5 || !want("LB5")) ? "" : IND("LB5","Treasury investment projection",
-     P({data:d, label:"LB5", h:240,
-       fill:[{k:"liq",t:"Liquidity allowance",c:"var(--l-inv)",o:.16}],
-       lines:[{k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:2.4},
-              {k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:1.8,dash:"3 3"},
-              {k:"liq",t:"Liquidity allowance",c:"var(--muted)",w:1.6},
-              {k:"strategic",t:"Strategic investments",c:"var(--l-strat)",w:1.8},
-              {k:"excess",t:"Excess investments",c:"var(--l-exc)",w:1.8}]})
+   ${(skipLB5 || !want("LB5")) ? "" : IND("LB5","Treasury investment position",
+     P({data:d, label:"LB5", h:240, xlab:fy,
+       // Every series on LB5 is an investment, and the consultation's table
+       // brackets every one of them.
+       lines:[{k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:2.2,neg:true},
+              {k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:2,neg:true},
+              {k:"liq",t:"Liquidity allowance",c:"var(--muted)",w:1.8,neg:true},
+              {k:"strategic",t:"Strategic treasury investments",c:"var(--l-strat)",w:2,neg:true},
+              {k:"excess",t:"Excess treasury investments",c:"var(--l-exc)",w:2,neg:true}]})
      + otable(d,[{l:"Treasury investment benchmark",k:"tib",cls:"inv"},{l:"Liquidity allowance",k:"liq"},
                  {l:"Strategic treasury investments",k:"strategic"},
                  {l:"Excess treasury investments",k:"excess"}])
-     + readoutHTML("LB5", d, fundLabel))}`;
+     + readoutHTML("LB5", d, fundLabel))}
+   ${!(want("LB6") && hraSet) ? "" : IND("LB6","General Fund / HRA treasury position",
+     /* "LB3 (supplemental)" in the annex, and the sixth of the "Charts
+        LB1-LB6" its own heading promises. Two-pool authorities only: it
+        quantifies what one fund has lent the other, which under a single pool
+        does not exist. */
+     P({data:D, xlab:fy, label:"LB6", h:220,
+       bars:[{k:"cross", t:"General Fund lending to / borrowing from the HRA",
+              c:"var(--l-strat)"}], lines:[]})
+     + otable(D,[{l:"GF lending to / (borrowing from) the HRA",k:"cross",cls:"key"}]))}`;
 }
 
 function caveat(){
@@ -6349,6 +6623,362 @@ function caveat(){
     ${esc(NAT().n)}.${S.hra==="two" ? ` Under the two-pool approach LB2 to LB4 are shown separately
     for each fund, with General Fund lending to or borrowing from the HRA as a further series,
     as the Code recommends.` : ""}</div>`;
+}
+
+/* ===========================================================================
+ * The prudential indicators an authority already knows, and the group.
+ *
+ * TWO THINGS THE CONSULTATION KEEPS OR ADDS, AND WE HAD NEITHER.
+ *
+ * THE EXISTING FOUR. Section 5: "Seventy percent of respondents agree that
+ * the following prudential indicators should include the two previous years:
+ * capital expenditure, capital financing requirement, financing costs vs the
+ * net revenue stream, service and commercial income vs the net revenue
+ * stream", with the insertion "The local authority will set out the actual
+ * total of [indicator] for the previous year and then make reasonable
+ * estimates for the current financial year, forthcoming financial year and at
+ * least the following two." So: a prior-year ACTUAL and four estimates. We
+ * computed all four figures and never presented them as the indicators an
+ * authority and its members have known for twenty years.
+ *
+ * THE GROUP. Section 4 proposes a separate suite where there are significant
+ * group undertakings, "in order to ensure that income from subsidiaries is
+ * sustainable and based on their operations", minimum: financing costs vs the
+ * net revenue stream and service and commercial income vs the net revenue
+ * stream, on a group basis as well as single-entity, excluding intra-group
+ * income and including third-party subsidiary debt the authority is
+ * ultimately responsible for.
+ *
+ * The arithmetic below is Annex 1's, and reconciles to all six of its
+ * published percentages. Its point is that a subsidiary that stops performing
+ * disappears from single-entity reporting: in its Scenario 2 the council's
+ * own two indicators are unchanged at 11.1% and 7.4% while the group's
+ * commercial income collapses from 8.5% to 0.7% of the net revenue stream.
+ * That is the whole reason for the proposal, and no single-entity report can
+ * show it.
+ * ======================================================================== */
+const PI_ROWS = [
+  {k:"capex", l:"Capital expenditure", u:"£m"},
+  {k:"cfr",   l:"Capital financing requirement", u:"£m"},
+  {k:"afford",l:"Financing costs to net revenue stream", u:"%"},
+  {k:"commratio", l:"Service and commercial income to net revenue stream", u:"%"}
+];
+
+/* Prior-year actual, current, forthcoming and at least the following two. */
+function piYears(d, fund){
+  const a = actualRow(S, fund || "all");
+  return (a ? [a] : []).concat(d.slice(0, 4));
+}
+
+function piTable(d, fund){
+  const rows = piYears(d, fund);
+  if(!rows.length) return "";
+  const cell = (r, x) => {
+    const v = r[x.k];
+    if(v == null || !isFinite(v)) return "–";
+    return x.u === "%" ? v.toFixed(1) + "%" : "£" + m1(v) + "m";
+  };
+  return `<div style="overflow-x:auto"><table class="otable">
+    <thead><tr><th>Prudential indicator</th>${rows.map(r =>
+      `<th>${fy(r.fy)}${r.actual ? "<br><i>actual</i>" : ""}</th>`).join("")}</tr></thead>
+    <tbody>${PI_ROWS.map(x => `<tr><td class="w">${esc(x.l)}</td>${
+      rows.map(r => `<td>${cell(r, x)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    <p class="note">The previous year is the actual from the statement of accounts; the
+      remaining years are the authority's own estimates. Financing costs are interest
+      payable and the provision for debt repayment, with interest receivable
+      <b>not</b> netted off.</p>`;
+}
+
+/* ---- the group ---------------------------------------------------------- */
+function groupOn(){ const G = S.group || {}; return !!G.on; }
+
+/* Annex 1, exactly. Council financing costs plus any third-party subsidiary
+   debt the authority stands behind; the net revenue stream with intra-group
+   income taken out and the subsidiaries' own external income put in. */
+function groupCalc(d){
+  const G = S.group || {}, y = d[0] || {};
+  const n = k => +G[k] || 0;
+  const single = {
+    fin: y.fincost, nrs: y.nrs, sc: y.comminc,
+    finR: y.afford, scR: y.commratio
+  };
+  const fin = (y.fincost || 0) + n("subdebtcost");
+  const nrs = (y.nrs || 0) - n("intra") + n("subincome");
+  const sc  = n("subincome") + Math.max(0, (y.comminc || 0) - n("intra"));
+  return {single, group: {fin, nrs, sc,
+    finR: nrs > 0 ? fin / nrs * 100 : null,
+    scR:  nrs > 0 ? sc  / nrs * 100 : null}};
+}
+
+function groupTable(d){
+  if(!groupOn()) return "";
+  const c = groupCalc(d);
+  const pc = v => v == null ? "–" : v.toFixed(1) + "%";
+  const m  = v => v == null ? "–" : "£" + m1(v) + "m";
+  return `<div style="overflow-x:auto"><table class="otable">
+    <thead><tr><th>${fy(S.fy0)}</th><th>Single entity</th><th>Group</th></tr></thead>
+    <tbody>
+      <tr><td class="w">Financing costs</td><td>${m(c.single.fin)}</td><td>${m(c.group.fin)}</td></tr>
+      <tr><td class="w">Net revenue stream</td><td>${m(c.single.nrs)}</td><td>${m(c.group.nrs)}</td></tr>
+      <tr><td class="w">Service and commercial income</td><td>${m(c.single.sc)}</td>
+          <td>${m(c.group.sc)}</td></tr>
+      <tr class="key"><td class="w">Financing costs to net revenue stream</td>
+          <td>${pc(c.single.finR)}</td><td>${pc(c.group.finR)}</td></tr>
+      <tr class="key"><td class="w">Service and commercial income to net revenue stream</td>
+          <td>${pc(c.single.scR)}</td><td>${pc(c.group.scR)}</td></tr>
+    </tbody></table></div>
+    <p class="note">Income the authority receives from its own subsidiaries is an
+      intra-group transfer and is excluded from the group figures; the subsidiaries'
+      income from third parties is included, as is any third-party debt held by a
+      subsidiary for which the authority is ultimately responsible. Where a subsidiary
+      stops performing, the group ratio moves and the single-entity ratio does not —
+      which is what the separate suite is for.</p>`;
+}
+
+/* ---- the inputs ---------------------------------------------------------
+ * A model nobody can feed is a model nobody has. The actual year-end goes
+ * beside the grid it precedes; the group figures go with the indicators they
+ * belong to, behind a switch, because most authorities have no significant
+ * group undertakings and should not be asked about subsidiaries they do not
+ * have. */
+const GROUP_IN = [
+  {k:"intra",       l:"Income from your own subsidiaries",
+   s:"an intra-group transfer — taken out of the group figures"},
+  {k:"subincome",   l:"Subsidiaries' income from third parties",
+   s:"what the group actually earns from outside itself"},
+  {k:"subdebtcost", l:"Financing cost of third-party subsidiary debt",
+   s:"where the authority is ultimately responsible for it"}
+];
+
+function actualPanel(){
+  S.actual = S.actual || {};
+  const funds = S.hra === "no" ? [["gf","Whole authority"]]
+                               : [["gf","General Fund"],["hra","HRA"]];
+  const cols = COLS.filter(c => ACTUAL_COLS.indexOf(c.k) >= 0);
+  return `<p class="cpsub">The Code asks that the table and charts commence with the most
+      recent actual year-end, taken from the statement of accounts. Enter
+      ${fy(S.fy0 - 1)} and every chart starts there; leave it and they start at
+      ${fy(S.fy0)}, as they did before.</p>
+    <div class="perfwrap"><table class="perf">
+      <thead><tr><th>${fy(S.fy0-1)} actual</th>${funds.map(([,t])=>
+        `<th>${esc(t)}</th>`).join("")}</tr></thead>
+      <tbody>${cols.map(c => `<tr>
+        <td class="pl"><b>${c.l.replace(/<br>/g," ")}</b></td>
+        ${funds.map(([f]) => {
+          const v = (S.actual[f] || {})[c.k];
+          return `<td><input type="text" inputmode="decimal" data-ac="${c.k}"
+            data-af="${f}" value="${v == null ? "" : v}" placeholder="—"
+            aria-label="${esc(c.l.replace(/<br>/g," "))} ${f}"></td>`;
+        }).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+
+function groupPanel(){
+  const G = S.group || (S.group = {});
+  return `<label class="cpmini"><input type="checkbox" id="groupon" ${G.on?"checked":""}>
+      This authority has significant group undertakings</label>
+    ${!G.on ? `<p class="cpsub">The Code asks for a separate suite of indicators only where
+      there are. Most authorities have none, and are not asked.</p>` : `
+    <div class="perfwrap"><table class="perf">
+      <tbody>${GROUP_IN.map(x => `<tr>
+        <td class="pl"><b>${esc(x.l)}</b><span>${esc(x.s)}</span></td>
+        <td><input type="text" inputmode="decimal" data-gp="${x.k}"
+          value="${G[x.k] == null ? "" : G[x.k]}" placeholder="£m"
+          aria-label="${esc(x.l)}"></td></tr>`).join("")}</tbody></table></div>`}`;
+}
+
+/* ===========================================================================
+ * The report you wrote last time.
+ *
+ * A treasury team does not start a strategy from a blank page. It opens last
+ * year's Word file, changes the years and the numbers, and keeps every
+ * locally-negotiated sentence — the phrasing the section 151 officer signed
+ * off, the paragraph legal insisted on, the house style the committee is used
+ * to. That document, not an adviser's template, is the real incumbent, and a
+ * tool that cannot take part in it asks somebody to give up a year of
+ * accumulated wording to use it.
+ *
+ * So the tool keeps what you wrote, and hands it to the next report.
+ *
+ * TWO SEEDINGS, AND THEY ARE NOT THE SAME OPERATION.
+ *
+ *   ROLL FORWARD — last year's strategy into this year's. The grid moves one
+ *   year left, because year two of last year's projection is year one of this
+ *   one. The wording, the choices, the counterparty policy and the debt come
+ *   with it. Anything that described a period that has now happened does not.
+ *
+ *   MONITOR AGAINST — this year's strategy into this year's outturn or
+ *   monitoring report. The grid does not move: it is the same year. What
+ *   transfers is what the strategy SET, so the later report can be measured
+ *   against it — the authorised limit it derived becomes the limit approved,
+ *   and the interest and income it projected become the BUDGET column of the
+ *   performance table. "Monitoring is against strategy" stops being a figure
+ *   of speech and becomes the arithmetic.
+ *
+ * Everything stays in this browser. There is no server to put it on, which is
+ * the same reason there is no account — and the same limitation: this is one
+ * browser on one machine, and it says so rather than implying a vault.
+ * ======================================================================== */
+const LIB_INDEX = "lb:index";
+// r1 lives inside the demo function in wire.js, so it is not ours to use.
+const lib1 = v => (v == null || !isFinite(v)) ? null : Math.round(v * 10) / 10;
+const libKey = (gss, report, fy0) => `lb:${gss||"none"}:${report}:${fy0}`;
+
+function libRead(){
+  try { return JSON.parse(localStorage.getItem(LIB_INDEX) || "[]"); }
+  catch(e){ return []; }
+}
+function libWrite(ix){
+  try { localStorage.setItem(LIB_INDEX, JSON.stringify(ix.slice(0, 60))); }
+  catch(e){ /* storage full or refused; the report itself is what matters */ }
+}
+/* Newest first, and one entry per authority-report-year: saving again
+   replaces rather than accumulates, because "version 7 of the 2026/27
+   strategy" is a thing nobody wants to choose between. */
+function libNote(gss, report, fy0, extra){
+  const ix = libRead().filter(e => e.k !== libKey(gss, report, fy0));
+  ix.unshift(Object.assign({
+    k: libKey(gss, report, fy0), gss, report, fy0,
+    n: (LB[gss] && LB[gss].n) || S.otherName || "your authority",
+    at: new Date().toISOString()
+  }, extra || {}));
+  libWrite(ix);
+}
+function libFor(gss){
+  return libRead().filter(e => e.gss === gss);
+}
+function libLoad(k){
+  try { return JSON.parse(localStorage.getItem(k) || "null"); }
+  catch(e){ return null; }
+}
+
+/* What a saved report would give this one, said before it is taken. A seed
+   that silently replaces forty fields is not a convenience, it is a surprise;
+   the offer names the operation and what comes with it. */
+function libOffer(e){
+  const rep = (REPORTS.find(r => r.k === e.report) || {}).t || e.report;
+  const roll = e.report === S.report;
+  return {
+    kind: roll ? "roll" : "monitor",
+    label: `${rep} · ${fy(e.fy0)}`,
+    what: roll
+      ? (e.fy0 === S.fy0
+          ? "the same report, saved earlier — everything, unchanged"
+          : `rolled forward ${S.fy0 - e.fy0} year${S.fy0-e.fy0===1?"":"s"}: the grid moves `
+            + `with the years, and the wording, choices, counterparty policy and debt come as they are`)
+      : `what that strategy SET: its authorised limit as the limit approved, and its `
+        + `projected interest and income as your budget column`
+  };
+}
+
+/* ---- roll forward ------------------------------------------------------- */
+function libRollGrid(g, shift){
+  // Year two of last year's projection is year one of this one. A grid rolled
+  // forward keeps the shape and loses the years that have gone; the tail is
+  // filled with the last real figure rather than with zero, because a blank
+  // year is read as nil and nil is a claim.
+  const out = {gf:{}, hra:{}};
+  ["gf","hra"].forEach(f => {
+    COLS.forEach(c => {
+      const src = ((g||{})[f] || {})[c.k] || [];
+      const row = new Array(S.years).fill(0);
+      for(let i = 0; i < S.years; i++){
+        const j = i + shift;
+        row[i] = j < src.length ? (src[j] || 0) : (src.length ? src[src.length-1] || 0 : 0);
+      }
+      out[f][c.k] = row;
+    });
+  });
+  return out;
+}
+
+function libSeed(k){
+  const d = libLoad(k);
+  if(!d) return {ok:false, note:"That saved report could not be read."};
+  const roll = d.report === S.report;
+  const shift = Math.max(0, S.fy0 - d.fy0);
+
+  // Carried either way: the words, the answers, the policy, what is held.
+  S.text = Object.assign({}, d.text || {});
+  if(d.choices) S.choices = Object.assign({}, d.choices);
+  S.cp = d.cp ? JSON.parse(JSON.stringify(d.cp)) : S.cp;
+  S.loans = (d.loans || []).map(x => Object.assign({}, x));
+  S.portfolio = (d.portfolio || []).map(x => Object.assign({}, x));
+  S.portfolioText = d.portfolioText || ""; S.portfolioNote = d.portfolioNote || "";
+  S.minliq = d.minliq == null ? S.minliq : d.minliq;
+  S.logo = d.logo || S.logo;
+  S.hra = d.hra || S.hra;
+  S.group = d.group ? JSON.parse(JSON.stringify(d.group)) : (S.group || {});
+  /* The actual year-end does NOT roll forward. Last year's report opened on
+     the year before it; this one opens on a year that has since closed, and
+     its figures come from a set of accounts we have not seen. Carrying the
+     old one would put a two-year-old actual under a heading that says it is
+     the most recent. */
+  if(roll && shift) S.actual = {}; else S.actual = d.actual || S.actual || {};
+  S.g = migrateGrid(roll ? libRollGrid(d.g, shift) : d.g, S.years);
+
+  let note;
+  if(roll){
+    /* A report that looks forward carries no actuals. Rolling last year's
+       outturn figures into this year's report would put a period that has
+       happened under a heading that has not. */
+    S.perf = {}; S.limits = {};
+    note = shift
+      ? `Rolled forward ${shift} year${shift===1?"":"s"} from ${fy(d.fy0)}. The grid moved with `
+        + `the years; wording, choices, counterparty policy and debt came as they were. `
+        + `Actuals were not carried — they belong to a period that has ended.`
+      : `Loaded the ${fy(d.fy0)} version as it was saved.`;
+  } else {
+    /* MONITOR AGAINST. This is the one that earns the feature. */
+    const m = buildModel(Object.assign({}, d, {g: migrateGrid(d.g, d.years || S.years)}),
+                         d.hra === "no" ? "gf" : "all");
+    const y0 = m[0] || {};
+    /* A strategy that recorded the limit MEMBERS approved beats the one the
+       projection derived: the approved figure is the fact, the derived one is
+       our arithmetic about it. Which was used is then stated, because the
+       message named the derived figure while quietly using the other. */
+    const fromSaved = d.limits && d.limits.al_approved != null;
+    const al = fromSaved ? d.limits.al_approved : lib1(y0.al);
+    S.limits = Object.assign({}, S.limits, {al_approved: al});
+    S.perf = S.perf || {};
+    const put = (k, v) => { if(v == null) return;
+      S.perf[k] = Object.assign({}, S.perf[k], {budget: lib1(v)}); };
+    put("intpay", y0.intpay);
+    put("intinc", y0.intinc);
+    S.perf = Object.assign({}, S.perf);
+    note = `Seeded from the ${fy(d.fy0)} strategy. Its authorised limit of £${m1(al || 0)}m `
+      + `— ${fromSaved ? "the figure recorded as approved" : "derived from its own projection"} `
+      + `— is entered as the limit approved, and the interest and income it projected are your `
+      + `budget column, so the variances are against what members actually agreed.`;
+  }
+
+  /* What last year said, kept so this year can be compared with it rather
+     than merely replacing it. Five figures, not a second copy of the grid. */
+  const pm = buildModel(Object.assign({}, d, {g: migrateGrid(d.g, d.years || S.years)}),
+                        d.hra === "no" ? "gf" : "all");
+  const p0 = pm[0] || {};
+  S.prior = {fy0: d.fy0, report: d.report, cfr: p0.cfr, lb: p0.lb, el: p0.el,
+             al: p0.al, ntp: p0.ntp};
+  return {ok:true, note, kind: roll ? "roll" : "monitor"};
+}
+
+/* One line in the draft, where a comparative belongs: beside the figure it
+   is a comparative for. Only where a prior report was actually loaded — this
+   never invents a movement. */
+function priorLine(d){
+  const p = S.prior;
+  if(!p || !d || !d.length) return "";
+  const mv = (now, was, what) => {
+    if(was == null || now == null) return "";
+    const dd = now - was;
+    return `${what} ${Math.abs(dd) < 0.05 ? "is unchanged at" :
+      `has moved ${dd > 0 ? "up" : "down"} £${m1(Math.abs(dd))}m to`} <b>£${m1(now)}m</b>`;
+  };
+  const bits = [mv(d[0].cfr, p.cfr, "The capital financing requirement"),
+                mv(d[0].lb, p.lb, "the liability benchmark"),
+                mv(d[0].el, p.el, "existing loan commitments")].filter(Boolean);
+  if(!bits.length) return "";
+  return `<p class="note">Against the ${esc((REPORTS.find(r=>r.k===p.report)||{}).t
+    || "previous report")} for ${fy(p.fy0)}: ${bits.join(", ")}.</p>`;
 }
 
 /* ===========================================================================
@@ -6539,6 +7169,22 @@ const CHECKS = [
        note:`A return of ${ret.toFixed(2)}% is reported against nothing. 61% of outturns in the `
           + `corpus name a benchmark; without one the figure cannot be judged.`};
      return {v:"met", note:`${ret.toFixed(2)}% against ${bench.toFixed(2)}%.`};
+   }},
+  {k:"carried", src:"PC E9", g:"The document", in:CK_ALL,
+   t:"The report is set against the one before it",
+   run(){
+     const p = S.prior;
+     if(p) return {v:"met", note:`Seeded from the ${esc((REPORTS.find(r=>r.k===p.report)||{}).t
+       || "previous report")} for ${fy(p.fy0)}, and the movement against it is stated in the `
+       + `balance sheet section.`};
+     const have = (typeof libFor === "function" ? libFor(S.gss) : [])
+       .filter(e => !(e.report === S.report && e.fy0 === S.fy0)).length;
+     return have
+       ? {v:"gap", go:1, note:`${have} earlier report${have===1?" is":"s are"} saved for this `
+          + `authority and none was used. Starting from one carries the wording and sets this `
+          + `report against it.`}
+       : {v:"yours", note:"No earlier report is saved in this browser to compare with. Save "
+          + "this one and the next will start from it."};
    }},
   {k:"wording", src:"TMC", g:"The document", in:CK_ALL,
    t:"Every section this report needs has been written",
@@ -7086,16 +7732,23 @@ async function downloadCSV(){
    Keyed on the report type, so a strategy and an outturn for the same council
    do not overwrite each other. Browser storage only for now: nothing leaves
    the machine, which is also why two people cannot yet work on one report.  */
-const KEY = () => `lb:${S.gss||"none"}:${S.report}`;
+/* Keyed by YEAR as well as by authority and report. It was not, so the
+   2027/28 strategy overwrote the 2026/27 one and there was never a library to
+   seed the next report from — only ever the last thing you saved. */
+const KEY = () => libKey(S.gss, S.report, S.fy0);
+const KEY_OLD = () => `lb:${S.gss||"none"}:${S.report}`;
 function saveVersion(){
   try{
     localStorage.setItem(KEY(), JSON.stringify({
       v:3, gss:S.gss, report:S.report, fy0:S.fy0, hra:S.hra, years:S.years,
       loans:S.loans, g:S.g, text:S.text, limits:S.limits, perf:S.perf, choices:S.choices,
+      actual:S.actual, group:S.group,
       portfolio:S.portfolio, portfolioText:S.portfolioText, portfolioNote:S.portfolioNote,
-      logo:S.logo, asAt:S.asAt, minliq:S.minliq, cp:S.cp,
+      logo:S.logo, asAt:S.asAt, minliq:S.minliq, cp:S.cp, prior:S.prior,
       otherName:S.otherName, natOverride:S.natOverride,
       at:new Date().toISOString()}));
+    libNote(S.gss, S.report, S.fy0, {hra:S.hra});
+    if(typeof libFill === "function") libFill();
     stampSaved("Saved");
   }catch(e){ $("saved").textContent = "Could not save — browser storage is unavailable."; }
 }
@@ -7120,8 +7773,9 @@ function migrateGrid(g, years){
 
 function restoreVersion(){
   try{
-    const raw = localStorage.getItem(KEY());
-    if(!raw){ $("saved").textContent = "Nothing saved for this authority and report type yet."; return; }
+    // Anything saved before the key carried a year lives under the old one.
+    const raw = localStorage.getItem(KEY()) || localStorage.getItem(KEY_OLD());
+    if(!raw){ $("saved").textContent = "Nothing saved for this authority, report and year yet."; return; }
     const d = JSON.parse(raw);
     S.fy0=d.fy0; S.hra=d.hra; S.years=d.years||51; S.loans=d.loans||[];
     S.g=migrateGrid(d.g, d.years||51);
@@ -7135,6 +7789,8 @@ function restoreVersion(){
     // a document somebody already took to committee.
     S.asAt=d.asAt||null; S.minliq=d.minliq||null;
     S.otherName=d.otherName||""; S.natOverride=d.natOverride||null;
+    S.perf=d.perf||{}; S.prior=d.prior||null;
+    S.actual=d.actual||{}; S.group=d.group||{};
     if(S.gss === "other" && LB.other) LB.other.n = S.otherName;
     // The counterparty policy is a whole section of the report. It was left
     // out of the saved payload when the step was added, so saving and
@@ -7223,13 +7879,13 @@ function stampSaved(word){
     if(c && c.l) S.loans.unshift({pwlb:true,name:"PWLB",amt:c.o,profile:"actual"});
     if(S.gss === "other") S.natOverride = $("otherreg").value;
     else S.natOverride = null;
-    otherShown(); loanRows(); applyLoans(); renderSections(); });
+    otherShown(); loanRows(); applyLoans(); renderSections(); libFill(); });
   $("othername").addEventListener("input", e=>{
     LB.other.n = e.target.value.trim(); S.otherName = LB.other.n; render(); });
   $("otherreg").addEventListener("change", e=>{
     S.natOverride = e.target.value; renderSections(); render(); });
   $("rtype").addEventListener("change", e=>{ S.report=e.target.value;
-    $("saved").textContent=""; renderSections(); render(); });
+    $("saved").textContent=""; renderSections(); render(); libFill(); });
   // The report's as-at date. Defaults to the data we hold, and is free to be
   // moved either side of it.
   $("asat").value = MKT.as_at || "";
@@ -7242,7 +7898,8 @@ function stampSaved(word){
     renderSections(); render();
   });
 
-  $("fy0").addEventListener("change", e=>{ S.fy0=+e.target.value; buildLedger(); loanRows(); applyLoans(); });
+  $("fy0").addEventListener("change", e=>{ S.fy0=+e.target.value;
+    buildLedger(); loanRows(); applyLoans(); libFill(); });
   $("hra").addEventListener("change", e=>{ S.hra=e.target.value; fundTabs(); render(); });
   // The logo is read into a data URI and kept in browser storage with the
   // rest of the version, so it survives a save and travels inside the exported
@@ -7681,6 +8338,37 @@ function stampSaved(word){
       ()=>$("dhint").textContent="Draft copied as text.",
       ()=>$("dhint").textContent="Could not reach the clipboard.");
   });
+  /* The library: what this authority has already written, and what taking it
+     would do. Refreshed whenever the authority, the report or the year
+     changes, because all three decide which saved reports are relevant and
+     which of the two seedings applies. */
+  function libFill(){
+    const box = $("libbox"), pick = $("libpick");
+    if(!box || !pick) return;
+    const mine = libFor(S.gss).filter(e => !(e.report === S.report && e.fy0 === S.fy0));
+    box.hidden = !mine.length;
+    if(!mine.length){ $("libwhat").textContent = ""; return; }
+    pick.innerHTML = mine.map(e =>
+      `<option value="${esc(e.k)}">${esc(libOffer(e).label)}</option>`).join("");
+    libSay();
+  }
+  function libSay(){
+    const e = libFor(S.gss).find(x => x.k === $("libpick").value);
+    $("libwhat").innerHTML = e ? esc(libOffer(e).what) : "";
+  }
+  $("libpick").addEventListener("change", libSay);
+  $("libgo").addEventListener("click", ()=>{
+    const r = libSeed($("libpick").value);
+    if(!r.ok){ $("saved").textContent = r.note; return; }
+    $("hra").value = S.hra;
+    if($("minliq")) $("minliq").value = S.minliq == null ? "" : S.minliq;
+    fundTabs(); buildLedger(); loanRows(); countClauses();
+    if(typeof cpRender === "function") cpRender();
+    renderSections(); render();
+    $("saved").textContent = r.note;
+  });
+  window.libFill = libFill;
+
   $("save").addEventListener("click", saveVersion);
   $("restore").addEventListener("click", restoreVersion);
   // The indicator picker lives inside the rendered draft, so it is delegated.
@@ -7770,7 +8458,7 @@ function stampSaved(word){
     const b=e.target.closest("button"); if(!b) return;
     S.sec=b.dataset.s; renderSections(); });
 
-  fundTabs(); buildLedger(); loanRows(); renderSections(); render();
+  fundTabs(); buildLedger(); loanRows(); renderSections(); render(); libFill();
   // The counterparty form is delegated from its container, so it is wired once
   // here and survives every re-render of its own contents.
   cpRender(); cpWire();
