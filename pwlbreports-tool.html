@@ -769,6 +769,8 @@ table.pwlbtab td.num,table.pwlbtab th.num{text-align:right}
   padding-bottom:6px}
 .otable tbody tr:last-child td{border-bottom:0}
 .otable tr.key td{font-weight:600;border-top:1.5px solid var(--line2)}
+.otable tr.pihead td{font-weight:600;color:var(--ink);padding-top:11px;
+  border-bottom:0;font-family:var(--sans)}
 .otable tr.lb td{color:var(--l-lb);font-weight:600}
 .otable tr.inv td{color:var(--l-inv);font-weight:600}
 .note{font-family:var(--sans);font-size:12.5px;color:var(--ink2);line-height:1.6;
@@ -5087,7 +5089,7 @@ function autoNote(k){
     return box("Limits and actuals", limitsPanel()) + complianceTable();
   if(k==="priorpi")
     return box("The most recent actual year-end", actualPanel())
-         + piTable(d, S.hra === "no" ? "gf" : "all");
+         + piTable();
   if(k==="group")
     return box("Group undertakings", groupPanel()) + groupTable(d);
   if(k==="performance")
@@ -6072,7 +6074,7 @@ function docSections(){
     b: `<p>The indicators below are those the Prudential Code requires, each shown with the
         previous year's actual from the statement of accounts alongside the authority's own
         estimates for this year, the year ahead and the two after it.</p>`
-      + piTable(d, S.hra === "no" ? "gf" : "all")},
+      + piTable()},
 
    {k:"group", n:"6c", t:"Group indicators",
     b: !(typeof groupOn === "function" && groupOn()) ? "" :
@@ -6672,36 +6674,107 @@ function caveat(){
  * That is the whole reason for the proposal, and no single-entity report can
  * show it.
  * ======================================================================== */
+/* WHAT A REAL STRATEGY LOOKS LIKE.
+ *
+ * Havering's 2019/20 appendix, which is a good one, presents every existing
+ * indicator the same way: a prior-year ACTUAL and four estimates across the
+ * top, and Non-HRA, HRA and Total down the side. The consultation's Section 5
+ * change makes the actual column the norm rather than good practice; the fund
+ * split is not in the Code at all, and every authority that has an HRA does it
+ * anyway, because "the ratio of financing costs to net revenue stream is 6.3%"
+ * is not a fact a housing authority can act on. Ours showed one blended row.
+ *
+ * Every one of these is computable per fund from the grid as it stands —
+ * capital expenditure, the CFR, interest payable, MRP and the net revenue
+ * stream all exist for both. Only non-treasury income is General Fund alone,
+ * so its ratio is shown once and says which fund it is.
+ */
 const PI_ROWS = [
   {k:"capex", l:"Capital expenditure", u:"£m"},
   {k:"cfr",   l:"Capital financing requirement", u:"£m"},
   {k:"afford",l:"Financing costs to net revenue stream", u:"%"},
-  {k:"commratio", l:"Service and commercial income to net revenue stream", u:"%"}
+  {k:"commratio", l:"Service and commercial income to net revenue stream", u:"%",
+   gfOnly:true}
 ];
 
 /* Prior-year actual, current, forthcoming and at least the following two. */
-function piYears(d, fund){
-  const a = actualRow(S, fund || "all");
+function piYears(fund){
+  const d = buildModel(S, fund);
+  const a = actualRow(S, fund);
   return (a ? [a] : []).concat(d.slice(0, 4));
 }
 
-function piTable(d, fund){
-  const rows = piYears(d, fund);
-  if(!rows.length) return "";
+function piTable(){
+  const hasHRA = S.hra !== "no";
+  const bands = hasHRA ? [["gf","Non-HRA"],["hra","HRA"],["all","Total"]]
+                       : [["gf",""]];
+  const cols = piYears(hasHRA ? "all" : "gf");
+  if(!cols.length) return "";
+  const rows = {};
+  bands.forEach(([f]) => { rows[f] = piYears(f); });
+
   const cell = (r, x) => {
+    if(!r) return "–";
     const v = r[x.k];
     if(v == null || !isFinite(v)) return "–";
     return x.u === "%" ? v.toFixed(1) + "%" : "£" + m1(v) + "m";
   };
+  const line = (x, f, label, cls) => `<tr${cls ? ` class="${cls}"` : ""}>
+      <td class="w">${esc(label)}</td>${cols.map((_, i) =>
+        `<td>${cell(rows[f][i], x)}</td>`).join("")}</tr>`;
+
+  const body = PI_ROWS.map(x => {
+    // The whole-authority row is the indicator; the funds are how it is made
+    // up, and are indented under it rather than sitting beside it as equals.
+    if(!hasHRA || x.gfOnly)
+      return line(x, hasHRA && x.gfOnly ? "gf" : (hasHRA ? "all" : "gf"),
+                  x.l + (x.gfOnly && hasHRA ? " (General Fund)" : ""), "key");
+    return `<tr class="pihead"><td class="w" colspan="${cols.length+1}">${esc(x.l)}</td></tr>`
+         + bands.filter(([f]) => f !== "all").map(([f,t]) =>
+             line(x, f, "  " + t)).join("")
+         + line(x, "all", "  Total", "key");
+  }).join("");
+
   return `<div style="overflow-x:auto"><table class="otable">
-    <thead><tr><th>Prudential indicator</th>${rows.map(r =>
-      `<th>${fy(r.fy)}${r.actual ? "<br><i>actual</i>" : ""}</th>`).join("")}</tr></thead>
-    <tbody>${PI_ROWS.map(x => `<tr><td class="w">${esc(x.l)}</td>${
-      rows.map(r => `<td>${cell(r, x)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    <thead><tr><th>Prudential indicator</th>${cols.map(r =>
+      `<th>${fy(r.fy)}<br><i>${r.actual ? "actual" : "estimate"}</i></th>`).join("")}</tr></thead>
+    <tbody>${body}</tbody></table></div>
+    ${piWalk(rows.all || rows.gf, cols.length)}
     <p class="note">The previous year is the actual from the statement of accounts; the
       remaining years are the authority's own estimates. Financing costs are interest
       payable and the provision for debt repayment, with interest receivable
-      <b>not</b> netted off.</p>`;
+      <b>not</b> netted off — the 2026 consultation tightens the definition to forbid the
+      netting that was common practice, because it can mask an unsustainable arrangement.</p>`;
+}
+
+/* HOW THE CFR MOVED, WHICH IS THE PART MEMBERS ASK ABOUT.
+ *
+ * Havering shows it and so do most good strategies: the movement, then what
+ * the movement is made of. We had the identity — it is the walk the figures
+ * step checks — and never printed it, so a reader could see the CFR rise by
+ * £142m and not what drove it. */
+function piWalk(rows, n){
+  if(!rows || rows.length < 2) return "";
+  const mv = rows.map((r, i) => i === 0 ? null : r.cfr - rows[i-1].cfr);
+  if(!mv.some(v => v != null && Math.abs(v) > 0.05)) return "";
+  /* A row headed "Less" carries a positive figure. Printing "Less MRP
+     -£41.7m" states the deduction twice and reads as an addition to anyone
+     skimming; Havering, and every strategy that does this well, puts the
+     magnitude under the label and lets the label do the arithmetic. */
+  const row = (l, f, cls) => `<tr${cls?` class="${cls}"`:""}><td class="w">${esc(l)}</td>${
+    rows.map((r,i) => {
+      if(i === 0) return "<td>–</td>";
+      const v = f(r,i), z = Math.abs(v) < 0.05 ? 0 : v;
+      return `<td>£${m1(z)}m</td>`;
+    }).join("")}</tr>`;
+  return `<div style="overflow-x:auto"><table class="otable" style="margin-top:10px">
+    <thead><tr><th>Movement in the capital financing requirement</th>${rows.map(r =>
+      `<th>${fy(r.fy)}</th>`).join("")}</tr></thead><tbody>
+    ${row("Capital expenditure financed by borrowing", r => r.capex)}
+    ${row("Less MRP", r => r.mrp)}
+    ${row("Less capital receipts applied", r => r.rec)}
+    ${row("Movement in CFR", (r,i) => mv[i], "key")}
+    </tbody></table></div>`;
 }
 
 /* ---- the group ----------------------------------------------------------
