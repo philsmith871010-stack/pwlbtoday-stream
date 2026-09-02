@@ -921,27 +921,34 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
  * One question per line with its control beside it, grouped by what the
  * question is about. Stacked labels in an auto-fit grid put a long question's
  * text above a different question's control.
+ *
+ * Dense on purpose: twenty-three questions at 53px a row filled a screen and
+ * a half, and a step whose whole job is to be answered quickly should not
+ * need scrolling to see what is left. A row is a line of text plus the space
+ * to click, and nothing else.
  */
-#choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
-  gap:16px 26px;align-items:start}
+#choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(324px,1fr));
+  gap:10px 14px;align-items:start}
 .cgroup{min-width:0;border:1px solid var(--line);border-radius:var(--r-sm);
   background:var(--card);overflow:hidden}
-.cgroup h3{display:flex;align-items:baseline;gap:9px;margin:0;
-  font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink);
-  letter-spacing:.02em;padding:9px 13px;background:var(--sunken);
-  border-bottom:1px solid var(--line)}
-.cgroup h3 i{margin-left:auto;font-style:normal;font-size:10.5px;font-weight:500;
-  color:var(--muted);font-family:var(--mono)}
-.qrow{display:grid;grid-template-columns:minmax(0,1fr) 168px;gap:14px;
-  align-items:center;padding:7px 13px;border-bottom:1px solid var(--hair)}
+.cgroup h3{display:flex;align-items:baseline;gap:8px;margin:0;
+  font-family:var(--sans);font-size:11px;font-weight:600;color:var(--ink);
+  letter-spacing:.04em;text-transform:uppercase;padding:6px 11px;
+  background:var(--sunken);border-bottom:1px solid var(--line)}
+.cgroup h3 i{margin-left:auto;font-style:normal;font-size:10px;font-weight:500;
+  color:var(--muted);font-family:var(--mono);text-transform:none;letter-spacing:0}
+.qrow{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:10px;
+  align-items:center;padding:3px 11px;border-bottom:1px solid var(--hair)}
 .qrow:last-child{border-bottom:0}
-.qrow label{margin:0;font-size:12.5px;font-weight:500;color:var(--ink2);line-height:1.35}
+.qrow label{margin:0;font-size:12px;font-weight:500;color:var(--ink2);line-height:1.3}
 .qrow.done label{color:var(--ink)}
-.qrow.done{background:color-mix(in srgb, var(--good) 5%, transparent)}
-.qrow select,.qrow input[type=text]{width:100%;padding:5px 8px;font-size:12.5px;
-  background:var(--card)}
-.qrow input[type=text]::placeholder{color:var(--faint);font-size:11.5px}
-@media(max-width:520px){.qrow{grid-template-columns:1fr;gap:4px}}
+.qrow.done{background:color-mix(in srgb, var(--good) 6%, transparent)}
+.qrow select,.qrow input[type=text]{width:100%;padding:3px 6px;font-size:12px;
+  background:var(--card);border-radius:3px}
+.qrow input[type=text]::placeholder{color:var(--faint);font-size:11px}
+/* A yes/no needs a fraction of the width a select of report types does. */
+.qrow.narrow{grid-template-columns:minmax(0,1fr) 84px}
+@media(max-width:520px){.qrow,.qrow.narrow{grid-template-columns:1fr;gap:3px}}
 
 </style>
 
@@ -6192,7 +6199,7 @@ function stampSaved(word){
       const answered = list.filter(c => C[c.k]).length;
       return `<section class="cgroup">
         <h3>${esc(g)}<i>${answered} of ${list.length}</i></h3>
-        ${list.map(c => `<div class="qrow ${C[c.k]?"done":""}">
+        ${list.map(c => `<div class="qrow ${c.type==="yesno"?"narrow":""} ${C[c.k]?"done":""}">
           <label for="c_${c.k}">${esc(c.l)}</label>${field(c)}</div>`).join("")}
       </section>`;
     }).join("");
