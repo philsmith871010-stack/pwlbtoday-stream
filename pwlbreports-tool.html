@@ -988,8 +988,7 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
 
   <section class="panel" data-step="5">
     <div class="phead"><span class="n">5</span><h2>Counterparty policy</h2>
-      <span class="why">Who you will lend to, for how long, and how much — set against what
-        145 authorities publish in their own current strategies.</span></div>
+      <span class="why">Who you will lend to, for how long, and how much.</span></div>
     <div class="pbody"><div id="cpbody"></div></div>
   </section>
 
@@ -4255,55 +4254,13 @@ function cpBench(sectorLabel, which, mine){
   </i>`;
 }
 
-/* Where this authority sits overall. Not a score: it counts how many of the
-   limits actually set fall inside, below or above the middle half of what
-   other authorities publish, and says so in those words. A single "you are
-   tighter than average" number would flatten ten separate decisions into one
-   and imply there is a right answer. */
-function cpStanding(){
-  const c = cpState();
-  let tighter = 0, typical = 0, looser = 0, set = 0;
-  CP_SECTORS.forEach(s => {
-    const b = ((CPB.sectors||{})[s.b]||{}).cash;
-    const v = parseFloat((c.sec[s.k]||{}).cash);
-    if(!b || !isFinite(v) || v <= 0) return;
-    set++;
-    if(v < b.p25) tighter++; else if(v > b.p75) looser++; else typical++;
-  });
-  return {set, tighter, typical, looser};
-}
-
-function cpSummary(){
-  const st = cpStanding(), c = cpState();
-  if(!st.set) return `<div class="cpsum empty">Set a limit and this will show where you
-    stand against the ${CPB.councils || 0} authorities in the survey.</div>`;
-  const bits = [];
-  if(st.tighter) bits.push(`<b class="t">${st.tighter}</b> tighter than most`);
-  if(st.typical) bits.push(`<b class="m">${st.typical}</b> within the middle half`);
-  if(st.looser)  bits.push(`<b class="l">${st.looser}</b> looser than most`);
-  const rated = CP_SECTORS.filter(s => (c.sec[s.k]||{}).rating).length;
-  const done = [c.country && "country policy",
-                rated && `${rated} rating floor${rated===1?"":"s"}`,
-                Object.keys(c.instr).some(k=>c.instr[k]) && "instruments",
-                Object.keys(c.pool).some(k=>c.pool[k]) && "pooled funds"].filter(Boolean);
-  return `<div class="cpsum">
-    <div class="cpsumbar">
-      ${st.tighter?`<span class="t" style="flex:${st.tighter}"></span>`:""}
-      ${st.typical?`<span class="m" style="flex:${st.typical}"></span>`:""}
-      ${st.looser?`<span class="l" style="flex:${st.looser}"></span>`:""}
-    </div>
-    <div class="cpsumtext"><b>${st.set}</b> of ${CP_SECTORS.length} sectors limited —
-      ${bits.join(", ")}.${done.length ? ` Also set: ${done.join(", ")}.` : ""}</div>
-  </div>`;
-}
-
 /* The common figure, offered as a starting point. It is a PLACEHOLDER until
    the field is typed in, so an untouched default never silently becomes an
-   authority's published limit: the value is grey, the state stays empty, and
-   the draft omits the row until a real figure is entered. */
+   authority's published limit: the value is grey, the step stays incomplete,
+   and the draft omits the row until a real figure is entered. */
 function cpDefault(sectorLabel, which){
   const b = ((CPB.sectors||{})[sectorLabel]||{})[which];
-  return b ? String(b.med) : "—";
+  return b ? String(b.med) : "\u2014";
 }
 
 function cpRender(){
@@ -4345,7 +4302,7 @@ function cpRender(){
       <span>${sel(x.k,"rating", CP_RATINGS)}</span>
     </div>`;
 
-  host.innerHTML = cpSummary() + `
+  host.innerHTML = `
     <div class="cpnote">Grey figures are the common starting point from
       <b>${CPB.councils || 0} authorities'</b> ${esc(CPB.basis_note || "current strategies")},
       surveyed ${esc(CPB.as_at || "")} — type over them. What is common is not what is
@@ -4435,10 +4392,8 @@ function cpWire(){
     const c = cpState(), el = e.target;
     if(el.dataset.cp){
       (c.sec[el.dataset.cp] = c.sec[el.dataset.cp] || {})[el.dataset.f] = el.value;
-      // Only the summary moves as you type. Re-rendering the step would take
-      // the focus out of the input mid-keystroke.
-      const sum = host.querySelector(".cpsum");
-      if(sum) sum.outerHTML = cpSummary();
+      // Nothing else needs redrawing as you type: re-rendering the step
+      // would take the focus out of the input mid-keystroke.
     }
     else if(el.dataset.cps){ c[el.dataset.cps] = el.type === "checkbox" ? el.checked : el.value; }
     else return;
