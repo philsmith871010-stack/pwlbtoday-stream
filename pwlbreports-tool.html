@@ -228,6 +228,7 @@ table.ledger tbody tr:nth-child(odd) td.ours{background:var(--cell-ours)}
 table.ledger tbody tr:hover td input{background:var(--sunken)}
 table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offset:-2px}
 .chk{font-family:var(--sans);font-size:11px;padding:4px 9px}
+.chk:empty{display:none}
 .saved{font-size:11.5px;color:var(--muted);font-family:var(--sans)}
 .saved b{color:var(--good)}
 
@@ -682,6 +683,10 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 .barrow.inv .bt i{background:var(--l-inv)}
 .barrow .bv{font-family:var(--mono);font-size:12.5px;color:var(--ink);
   font-variant-numeric:tabular-nums}
+.barrow.rated{grid-template-columns:minmax(110px,175px) auto 1fr auto}
+.barrow .br{font-family:var(--mono);font-size:12px;color:var(--ink2);
+  font-variant-numeric:tabular-nums;text-align:right;min-width:46px}
+.barrow .br.part{border-bottom:1px dotted var(--line2);cursor:help}
 .brwrap{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
 .brbox{flex:1 1 96px;min-width:96px;background:var(--card);border:1px solid var(--line);
   border-radius:var(--r-sm);padding:11px 12px 10px;text-align:center}
@@ -810,6 +815,9 @@ svg.ctip .hits rect{cursor:crosshair}
    .otable and .readout wholesale — it is the report's own block, not a
    lookalike — so there is nothing here but the frame around it and the
    enlarged state. */
+.ltop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.ltop .sp{flex:1;min-width:8px}
+.hintline:empty{display:none}
 .pv{margin-top:26px;border-top:1px solid var(--line);padding-top:18px}
 .pvhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .pvtog{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);
@@ -994,7 +1002,7 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
   <section class="panel" data-step="1">
     <div class="phead"><span class="n">1</span><h2>Your authority and report</h2></div>
     <div class="pbody"><div class="setup">
-      <div><label for="council">Authority<span class="hint" id="stamp"></span></label>
+      <div><label for="council">Authority</label>
         <select id="council"></select></div>
       <div><label for="rtype">Report</label><select id="rtype"></select></div>
       <div><label for="fy0">First year</label>
@@ -1086,10 +1094,28 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
   <section class="panel" data-step="3">
     <div class="phead"><span class="n">3</span><h2>Your projections</h2>
       <span class="why">Years down, measures across. The loans and investments rows are your own
-        projection of year-end balances across the whole portfolio — paste them from Excel, or
-        start from the PWLB run-off and amend it.</span></div>
+        projection of year-end balances across the whole portfolio — paste them from Excel.</span></div>
     <div class="pbody">
-      <div class="fundtabs" id="fundtabs" role="group" aria-label="Fund"></div>
+      <div class="ltop">
+        <div class="fundtabs" id="fundtabs" role="group" aria-label="Fund"></div>
+        <span class="sp"></span>
+        <button type="button" id="pastex">Paste from Excel</button>
+        <button type="button" id="copyx">Copy for Excel</button>
+      </div>
+      <span class="hintline" id="xhint"></span>
+      <div class="pastebox" id="xpaste" hidden>
+        <label for="xtext">Paste your projection<span class="hint">Straight out of the sheet.
+          A header row is read if you give one, so the columns need not be in our order; a
+          year column is read too, so the rows need not start at your first year. Without
+          either it lands from the top-left cell.</span></label>
+        <textarea id="xtext" rows="6" placeholder="Year end&#9;Capital financing requirement&#9;MRP&#9;Existing loan commitments
+2026/27&#9;755.5&#9;0.0&#9;545.6
+2027/28&#9;763.9&#9;30.2&#9;519.6
+2028/29&#9;771.9&#9;30.6&#9;487.1"></textarea>
+        <div class="ltools"><button type="button" class="primary" id="xread">Read it</button>
+          <button type="button" id="xcancel">Cancel</button>
+          <span class="hintline" id="xnote"></span></div>
+      </div>
       <div class="ledgerwrap"><table class="ledger" id="ledger"></table></div>
       <div class="legendkey">
         <span><i style="background:var(--cell-ours)"></i>seeded from the PWLB book — yours to amend</span>
@@ -1100,16 +1126,6 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
         <label class="minliq" for="minliq">Minimum liquidity balance £m
           <input type="text" inputmode="decimal" id="minliq" value="" placeholder="e.g. 15">
         </label>
-        <span class="hintline">One figure, applied across every year — the lowest balance you
-          would run to. It sets the benchmark.</span>
-      </div>
-
-      <div class="ltools">
-        <button type="button" id="clear">Clear</button>
-        <span class="sp"></span>
-        <button type="button" id="copyx">Copy for Excel</button>
-        <span class="hintline" id="xhint">Copy, edit in Excel, then paste back into any cell —
-          the block lands from the cell you are in.</span>
       </div>
       <div class="chk" id="chk"></div>
 
@@ -2879,9 +2895,16 @@ function groupHoldings(list){
   const map = new Map();
   list.forEach(x => {
     const k = (byType ? (x.type || "Unclassified") : (x.name || "Unnamed"));
-    map.set(k, (map.get(k)||0) + x.amt);
+    const g = map.get(k) || {k, v:0, rw:0, rc:0};
+    g.v += x.amt;
+    // Weighted by amount, and only over the part that carries a rate. A
+    // simple mean of two rates on £2m and £200m would describe neither.
+    if(x.rate != null && isFinite(x.rate)){ g.rw += x.rate * x.amt; g.rc += x.amt; }
+    map.set(k, g);
   });
-  return [...map.entries()].map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v);
+  return [...map.values()]
+    .map(g => ({k:g.k, v:g.v, r: g.rc ? g.rw/g.rc : null, rcov: g.rc}))
+    .sort((a,b)=>b.v-a.v);
 }
 
 function barChart(items, kind){
@@ -2890,13 +2913,35 @@ function barChart(items, kind){
   if(!max) return "";
   const tot = items.reduce((a,b)=>a+b.v,0);
   const col = kind==="inv" ? "var(--l-inv)" : "var(--l-debt)";
-  const rows = items.map(x=>`<div class="barrow ${kind==="inv"?"inv":""}">
-      <span class="bn" title="${esc(x.k)}">${esc(x.k)}</span>
+  /* THE RATE BELONGS IN THE LABEL. A bar is a picture of size, and size on
+     its own does not say whether a holding is worth keeping: £120m of LOBOs
+     and £120m of PWLB are the same bar and a different problem. Where only
+     part of a group carries a rate the average says so, because an average
+     over a third of a line, presented as the line's rate, is a wrong number
+     rather than a partial one. */
+  const anyRate = items.some(x => x.r != null);
+  // Its own cell rather than a suffix on the name: rates line up down the
+  // page, and a long counterparty name cannot push one out of sight -- .bn
+  // truncates with an ellipsis, which would have silently eaten it.
+  const rate = x => {
+    if(!anyRate) return "";
+    if(x.r == null) return `<span class="br"></span>`;
+    const part = x.rcov < Math.abs(x.v) - 0.05;
+    return `<span class="br${part?" part":""}"${
+      part ? ` title="on the £${m1(x.rcov)}m of it that carries a rate"` : ""
+    }>${x.r.toFixed(2)}%</span>`;
+  };
+  const rows = items.map(x=>`<div class="barrow ${kind==="inv"?"inv":""}${anyRate?" rated":""}">
+      <span class="bn" title="${esc(x.k)}">${esc(x.k)}</span>${rate(x)}
       <span class="bt"><i style="width:${(Math.abs(x.v)/max*100).toFixed(1)}%;background:${col}"></i></span>
       <span class="bv">£${m1(x.v)}m</span></div>`).join("");
+  const rw = items.reduce((a,b)=> a + (b.r==null?0:b.r*b.rcov), 0);
+  const rc = items.reduce((a,b)=> a + (b.r==null?0:b.rcov), 0);
+  const blended = rc ? {r: rw/rc, rcov: rc, v: tot} : {r:null};
   return `<div class="barwrap">${rows}
-    <div class="barrow ${kind==="inv"?"inv":""}" style="border-top:1px solid var(--line);margin-top:4px">
-      <span class="bn"><b>Total</b></span><span class="bt" style="background:none"></span>
+    <div class="barrow ${kind==="inv"?"inv":""}${anyRate?" rated":""}"
+         style="border-top:1px solid var(--line);margin-top:4px">
+      <span class="bn"><b>Total</b></span>${rate(blended)}<span class="bt" style="background:none"></span>
       <span class="bv"><b>£${m1(tot)}m</b></span></div></div>`;
 }
 
@@ -2906,8 +2951,11 @@ function barChart(items, kind){
 function debtHoldings(){
   const out = [];
   (S.loans||[]).forEach(L => {
-    if(L.pwlb){ const c = LB[S.gss];
-      out.push({name:"PWLB", type:"PWLB", amt: L.amt != null ? L.amt : (c?c.o:0)}); }
+    if(L.pwlb){ const c = LB[S.gss], p = pwlbSummary();
+      // The book knows its own rate loan by loan; there is no reason to make
+      // them enter what we already hold.
+      out.push({name:"PWLB", type:"PWLB", amt: L.amt != null ? L.amt : (c?c.o:0),
+                rate: p ? p.wavg : null}); }
     else out.push(L);
   });
   return out.filter(x=>x.amt);
@@ -3045,6 +3093,142 @@ function debtCostNote(){
     : "";
   return `<p class="note">Total debt <b>£${m1(d.tot)}m</b> at a blended
     <b>${d.wavg.toFixed(2)}%</b>${part}.</p>`;
+}
+
+/* ---------------------------------------------------------------------------
+ * A projection pasted as a block.
+ *
+ * The grid already accepts a paste into a cell, which is the spreadsheet
+ * habit and the right thing for a correction. It is the wrong thing for the
+ * first load: it requires knowing you can click a cell and press paste, it
+ * lands positionally, and it therefore only works if the sheet is already in
+ * our column order and starts at our first year. Nobody's sheet is.
+ *
+ * So this reads the block instead of placing it. A header row is matched
+ * against the column labels the grid itself publishes, and a year column
+ * against the years it is showing, which makes the round trip the Copy button
+ * advertises actually work -- copy out, edit in Excel, paste the whole thing
+ * back, headers and all.
+ *
+ * With neither a header nor a year it falls back to landing from the top-left
+ * cell, which is the old behaviour and still the right answer for a bare
+ * block of numbers.
+ * ------------------------------------------------------------------------ */
+const norm = t => String(t).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+/* WHAT A COUNCIL CALLS THE COLUMN.
+ *
+ * Our own labels round-trip, and the Code's references ("LB1 (a)") are in the
+ * grid header, so both are matched. Neither is what a council's own sheet
+ * says: it says CFR, and MRP, and external borrowing. This is not the start
+ * of an arms race in header patterns -- it is the dozen abbreviations the
+ * sector actually uses, and the fallback for anything else is the position of
+ * the column, which still works.
+ *
+ * A pasted column we cannot name is REPORTED, never guessed at. A figure in
+ * the wrong column of this grid is a wrong benchmark that draws perfectly. */
+const COL_ALIAS = {
+  cfr:     ["cfr", "capital financing requirement"],
+  mrp:     ["mrp", "minimum revenue provision", "mrp vrp", "mrp and vrp"],
+  rec:     ["capital receipts", "usable capital receipts", "receipts applied"],
+  obs:     ["obs", "other balance sheet", "balance sheet resources", "internal borrowing"],
+  loans:   ["external debt", "external borrowing", "existing loans", "loans outstanding",
+            "gross debt", "borrowing"],
+  inv:     ["existing investments", "investments", "treasury investments"],
+  liq:     ["liquidity", "minimum liquidity", "liquidity allowance", "minimum cash"],
+  capex:   ["capital expenditure", "unfinanced capital expenditure", "borrowing need",
+            "capital spend"],
+  intpay:  ["interest payable", "interest paid", "interest cost", "financing costs"],
+  intinc:  ["interest received", "interest earned"],
+  nrs:     ["nrs", "net revenue stream", "net revenue budget"],
+  comminc: ["commercial income", "non treasury income"]
+};
+
+function matchCol(cell){
+  const want = norm(cell);
+  if(!want) return null;
+  const cands = COLS.map(c => ({k:c.k,
+    full: norm(c.l.replace(/<br>/g, " ")),
+    head: norm(String(c.l).split("<br>")[0]),
+    ref:  norm(c.s || "")}));
+  // Exact first, over every name a column answers to, so a partial match can
+  // never take a column an exact one wanted.
+  let hit = cands.find(c => c.full === want || c.head === want
+                         || (c.ref && c.ref === want)
+                         || (COL_ALIAS[c.k] || []).indexOf(want) >= 0);
+  if(hit) return hit.k;
+  hit = cands.find(c => c.full.indexOf(want) === 0 || want.indexOf(c.head) === 0
+                     || (COL_ALIAS[c.k] || []).some(a => want.indexOf(a) === 0));
+  return hit ? hit.k : null;
+}
+
+/* "2026/27", "2026-27", "2026/2027" or a bare "2026" -> the opening year. */
+function asFY(v){
+  const t = String(v).trim();
+  let m = t.match(/^(\d{4})\s*[\/\-]\s*(\d{2,4})$/);
+  if(m) return +m[1];
+  m = t.match(/^(\d{4})$/);
+  return m ? +m[1] : null;
+}
+
+function readLedgerBlock(txt){
+  const rows = String(txt).replace(/\r/g, "").split("\n")
+    .filter(l => l.trim())
+    .map(l => (l.indexOf("\t") >= 0 ? l.split("\t") : l.split(/ {2,}/)).map(c => c.trim()));
+  if(!rows.length) return {ok:false, note:"Nothing to read."};
+
+  // A header row is one whose cells name our columns rather than hold numbers.
+  const hdr = rows[0].map(matchCol);
+  const named = hdr.filter(Boolean).length;
+  const hasHeader = named >= 2 && rows[0].filter(c => MONEY.test(c)).length === 0;
+  const body = hasHeader ? rows.slice(1) : rows;
+  if(!body.length) return {ok:false, note:"A header row and nothing under it."};
+
+  // A year column is one whose values read as financial years. It is looked
+  // for in the first two columns only: a maturity year buried in the middle
+  // of a block is not the row's year.
+  let yc = -1;
+  for(let c = 0; c < Math.min(2, body[0].length); c++)
+    if(body.filter(r => asFY(r[c]) != null).length >= Math.max(2, body.length * 0.7)){ yc = c; break; }
+
+  // Which grid column each block column writes to.
+  const asked = colsFor(S.fund, S.hra).map(c => c.k);
+  const map = [];
+  if(hasHeader) rows[0].forEach((h, i) => { map[i] = (i === yc) ? null : matchCol(h); });
+  else { let n = 0; body[0].forEach((_, i) => { map[i] = (i === yc) ? null : asked[n++] || null; }); }
+
+  let written = 0, offGrid = 0, offYear = 0;
+  const cols = new Set();
+  body.forEach((r, ri) => {
+    const y = yc >= 0 ? asFY(r[yc]) : null;
+    const row = yc >= 0 ? (y == null ? -1 : y - S.fy0) : ri;
+    if(row < 0 || row >= S.years){ if(yc >= 0) offYear++; else offGrid++; return; }
+    r.forEach((cell, ci) => {
+      const k = map[ci];
+      if(!k || cell === "") return;
+      const col = COLS.find(x => x.k === k);
+      // Hidden and beyond-the-MTFP cells are not written, the same rule the
+      // grid enforces on typing. A pasted figure in a column this fund is not
+      // asked for would be counted twice in the combined sheet.
+      if(!col || asked.indexOf(k) < 0 || !colAsked(col, row)){ offGrid++; return; }
+      const v = money(cell);
+      if(v == null) return;
+      S.g[S.fund][k][row] = v;
+      written++; cols.add(k);
+    });
+  });
+
+  const bits = [];
+  if(offYear) bits.push(`${offYear} row${offYear===1?"":"s"} outside ${fy(S.fy0)}–${fy(S.fy0+S.years-1)}`);
+  if(offGrid) bits.push(`${offGrid} value${offGrid===1?"":"s"} with nowhere to go`);
+  return {ok: written > 0, written, cols: cols.size,
+          note: written
+            ? `Read ${written} figure${written===1?"":"s"} across ${cols.size} column${cols.size===1?"":"s"}`
+              + (hasHeader ? ", matched by header" : "")
+              + (yc >= 0 ? " and by year" : "") + "."
+              + (bits.length ? ` ${bits.join("; ")} — skipped.` : "")
+            : "Nothing in that block matched a column of this grid."
+              + (bits.length ? ` ${bits.join("; ")}.` : "")};
 }
 
 /* ===========================================================================
@@ -5760,7 +5944,10 @@ function syncLedger(force){
     ? `${bad.length} year${bad.length===1?"":"s"} where the CFR does not reconcile with the `
       + `movement entered — first at ${fy(bad[0].fy)}: entered ${m1(bad[0].cur)}, `
       + `the walk implies ${m1(bad[0].implied)}. Your figures are used as entered.`
-    : "CFR reconciles with the movement entered in every year.";
+    // Silence when it reconciles. A line saying so on every render is a
+    // reassurance nobody asked for, and it trains the eye to skip the place
+    // the warning appears.
+    : "";
 }
 function refresh(){ syncLedger(); render(); }
 
@@ -6173,12 +6360,6 @@ function stampSaved(word){
   };
   $("minliq").addEventListener("input", applyMinLiq);
 
-  // Fill down: the honest way to enter a constant like the liquidity allowance
-  // across fifty years without typing it fifty times. It is still their figure.
-  $("clear").addEventListener("click", ()=>{
-    COLS.forEach(c=>S.g[S.fund][c.k]=Array(S.years).fill(0));
-    if(S.fund==="gf") applyLoans(); else refresh(); });
-
   /* ---------------------------------------------------------------------
    * Three complete demonstration authorities.
    *
@@ -6411,6 +6592,23 @@ function stampSaved(word){
   renderChoices();
 
   $("copyx").addEventListener("click", copyForExcel);
+  $("pastex").addEventListener("click", ()=>{
+    const b = $("xpaste"); b.hidden = !b.hidden;
+    $("xhint").textContent = "";
+    if(!b.hidden) $("xtext").focus();
+  });
+  $("xcancel").addEventListener("click", ()=>{
+    $("xpaste").hidden = true; $("xnote").textContent = ""; });
+  $("xread").addEventListener("click", ()=>{
+    const r = readLedgerBlock($("xtext").value);
+    $("xnote").textContent = r.note;
+    if(!r.ok) return;
+    // The seeded PWLB run-off is a starting point, not an answer; a pasted
+    // projection is the authority's own and replaces it where the two meet.
+    syncLedger(true); render();
+    $("xpaste").hidden = true; $("xtext").value = "";
+    $("xhint").textContent = r.note;
+  });
   $("expdoc").addEventListener("click", async ()=>{
     const html = documentHTML(true);
     const who=(LB[S.gss]||{n:"authority"}).n.replace(/\W+/g,"-").toLowerCase();
@@ -6492,7 +6690,6 @@ function stampSaved(word){
     const b=e.target.closest("button"); if(!b) return;
     S.sec=b.dataset.s; renderSections(); });
 
-  $("stamp").textContent = `${keys.length} authorities · loan book 3 Aug 2026`;
   fundTabs(); buildLedger(); loanRows(); renderSections(); render();
   // The counterparty form is delegated from its container, so it is wired once
   // here and survives every re-render of its own contents.
