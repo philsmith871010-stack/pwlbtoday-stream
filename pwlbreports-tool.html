@@ -515,6 +515,28 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 .cplbl{font-family:var(--sans);font-size:11.5px;color:var(--ink2);font-weight:600;
   margin-right:4px}
 
+
+/* ---- the counterparty tables in the draft --------------------------------
+ * Two kinds of column live in one table here: figures, which belong in the
+ * mono face and right-aligned so they compare down the column, and words,
+ * which do not. Mixing the two alignments made the table unreadable, so a
+ * word column is marked and set in the sans face, left aligned.
+ */
+.cptab td:first-child,.cprules td:first-child{font-weight:500;color:var(--ink)}
+.otable th.w,.otable td.w{text-align:left;font-family:var(--sans);font-size:12px;
+  white-space:normal;line-height:1.5}
+.cptab tbody tr:nth-child(even){background:var(--hair)}
+.cptab td:nth-child(2),.cptab td:nth-child(3){font-variant-numeric:tabular-nums}
+.cprules{margin-top:4px}
+.cprules td:first-child{white-space:normal;width:26%;vertical-align:top;padding-top:9px}
+.cprules td.w{color:var(--ink2)}
+.cprules tbody tr{border-bottom:1px solid var(--hair)}
+.doc h4{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ink);
+  margin:22px 0 6px}
+.doc p.dnote{font-size:12px;color:var(--muted);font-style:italic;margin-top:6px}
+@media print{.cptab tbody tr:nth-child(even){background:transparent}
+  .cprules td:first-child{width:24%}}
+
 /* ---- the step rail --------------------------------------------------------
  * Sticky, because the one question it answers — where am I, and what is left
  * — is the question you have while you are in the middle of a step, not the
@@ -4446,75 +4468,123 @@ function cpSectionHTML(){
   const BAS = {counterparty:"per counterparty", sector:"per sector",
                group:"per ownership group", manager:"per fund manager"};
   const ags = Object.keys(c.agencies).filter(a => c.agencies[a]);
-  const instr = CP_INSTRUMENTS.filter(([k]) => c.instr[k]).map(([,t]) => t.toLowerCase());
-  const pools = CP_POOL_TYPES.filter(([k]) => c.pool[k]).map(([,t]) => t.toLowerCase());
+  /* Lowercasing a label to drop it into a sentence turns "Supranational and
+     MDB bonds" into "mdb bonds" and "REITs" into "reits". Only the first word
+     is lowered, and never when it is itself an acronym. */
+  const unTitle = t => {
+    const words = t.split(" ");
+    // An acronym stays an acronym, and a proper noun stays a proper noun: if
+    // any later word is capitalised the label is a name ("Municipal Bonds
+    // Agency") rather than a common noun phrase, and lowering its first word
+    // gives "municipal Bonds Agency".
+    if(/^[A-Z]{2,}s?$/.test(words[0])) return t;
+    if(words.slice(1).some(w => /^[A-Z]/.test(w))) return t;
+    return [words[0].toLowerCase(), ...words.slice(1)].join(" ");
+  };
+  // "a, b and c" reads as a sentence; "a, b, c" reads as a database field.
+  const list = xs => xs.length < 2 ? (xs[0] || "")
+    : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
+  const instr = CP_INSTRUMENTS.filter(([k]) => c.instr[k]).map(([,t]) => unTitle(t));
+  const pools = CP_POOL_TYPES.filter(([k]) => c.pool[k]).map(([,t]) => unTitle(t));
   const country = CP_COUNTRY.find(o => o.k === c.country);
+  const anyRating = rows.some(s => (c.sec[s.k]||{}).rating);
+  const anyMonths = rows.some(s => (c.sec[s.k]||{}).months);
   let out = "";
 
-  /* The lead-in follows how authorities actually introduce the table -- the
-     permission first, the table as the limits on it. Hampshire: "The County
-     Council may invest its surplus funds with any of the counterparty types
-     in Table 4, subject to the limits shown". */
+  /* THE LEAD-IN FOLLOWS HOW AUTHORITIES ACTUALLY WRITE IT: the permission
+     first, then the table as the limits on it. Hampshire: "The County Council
+     may invest its surplus funds with any of the counterparty types in Table
+     4, subject to the limits shown". Anything the reader needs in order to
+     read the table correctly goes here, not in a footnote. */
   if(rows.length){
     out += `<p>The authority may invest its surplus funds with any of the counterparty
-      types set out below, subject to the cash and duration limits shown against each.
-      A limit applies to the amount held with any one name at any one time, and the
-      duration is the longest remaining term the authority will accept at the point of
-      investment.</p>`;
-    // Every column the reader needs to act on the row, in the order a
-    // strategy states them. The rating column is dropped entirely when no row
-    // sets one, rather than printing a table of dashes.
-    const anyRating = rows.some(s => (c.sec[s.k]||{}).rating);
-    out += `<table class="dtab"><thead><tr><th>Counterparty type</th>
-      <th>Cash limit</th><th>Maximum duration</th><th>Limit applies</th>` +
-      (anyRating ? `<th>Minimum rating</th>` : "") + `</tr></thead><tbody>` +
+      types set out below, subject to the limits shown against each. A cash limit is the
+      maximum that may be held at any one time` +
+      (anyMonths ? `, and a duration limit is the longest remaining term the authority
+        will accept at the point the investment is made` : "") + `.</p>`;
+
+    /* Money and duration are right-aligned figures; basis and rating are
+       words. Mixing them in one alignment made the table hard to scan, so
+       the numeric columns are set in the mono face and the word columns in
+       the sans, which is what the rest of the draft already does. */
+    out += `<div style="overflow-x:auto"><table class="otable cptab">
+      <thead><tr>
+        <th>Counterparty type</th>
+        <th>Cash limit</th>` +
+        (anyMonths ? `<th>Maximum duration</th>` : "") +
+        `<th class="w">Limit applies</th>` +
+        (anyRating ? `<th class="w">Minimum long-term rating</th>` : "") +
+      `</tr></thead><tbody>` +
       rows.map(s => {
         const v = c.sec[s.k] || {};
-        return `<tr><td>${esc(s.t)}</td>
-          <td>${v.cash ? "£" + esc(v.cash) + "m" : "—"}</td>
-          <td>${v.months ? esc(v.months) + " months" : "—"}</td>
-          <td>${esc(BAS[v.basis || "counterparty"])}</td>` +
-          (anyRating ? `<td>${v.rating === "none" ? "not rated"
-                              : v.rating ? esc(v.rating) : "—"}</td>` : "") + `</tr>`;
-      }).join("") + `</tbody></table>`;
+        const months = v.months ? (+v.months % 12 === 0 && +v.months >= 12
+            ? `${+v.months / 12} year${+v.months === 12 ? "" : "s"}`
+            : `${esc(v.months)} months`) : "—";
+        return `<tr>
+          <td>${esc(s.t)}</td>
+          <td>£${esc(v.cash || "—")}${v.cash ? "m" : ""}</td>` +
+          (anyMonths ? `<td>${months}</td>` : "") +
+          `<td class="w">${esc(BAS[v.basis || "counterparty"])}</td>` +
+          (anyRating ? `<td class="w">${v.rating === "none" ? "not rated"
+                        : v.rating ? esc(v.rating) : "—"}</td>` : "") +
+        `</tr>`;
+      }).join("") + `</tbody></table></div>`;
+
+    // A duration shown as "13 months" and one shown as "1 year" are the same
+    // policy; saying so once stops a reader wondering whether they differ.
+    if(anyMonths)
+      out += `<p class="dnote">Durations are stated as at the date the investment is
+        placed. A limit expressed in months and one expressed in years are equivalent.</p>`;
   }
 
-  /* Everything that is a rule rather than a number, as a second table. Prose
-     that lists four controls in one sentence is unreadable and impossible to
-     amend; a table can be lifted straight into a committee report. */
+  /* Everything that is a rule rather than a figure, as its own table. Four
+     controls run together in one paragraph are unreadable and impossible to
+     amend in committee; a two-column table can be lifted into a report and
+     edited a line at a time. */
   const controls = [];
   if(c.groupnote)
     controls.push(["Common ownership",
-      "A group of entities under the same ownership is treated as a single organisation for limit purposes."]);
+      "A group of entities under the same ownership is treated as a single organisation " +
+      "for the purpose of these limits."]);
   if(ags.length)
     controls.push(["Credit assessment",
-      `Counterparties are assessed on ratings published by ${ags.join(", ")}. Where a ` +
-      `minimum rating is shown against a counterparty type above, it is the lowest ` +
-      `long-term rating the authority will accept for that type.`]);
+      `Counterparties are assessed on ratings published by ${list(ags)}` +
+      (ags.length > 1 ? ", and the lowest available rating is used where these differ" : "") +
+      (anyRating ? ". Where a minimum rating is shown above it is the lowest long-term " +
+        "rating the authority will accept for that counterparty type" : "") + "."]);
+  if(anyRating)
+    controls.push(["A counterparty falling below criteria",
+      "Where a counterparty ceases to meet the criteria, no new investment is made with " +
+      "it and existing investments are held to maturity unless the Section 151 Officer " +
+      "determines that earlier recovery is in the authority's interest."]);
   if(country)
     controls.push(["Counterparties outside the UK",
       natText(country.w.replace("[[FLOOR]]", c.floor).replace("[[PCT]]", c.pct))]);
-  if(c.split)
-    controls.push(["Specified and non-specified",
-      "Investments are classified as specified or non-specified in accordance with the statutory guidance" +
-      (c.nonspec ? `, with non-specified investments limited in aggregate to £${esc(c.nonspec)}m` : "") + "."]);
   if(pools.length)
     controls.push(["Pooled funds",
-      `The authority may hold ${pools.join(", ")}. These funds have no defined maturity date, ` +
-      "so no duration limit is applied to them; exposure is controlled by the cash limit " +
-      "and, where stated, by fund manager."]);
+      `The authority may hold ${list(pools)}. These funds have no defined maturity ` +
+      "date, so no duration limit applies to them; exposure is controlled by the cash " +
+      "limit and, where shown, by fund manager. They are held for their income return " +
+      "and the authority accepts that their capital value will fluctuate."]);
+  if(c.split)
+    controls.push(["Specified and non-specified investments",
+      "Investments are classified as specified or non-specified in accordance with the " +
+      "statutory investment guidance" +
+      (c.nonspec ? `, and non-specified investments are limited in aggregate to £${esc(c.nonspec)}m`
+                 : "") + "."]);
   if(instr.length)
-    controls.push(["Approved instruments", `${instr.join(", ")}.`]);
+    controls.push(["Approved instruments",
+      `The instruments approved for use are ${list(instr)}.`]);
+  controls.push(["Operating within the limits",
+    "These limits are maxima. The Section 151 Officer may operate within tighter limits " +
+    "at any time, and will do so where market conditions or a counterparty's standing " +
+    "warrant it. Any breach is reported to members at the next available opportunity."]);
 
-  if(controls.length)
-    out += `<table class="dtab"><thead><tr><th>Control</th><th>How it applies</th></tr></thead>
-      <tbody>` + controls.map(([a,b]) =>
-        `<tr><td>${esc(a)}</td><td class="wrap">${esc(b)}</td></tr>`).join("") +
-      `</tbody></table>`;
-
-  out += `<p>These limits are the maximum the authority will accept. The Section 151
-    Officer may operate within tighter limits at any time, and will do so where market
-    conditions or a counterparty's standing warrant it.</p>`;
+  out += `<h4>Conditions applying to these limits</h4>
+    <div style="overflow-x:auto"><table class="otable cprules">
+    <thead><tr><th>Control</th><th class="w">How it applies</th></tr></thead><tbody>` +
+    controls.map(([a,b]) => `<tr><td>${esc(a)}</td><td class="w">${esc(b)}</td></tr>`).join("") +
+    `</tbody></table></div>`;
   return out;
 }
 
