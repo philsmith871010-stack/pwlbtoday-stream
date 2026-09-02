@@ -1210,14 +1210,11 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
       <p class="libwhat" id="libwhat"></p>
     </div>
     <div class="ltools" style="margin-top:12px">
-      <button type="button" id="save">Save this version</button>
-      <button type="button" id="restore">Restore</button>
-      <label class="cpmini issuedbox"><input type="checkbox" id="issued">
-        Issued to members</label>
-      <span class="sp"></span>
       <button type="button" id="libfile">Save to a file</button>
       <label class="filebtn" for="libopen">Open a file</label>
       <input type="file" id="libopen" accept=".json,application/json" hidden>
+      <label class="cpmini issuedbox"><input type="checkbox" id="issued">
+        Issued to members</label>
     </div>
     <span class="hintline" id="saved"></span></div>
   </section>
@@ -1966,6 +1963,9 @@ function render(){
     _docDirty = true;
   }
   if(typeof renderRail === "function"){ renderRail(); renderNav(); }
+  // Every change reaches render(), so this is the one place that can promise
+  // the browser is keeping up without anyone pressing anything.
+  if(typeof autoSave === "function") autoSave();
   const dc = $("debtcost");
   if(dc) dc.innerHTML = (typeof debtCostNote === "function") ? debtCostNote() : "";
   const iv = $("invsummary");
@@ -8118,7 +8118,31 @@ async function downloadCSV(){
    seed the next report from — only ever the last thing you saved. */
 const KEY = () => libKey(S.gss, S.report, S.fy0);
 const KEY_OLD = () => `lb:${S.gss||"none"}:${S.report}`;
-function saveVersion(){
+/* THE BROWSER REMEMBERS. NOBODY SHOULD HAVE TO ASK IT TO.
+ *
+ * There were four controls here — save this version, restore, save to a file,
+ * open a file — and between them a mental model nobody should have to hold.
+ * The honest one is much smaller:
+ *
+ *   the browser always has your work            (no button)
+ *   want it somewhere safe, or shared?          save to a file
+ *   want it back, or on another machine?        open the file
+ *
+ * So saving is automatic, and "restore" is gone: restoring IS opening the
+ * file, which is the same gesture as getting it onto a colleague's machine
+ * and needs no separate concept.
+ *
+ * Debounced, because this runs off render() and render() runs on a keystroke.
+ */
+let _auto = null;
+function autoSave(){
+  // Before an authority is chosen there is nothing to file it under.
+  if(!S.gss) return;
+  clearTimeout(_auto);
+  _auto = setTimeout(() => { saveVersion(true); }, 900);
+}
+
+function saveVersion(quiet){
   try{
     localStorage.setItem(KEY(), JSON.stringify({
       v:3, gss:S.gss, report:S.report, fy0:S.fy0, hra:S.hra, years:S.years,
@@ -8130,8 +8154,9 @@ function saveVersion(){
       at:new Date().toISOString()}));
     // Saving again does not un-issue what was already issued.
     libNote(S.gss, S.report, S.fy0, {hra:S.hra, issued: libIsIssued()});
+    localStorage.setItem("lb:last", KEY());
     if(typeof libFill === "function") libFill();
-    stampSaved("Saved");
+    stampSaved(quiet ? "Saved in this browser" : "Saved");
   }catch(e){ $("saved").textContent = "Could not save — browser storage is unavailable."; }
 }
 /* A grid saved by an older build carries only the columns that existed then.
@@ -8153,7 +8178,7 @@ function migrateGrid(g, years){
   return out;
 }
 
-function restoreVersion(){
+function restoreVersion(quiet){
   try{
     // Anything saved before the key carried a year lives under the old one.
     const raw = localStorage.getItem(KEY()) || localStorage.getItem(KEY_OLD());
@@ -8182,7 +8207,7 @@ function restoreVersion(){
     if($("asat")) $("asat").value = S.asAt || MKT.as_at || "";
     if($("minliq")) $("minliq").value = S.minliq==null ? "" : S.minliq;
     buildLedger(); loanRows(); renderSections(); cpRender(); render();
-    stampSaved("Restored");
+    stampSaved(quiet ? "Picked up where you left off" : "Restored");
   }catch(e){ $("saved").textContent = "Could not restore that version."; }
 }
 function stampSaved(word){
@@ -8190,8 +8215,9 @@ function stampSaved(word){
   let when = "";
   try{ when = new Date(JSON.parse(raw).at).toLocaleString("en-GB",
     {dateStyle:"medium",timeStyle:"short"}); }catch(e){}
-  $("saved").innerHTML = `<b>${word}</b> — ${esc(REPORTS.find(r=>r.k===S.report).t)}`
-    + (when?`, ${esc(when)}`:"") + ". Stored in this browser only.";
+  $("saved").innerHTML = `${esc(word)} — ${esc(REPORTS.find(r=>r.k===S.report).t)}`
+    + (when?`, ${esc(when)}`:"")
+    + ". Save to a file to keep it beyond this browser.";
 }
 
 /* ---- init ---------------------------------------------------------------- */
@@ -8489,6 +8515,16 @@ function stampSaved(word){
   };
 
   function fillDemo(which){
+    /* AUTOSAVE MADE THIS DESTRUCTIVE. Filling a demonstration replaces every
+       figure and every paragraph, and with nothing to press afterwards the
+       replacement is now written to the browser a second later. Ask once, and
+       only where there is actually saved work to lose. */
+    const held = S.gss && localStorage.getItem(KEY());
+    if(held && !confirm("This replaces everything with a demonstration authority, "
+      + "including work already saved in this browser. Save to a file first if you "
+      + "want to keep it.\n\nFill the demonstration?")){
+      $("demokind").value = ""; return;
+    }
     const D = DEMOS[which];
     if(!S.gss){ S.gss = keys.find(k=>LB[k].o>100) || keys[0]; $("council").value = S.gss; }
     const base = LB[S.gss].o;
@@ -8839,8 +8875,6 @@ function stampSaved(word){
       : "No longer marked as issued.";
     libFill();
   });
-  $("save").addEventListener("click", saveVersion);
-  $("restore").addEventListener("click", restoreVersion);
   // The indicator picker lives inside the rendered draft, so it is delegated.
   document.addEventListener("click", e=>{
     const b = e.target.closest("[data-vi],[data-vf]");
@@ -8928,7 +8962,18 @@ function stampSaved(word){
     const b=e.target.closest("button"); if(!b) return;
     S.sec=b.dataset.s; renderSections(); });
 
+  /* PICK UP WHERE THEY LEFT OFF. The browser remembering is only half of it;
+     the tool has to open on what it remembered, or the user is looking at a
+     blank page wondering where their work went. */
+  const lastKey = localStorage.getItem("lb:last");
+  const last = lastKey ? libRead().find(e => e.k === lastKey) : null;
+  if(last && LB[last.gss]){
+    S.gss = last.gss; S.report = last.report; S.fy0 = last.fy0;
+    $("council").value = S.gss; $("rtype").value = S.report; $("fy0").value = S.fy0;
+    restoreVersion(true);
+  }
   fundTabs(); buildLedger(); loanRows(); renderSections(); render(); libFill();
+  $("issued").checked = libIsIssued();
   // The counterparty form is delegated from its container, so it is wired once
   // here and survives every re-render of its own contents.
   cpRender(); cpWire();
