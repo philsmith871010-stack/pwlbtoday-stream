@@ -103,13 +103,6 @@ button,input,select{font:inherit;color:inherit}
 </style>
 <style>
 .shell{max-width:1500px;margin:0 auto;padding:20px 22px 60px}
-.mast{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;
-  padding-bottom:16px;border-bottom:1px solid var(--line2);margin-bottom:22px;
-  position:relative}
-.mast::after{content:"";position:absolute;left:0;bottom:-1px;width:64px;height:2px;
-  background:var(--accent)}
-.mast h1{font-size:21px;font-weight:600;letter-spacing:-.022em}
-.mast h1 b{font-weight:700}
 .stamp{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-align:right;line-height:1.6}
 .stamp b{color:var(--ink2)}
 .proto{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;
@@ -813,6 +806,33 @@ svg.ctip .hits rect{cursor:crosshair}
 
 /* The indicator picker. Screen furniture inside a document, so it is marked
    no-print and never reaches the export. */
+/* The live chart on the figures step. It reuses .picker, .chartwrap, .legend,
+   .otable and .readout wholesale — it is the report's own block, not a
+   lookalike — so there is nothing here but the frame around it and the
+   enlarged state. */
+.pv{margin-top:26px;border-top:1px solid var(--line);padding-top:18px}
+.pvhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.pvtog{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);
+  background:none;border:0;padding:0;cursor:pointer;display:flex;align-items:center;gap:7px}
+.pvtog .cav{font-size:13px;line-height:1;color:var(--ink2);transition:transform .15s}
+.pv.shut .pvtog .cav{transform:rotate(-90deg)}
+.pv.shut .pvbody,.pv.shut .pvbig{display:none}
+.pvsub{font-family:var(--sans);font-size:12px;color:var(--muted);flex:1;min-width:180px}
+.pvbig{font-family:var(--sans);font-size:12px;font-weight:600;padding:4px 11px;
+  border:1px solid var(--line2);border-radius:var(--r-sm);background:var(--card);
+  color:var(--ink2);cursor:pointer}
+.pvbig:hover{border-color:var(--muted);color:var(--ink)}
+.pvempty{font-family:var(--sans);font-size:13.5px;color:var(--muted);
+  border:1px dashed var(--line2);border-radius:var(--r-sm);padding:26px 18px;text-align:center}
+.pvbar{margin-bottom:14px}
+/* Enlarged is a state of the same element, not a second copy of it: one
+   render target, so the big view cannot show something the small one does
+   not. */
+.pv.full{position:fixed;inset:16px;z-index:60;margin:0;background:var(--card);
+  border:1px solid var(--line2);border-radius:var(--r);padding:20px 24px;
+  overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.28)}
+.pv.full .pvsub{flex:none}
+.pvveil{position:fixed;inset:0;z-index:59;background:rgba(15,23,32,.42)}
 .picker{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 16px;
   padding:9px 11px;background:var(--sunken);border-radius:var(--r-sm);
   border:1px solid var(--line)}
@@ -827,11 +847,6 @@ svg.ctip .hits rect{cursor:crosshair}
 .picker .pnote{flex:1 1 100%;font-family:var(--sans);font-size:11.5px;color:var(--muted);
   margin-top:2px}
 @media print{.no-print{display:none}}
-.benchlink{display:block;font-family:var(--sans);font-size:12.5px;font-weight:600;
-  color:var(--ink2);text-decoration:none;padding:8px 11px;border:1px dashed var(--line2);
-  border-radius:var(--r-sm);align-self:start}
-.benchlink:hover{border-color:var(--accent);color:var(--accent)}
-.benchlink span{display:block;font-weight:400;font-size:11px;color:var(--muted);margin-top:2px}
 /* A message you cannot miss. The step you are on decides which notes are on
    screen, so anything worth saying goes here as well. */
 .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:120;
@@ -953,10 +968,8 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
 
 /* The demonstration is a way in, not a field, so it reads as an offer rather
    than another thing to fill. */
-.demobox{grid-column:span 2}
+.demobox{grid-column:span 1}
 .demobox select{border-color:var(--accent);font-weight:600;color:var(--accent)}
-.demobox .hint{display:block;margin-top:3px}
-@media(max-width:700px){.demobox{grid-column:span 1}}
 
 
 
@@ -968,10 +981,6 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
        every visit to say something the reader knew before they arrived. The
        loan book stamp moved into step 1, beside the authority it describes,
        which is where it is actually read. -->
-  <header class="mast">
-    <a class="benchlink" href="lb-test-suite.html">LB test suite &rarr;</a>
-  </header>
-
   <nav class="railwrap" aria-label="Report progress">
     <div class="railtrack"><div class="railbar" id="railbar"></div></div>
     <div class="rail" id="rail"></div>
@@ -1003,8 +1012,6 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
           <option value="one">Demo authority · HRA, one pool</option>
           <option value="two">Demo authority · HRA, two pools</option>
         </select>
-        <span class="hint">fills every step — figures, holdings, choices,
-          counterparty policy and all the wording</span>
       </div>
       <div><label for="horizon">Horizon</label>
         <select id="horizon"></select></div>
@@ -1105,6 +1112,17 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
           the block lands from the cell you are in.</span>
       </div>
       <div class="chk" id="chk"></div>
+
+      <div class="pv" id="pv">
+        <div class="pvhead">
+          <button type="button" class="pvtog" id="pvtog" aria-expanded="true"
+            aria-controls="pvbody"><span class="cav">▾</span>Chart of these figures</button>
+          <span class="pvsub">Drawn from the grid above as you type — the same chart the
+            report will carry.</span>
+          <button type="button" class="pvbig" id="pvbig">Enlarge</button>
+        </div>
+        <div class="pvbody" id="pvbody"></div>
+      </div>
     </div>
   </section>
 
@@ -1577,6 +1595,13 @@ function render(){
   if(iv && typeof portfolioNote === "function") iv.textContent = portfolioNote();
   const pc = $("portfoliocharts");
   if(pc) pc.innerHTML = portfolioCharts();
+  // The figures step's live chart. Drawn only while that step is on screen —
+  // three buildModel calls and an SVG on every keystroke is cheap, but not
+  // when nobody is looking at the result.
+  const pv = $("pvbody"), pvw = $("pv");
+  if(pv && pvw && !pvw.classList.contains("shut")
+     && (pvw.classList.contains("full") || (typeof STEP === "undefined") || STEP === 3))
+    pv.innerHTML = previewHTML();
   $("prefill").innerHTML = c
     ? `<span class="t">From the published loan book</span><b>£${m1(c.o)}m</b> across <b>${c.l}</b>
        PWLB loan${c.l===1?"":"s"}. We hold this with high confidence, but it is a starting
@@ -5169,36 +5194,118 @@ function viewWanted(tag, fundKey){
   return true;
 }
 
+/* WHICH FUND CARRIES WHICH INDICATOR IS NOT A PRESENTATION CHOICE.
+ *
+ * Under two pools the HRA has its own benchmark, so LB1 to LB4 are drawn
+ * twice and only LB5 is whole-authority. Under one pool the debt is pooled,
+ * so only LB1 splits and LB2 to LB5 exist for the authority as a whole.
+ * There is no "HRA LB3" under a single pool to show, because the authority
+ * does not have one.
+ *
+ * That routing lives here, once, so the draft and the live preview on the
+ * figures step cannot drift apart: the preview does not draw its own version
+ * of a chart, it asks for the same part and shows one of it.
+ */
+function indicatorParts(gf, hra, all, hasHRA, twoPool){
+  if(!hasHRA) return [{model:gf, label:"", cross:null, fund:"all", heading:"",
+                       tags:["LB1","LB2","LB3","LB4","LB5"]}];
+  if(twoPool) return [
+    {model:gf,  label:"General Fund", cross:hra,  fund:"gf",  heading:"",
+     tags:["LB1","LB2","LB3","LB4"]},
+    {model:hra, label:"HRA",          cross:null, fund:"hra", heading:"Housing Revenue Account",
+     tags:["LB1","LB2","LB3","LB4"]},
+    {model:all, label:"",             cross:null, fund:"all", heading:"Whole authority",
+     tags:["LB5"]}];
+  // One pool. LB1 for each fund; everything else on the combined balance sheet.
+  return [
+    {model:gf,  label:"General Fund", cross:null, fund:"gf",  heading:"", tags:["LB1"]},
+    {model:hra, label:"HRA",          cross:null, fund:"hra",
+     heading:"Housing Revenue Account", tags:["LB1"]},
+    {model:all, label:"",             cross:null, fund:"all",
+     heading:"Whole authority — debt is pooled, so the benchmarks are not split",
+     tags:["LB2","LB3","LB4","LB5"]}];
+}
+
 function indicatorSplit(gf, hra, all, hasHRA, twoPool, forExport){
   // Filtering is a screen convenience; the paper is the paper.
   const F = forExport ? null : (S.view || null);
   const wantInd = t => !F || (F.ind || "all") === "all" || F.ind === t;
   const wantFund = k => !F || (F.fund || "all") === "all" || F.fund === k;
-  const only = list => list.filter(wantInd);
   const head = forExport ? "" : indicatorPicker(hasHRA, twoPool);
-
-  if(!hasHRA)
-    return head + indicatorBlock(gf, "", null, {only: only(["LB1","LB2","LB3","LB4","LB5"])});
-
   const H = t => `<h4 style="margin-top:24px">${t}</h4>`;
-  const part = (model, label, cross, tags, fundKey, heading) => {
-    const keep = only(tags);
-    if(!keep.length || !wantFund(fundKey)) return "";
-    return (heading ? H(heading) : "") + indicatorBlock(model, label, cross, {only:keep});
-  };
 
-  if(twoPool)
-    return head
-         + part(gf,  "General Fund", hra, ["LB1","LB2","LB3","LB4"], "gf")
-         + part(hra, "HRA", null, ["LB1","LB2","LB3","LB4"], "hra", "Housing Revenue Account")
-         + part(all, "", null, ["LB5"], "all", "Whole authority");
+  return head + indicatorParts(gf, hra, all, hasHRA, twoPool).map(p => {
+    const keep = p.tags.filter(wantInd);
+    if(!keep.length || (hasHRA && !wantFund(p.fund))) return "";
+    return (p.heading ? H(p.heading) : "")
+         + indicatorBlock(p.model, p.label, p.cross, {only:keep});
+  }).join("");
+}
 
-  // One pool. LB1 for each fund; everything else on the combined balance sheet.
-  return head
-       + part(gf,  "General Fund", null, ["LB1"], "gf")
-       + part(hra, "HRA", null, ["LB1"], "hra", "Housing Revenue Account")
-       + part(all, "", null, ["LB2","LB3","LB4","LB5"], "all",
-              "Whole authority — debt is pooled, so the benchmarks are not split");
+/* ---------------------------------------------------------------------------
+ * The live preview on the figures step.
+ *
+ * The figures step is the one people sit on: they type a CFR, change an MRP,
+ * try another year of borrowing, and want to know what it did to the
+ * benchmark. Before this the only way to find out was to walk to step 7,
+ * look, and walk back — four clicks an experiment, which is enough friction
+ * to stop anyone experimenting at all.
+ *
+ * It is deliberately NOT a modal over the grid. A modal covers the ledger, so
+ * you would have to shut it to change the number whose effect you are trying
+ * to see: the same round trip in a smaller window. It sits under the grid and
+ * redraws on the keystroke, and it enlarges to fill the screen for when what
+ * you want is a long look rather than a quick one.
+ *
+ * It shows the WHOLE indicator — chart, table and readout — because that is
+ * what the report will carry, and a preview that shows less than the thing it
+ * previews sends you to step 7 anyway.
+ * ------------------------------------------------------------------------ */
+const PV_FUND = {gf:"General Fund", hra:"HRA", all:"Whole authority"};
+const PV_TITLE = {LB1:"Net treasury position", LB2:"Treasury benchmarks",
+  LB3:"Treasury commitments against the benchmarks",
+  LB4:"Borrowing requirement / overborrowing", LB5:"Treasury investment projection"};
+
+function previewHTML(){
+  const V = S.pv || (S.pv = {ind:"LB3", fund:null});
+  const hasHRA = S.hra !== "no", twoPool = S.hra === "two";
+  const gf  = buildModel(S, "gf");
+  const hra = hasHRA ? buildModel(S, "hra") : null;
+  const all = hasHRA ? buildModel(S, "all") : gf;
+  const parts = indicatorParts(gf, hra, all, hasHRA, twoPool);
+
+  // An indicator can stop existing under you: switch from two pools to one
+  // while looking at the HRA's LB3 and the authority no longer has such a
+  // chart. Fall back rather than draw a blank.
+  let av = parts.filter(p => p.tags.indexOf(V.ind) >= 0);
+  if(!av.length){ V.ind = "LB3"; av = parts.filter(p => p.tags.indexOf(V.ind) >= 0); }
+  const pick = av.filter(p => p.fund === V.fund)[0] || av[0];
+  V.fund = pick.fund;
+
+  const btn = (on, attr, val, txt, ttl) =>
+    `<button type="button" class="pbtn${on ? " on" : ""}" ${attr}="${val}"${
+      ttl ? ` title="${esc(ttl)}"` : ""}>${esc(txt)}</button>`;
+  // Where an indicator exists for one fund only, say WHY rather than showing
+  // a single dead button or nothing at all.
+  const funds = av.length > 1
+    ? `<span class="pl">Fund</span>` +
+      av.map(p => btn(p.fund === V.fund, "data-pf", p.fund, PV_FUND[p.fund])).join("")
+    : `<span class="pnote">${esc(!hasHRA ? "No HRA — one balance sheet"
+        : twoPool ? PV_FUND[pick.fund] + " — the only fund this one is drawn for"
+        : PV_FUND[pick.fund] + " — debt is pooled, so this one is not split by fund")}</span>`;
+
+  const started = gf.some(r => r.cfr) || (hra || []).some(r => r.cfr);
+  const body = started
+    ? indicatorBlock(pick.model, pick.label, pick.cross, {only:[V.ind]})
+    : `<p class="pvempty">Nothing to draw yet — enter a capital financing requirement
+       above and the chart appears as you type.</p>`;
+
+  return `<div class="picker no-print pvbar">
+      <span class="pl">Chart</span>
+      ${["LB1","LB2","LB3","LB4","LB5"].map(k =>
+        btn(k === V.ind, "data-pi", k, k, PV_TITLE[k])).join("")}
+      <span class="sp"></span>${funds}
+    </div>${body}`;
 }
 
 function documentHTML(forExport){
@@ -5362,7 +5469,7 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
       ${otable(d,[{l:"Treasury investment benchmark",k:"tib",cls:"inv"},{l:"Liquidity allowance",k:"liq"},
                   {l:"Strategic treasury investments",k:"strategic"},
                   {l:"Excess treasury investments",k:"excess"}])}
-      ${readoutHTML("LB5", d, fundLabel)}`)}}`;
+      ${readoutHTML("LB5", d, fundLabel)}`)}`;
 }
 
 function caveat(){
@@ -5537,7 +5644,9 @@ function showStep(n){
   // Arriving at the draft is what builds it, since render() no longer does so
   // while it is hidden. Without this the step opens empty and the rail keeps
   // saying "open it to build the draft" on the step you are standing on.
-  if(STEP === STEPS.length) render();
+  // The same is true of the figures step's live chart, which render() also
+  // skips while it is off screen.
+  if(STEP === STEPS.length || STEP === 3) render();
   renderRail();
   renderNav();
   // Scroll only if the step is not already where you can see it. Smooth-
@@ -6337,6 +6446,46 @@ function stampSaved(word){
     if(b.dataset.vi) S.view.ind = b.dataset.vi;
     if(b.dataset.vf) S.view.fund = b.dataset.vf;
     render();
+  });
+
+  /* The figures step's live chart: which indicator, which fund, open or shut,
+     and big or docked. Its picker is inside the rendered preview, so it is
+     delegated the same way the draft's is. */
+  document.addEventListener("click", e=>{
+    const b = e.target.closest("[data-pi],[data-pf]");
+    if(!b) return;
+    S.pv = S.pv || {ind:"LB3", fund:null};
+    if(b.dataset.pi) S.pv.ind  = b.dataset.pi;
+    if(b.dataset.pf) S.pv.fund = b.dataset.pf;
+    render();
+  });
+  const PVW = $("pv"), PVT = $("pvtog"), PVB = $("pvbig");
+  function pvVeil(on){
+    const old = document.querySelector(".pvveil");
+    if(old) old.remove();
+    if(!on) return;
+    const v = document.createElement("div");
+    v.className = "pvveil";
+    v.addEventListener("click", ()=>pvFull(false));
+    document.body.appendChild(v);
+  }
+  function pvFull(on){
+    PVW.classList.toggle("full", on);
+    pvVeil(on);
+    PVB.textContent = on ? "Close" : "Enlarge";
+    // Enlarging something that is shut would open an empty box.
+    if(on) PVW.classList.remove("shut");
+    document.body.style.overflow = on ? "hidden" : "";
+    render();
+  }
+  PVT.addEventListener("click", ()=>{
+    const shut = PVW.classList.toggle("shut");
+    PVT.setAttribute("aria-expanded", shut ? "false" : "true");
+    if(shut && PVW.classList.contains("full")) pvFull(false); else render();
+  });
+  PVB.addEventListener("click", ()=>pvFull(!PVW.classList.contains("full")));
+  document.addEventListener("keydown", e=>{
+    if(e.key === "Escape" && PVW.classList.contains("full")) pvFull(false);
   });
 
   $("seclist").addEventListener("click", e=>{
