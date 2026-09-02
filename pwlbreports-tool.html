@@ -537,6 +537,17 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 @media print{.cptab tbody tr:nth-child(even){background:transparent}
   .cprules td:first-child{width:24%}}
 
+
+/* A ticked row is in the report; an unticked one is not. The tick sits with
+   the name because that is what it includes, and the whole row lifts so the
+   state reads down the table rather than one column at a time. */
+.cpuse{display:flex;align-items:center;gap:7px;cursor:pointer;font:inherit;color:inherit}
+.cpuse input{accent-color:var(--good);flex:0 0 auto;margin:0}
+.cptable.wide .cprow.on{background:var(--cell-ours)}
+.cptable.wide .cprow.on .cpt{color:var(--ink);font-weight:600}
+.cptable.wide .cprow:not(.on) input[type=text],
+.cptable.wide .cprow:not(.on) select{opacity:.62}
+
 /* ---- the step rail --------------------------------------------------------
  * Sticky, because the one question it answers — where am I, and what is left
  * — is the question you have while you are in the middle of a step, not the
@@ -4294,8 +4305,16 @@ function cpRender(){
       <span><b>${esc(t)}</b>${d?`<em>${esc(d)}</em>`:""}${
         n!=null?`<i class="cpb">${n}</i>`:""}</span></label>`;
 
-  const row = x => `<div class="cprow">
-      <span class="cpt">${esc(x.t)}</span>
+  /* A row goes into the report because it was TICKED, not because a figure
+     was typed into it. The grey figures are the common starting point, and
+     without a tick the only way to accept one was to retype it -- so a policy
+     you were content with could not be included at all. Ticking uses the
+     typed figure where there is one and the starting figure where there is
+     not, which is what accepting a default means. */
+  const row = x => `<div class="cprow ${(c.sec[x.k]||{}).on ? "on" : ""}">
+      <span class="cpt"><label class="cpuse"><input type="checkbox" data-cpu="${x.k}"
+        ${(c.sec[x.k]||{}).on ? "checked" : ""} aria-label="Include ${esc(x.t)}"
+        >${esc(x.t)}</label></span>
       <span>${num(x.k,"cash", cpDefault(x.b,"cash"))}</span>
       <span>${num(x.k,"months", cpDefault(x.b,"months"))}</span>
       <span>${sel(x.k,"basis", CP_BASIS_OPTS)}</span>
@@ -4313,7 +4332,7 @@ function cpRender(){
       the duration the longest term, the basis what the limit is measured against, and the
       floor the minimum long-term rating accepted.</p>
     <div class="cptable tight wide">
-      <div class="cprow cphead"><span>Counterparty type</span><span>£m</span>
+      <div class="cprow cphead"><span>Include &amp; counterparty type</span><span>£m</span>
         <span>Months</span><span>Limit applies</span><span>Min rating</span></div>
       ${CP_SECTORS.map(row).join("")}
     </div>
@@ -4391,17 +4410,29 @@ function cpWire(){
   host.addEventListener("input", e => {
     const c = cpState(), el = e.target;
     if(el.dataset.cp){
-      (c.sec[el.dataset.cp] = c.sec[el.dataset.cp] || {})[el.dataset.f] = el.value;
+      const rec = (c.sec[el.dataset.cp] = c.sec[el.dataset.cp] || {});
+      rec[el.dataset.f] = el.value;
+      // Typing a figure is a clearer statement of intent than the tick, so it
+      // ticks the row rather than leaving the reader to do it twice.
+      if(el.value.trim()){
+        rec.on = true;
+        const box = host.querySelector(`input[data-cpu="${el.dataset.cp}"]`);
+        if(box && !box.checked){ box.checked = true; box.closest(".cprow").classList.add("on"); }
+      }
       // Nothing else needs redrawing as you type: re-rendering the step
       // would take the focus out of the input mid-keystroke.
     }
     else if(el.dataset.cps){ c[el.dataset.cps] = el.type === "checkbox" ? el.checked : el.value; }
     else return;
-    save(); renderRail();
+    renderRail();
   });
   host.addEventListener("change", e => {
     const c = cpState(), el = e.target;
-    if(el.dataset.cp){ (c.sec[el.dataset.cp] = c.sec[el.dataset.cp] || {})[el.dataset.f] = el.value; }
+    if(el.dataset.cpu){
+      const rec = (c.sec[el.dataset.cpu] = c.sec[el.dataset.cpu] || {});
+      rec.on = el.checked;
+    }
+    else if(el.dataset.cp){ (c.sec[el.dataset.cp] = c.sec[el.dataset.cp] || {})[el.dataset.f] = el.value; }
     else if(el.dataset.cpb){ c.basis[el.dataset.cpb] = el.checked; }
     else if(el.dataset.cpi){ c.instr[el.dataset.cpi] = el.checked; }
     else if(el.dataset.cpp){ c.pool[el.dataset.cpp] = el.checked; }
@@ -4409,7 +4440,7 @@ function cpWire(){
     else if(el.dataset.cpc){ c.country = el.dataset.cpc; }
     else if(el.dataset.cps){ c[el.dataset.cps] = el.type === "checkbox" ? el.checked : el.value; }
     else return;
-    save(); cpRender(); renderRail();
+    cpRender(); renderRail();
   });
 }
 
@@ -4418,7 +4449,15 @@ function cpWire(){
    asserting a limit the authority has not set. */
 function cpSectionHTML(){
   const c = cpState();
-  const rows = CP_SECTORS.filter(s => (c.sec[s.k]||{}).cash || (c.sec[s.k]||{}).months);
+  // Ticked rows only, and a ticked row without a typed figure publishes the
+  // starting figure -- which is what the reader chose by ticking it.
+  const val = (k, b, f) => {
+    const v = ((c.sec[k]||{})[f] || "").trim();
+    if(v) return v;
+    const d = cpDefault(b, f);
+    return d === "\u2014" ? "" : d;
+  };
+  const rows = CP_SECTORS.filter(s => (c.sec[s.k]||{}).on);
   if(!rows.length && !c.country) return "";
   const BAS = {counterparty:"per counterparty", sector:"per sector",
                group:"per ownership group", manager:"per fund manager"};
@@ -4443,7 +4482,7 @@ function cpSectionHTML(){
   const pools = CP_POOL_TYPES.filter(([k]) => c.pool[k]).map(([,t]) => unTitle(t));
   const country = CP_COUNTRY.find(o => o.k === c.country);
   const anyRating = rows.some(s => (c.sec[s.k]||{}).rating);
-  const anyMonths = rows.some(s => (c.sec[s.k]||{}).months);
+  const anyMonths = rows.some(s => val(s.k, s.b, "months"));
   let out = "";
 
   /* THE LEAD-IN FOLLOWS HOW AUTHORITIES ACTUALLY WRITE IT: the permission
@@ -4472,12 +4511,13 @@ function cpSectionHTML(){
       `</tr></thead><tbody>` +
       rows.map(s => {
         const v = c.sec[s.k] || {};
-        const months = v.months ? (+v.months % 12 === 0 && +v.months >= 12
-            ? `${+v.months / 12} year${+v.months === 12 ? "" : "s"}`
-            : `${esc(v.months)} months`) : "—";
+        const cash = val(s.k, s.b, "cash"), mo = val(s.k, s.b, "months");
+        const months = mo ? (+mo % 12 === 0 && +mo >= 12
+            ? `${+mo / 12} year${+mo === 12 ? "" : "s"}`
+            : `${esc(mo)} months`) : "—";
         return `<tr>
           <td>${esc(s.t)}</td>
-          <td>£${esc(v.cash || "—")}${v.cash ? "m" : ""}</td>` +
+          <td>${cash ? "£" + esc(cash) + "m" : "—"}</td>` +
           (anyMonths ? `<td>${months}</td>` : "") +
           `<td class="w">${esc(BAS[v.basis || "counterparty"])}</td>` +
           (anyRating ? `<td class="w">${v.rating === "none" ? "not rated"
@@ -4547,7 +4587,7 @@ function cpSectionHTML(){
    answered, never whether the step was opened. */
 function cpProgress(){
   const c = cpState();
-  const limits = CP_SECTORS.filter(s => (c.sec[s.k]||{}).cash).length;
+  const limits = CP_SECTORS.filter(s => (c.sec[s.k]||{}).on).length;
   const parts = [limits > 0, !!c.country,
                  CP_SECTORS.some(s => (c.sec[s.k]||{}).rating),
                  Object.keys(c.instr).some(k=>c.instr[k])];
@@ -5463,7 +5503,7 @@ function saveVersion(){
       v:3, gss:S.gss, report:S.report, fy0:S.fy0, hra:S.hra, years:S.years,
       loans:S.loans, g:S.g, text:S.text, limits:S.limits, choices:S.choices,
       portfolio:S.portfolio, portfolioText:S.portfolioText, portfolioNote:S.portfolioNote,
-      logo:S.logo, asAt:S.asAt, minliq:S.minliq,
+      logo:S.logo, asAt:S.asAt, minliq:S.minliq, cp:S.cp,
       at:new Date().toISOString()}));
     stampSaved("Saved");
   }catch(e){ $("saved").textContent = "Could not save — browser storage is unavailable."; }
@@ -5503,10 +5543,14 @@ function restoreVersion(){
     // silently moving it to today's data would change the market figures under
     // a document somebody already took to committee.
     S.asAt=d.asAt||null; S.minliq=d.minliq||null;
+    // The counterparty policy is a whole section of the report. It was left
+    // out of the saved payload when the step was added, so saving and
+    // restoring silently discarded it.
+    S.cp=d.cp||null;
     $("fy0").value=S.fy0; $("hra").value=S.hra; $("horizon").value=S.years;
     if($("asat")) $("asat").value = S.asAt || MKT.as_at || "";
     if($("minliq")) $("minliq").value = S.minliq==null ? "" : S.minliq;
-    buildLedger(); loanRows(); renderSections(); render();
+    buildLedger(); loanRows(); renderSections(); cpRender(); render();
     stampSaved("Restored");
   }catch(e){ $("saved").textContent = "Could not restore that version."; }
 }
