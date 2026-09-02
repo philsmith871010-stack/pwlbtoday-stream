@@ -950,6 +950,14 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
 .qrow.narrow{grid-template-columns:minmax(0,1fr) 84px}
 @media(max-width:520px){.qrow,.qrow.narrow{grid-template-columns:1fr;gap:3px}}
 
+
+/* The demonstration is a way in, not a field, so it reads as an offer rather
+   than another thing to fill. */
+.demobox{grid-column:span 2}
+.demobox select{border-color:var(--accent);font-weight:600;color:var(--accent)}
+.demobox .hint{display:block;margin-top:3px}
+@media(max-width:700px){.demobox{grid-column:span 1}}
+
 </style>
 
 <div class="shell">
@@ -985,6 +993,17 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
       <div><label for="hra">HRA</label>
         <select id="hra"><option value="no">No HRA</option><option value="one">One pool</option>
         <option value="two">Two pool</option></select></div>
+      <div class="demobox">
+        <label for="demokind">Demonstration authority</label>
+        <select id="demokind">
+          <option value="">— choose your own authority above —</option>
+          <option value="nohra">Demo authority · no HRA</option>
+          <option value="one">Demo authority · HRA, one pool</option>
+          <option value="two">Demo authority · HRA, two pools</option>
+        </select>
+        <span class="hint">fills every step — figures, holdings, choices,
+          counterparty policy and all the wording</span>
+      </div>
       <div><label for="horizon">Horizon</label>
         <select id="horizon"></select></div>
       <div><label for="logo">Council logo</label>
@@ -1011,7 +1030,6 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
         <th style="width:12%">Rate</th><th></th>
       </tr></thead><tbody id="loanrows"></tbody></table>
       <div class="ltools"><button type="button" id="addloan">Add a debt source</button>
-        <button type="button" class="primary" id="demoport">Fill demo debt <b>and</b> investments</button>
         <button type="button" id="pasteloans">Paste your loans</button>
         <button type="button" class="ghost" id="tmplloans">Template .csv</button>
         <button type="button" class="ghost" id="showloans">Show the PWLB advances</button>
@@ -1076,14 +1094,8 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
         <span class="hintline">One figure, applied across every year — the lowest balance you
           would run to. It sets the benchmark.</span>
       </div>
+
       <div class="ltools">
-        <label class="minliq" for="demokind">Demonstration
-          <select id="demokind">
-            <option value="nohra">No HRA</option>
-            <option value="one">HRA, one pool</option>
-            <option value="two">HRA, two pool</option>
-          </select></label>
-        <button type="button" class="primary" id="example">Fill it completely</button>
         <button type="button" id="clear">Clear</button>
         <span class="sp"></span>
         <button type="button" id="copyx">Copy for Excel</button>
@@ -5939,36 +5951,7 @@ function stampSaved(word){
    * with variety, and every line carries a rate so the blended cost has
    * something to work with.
    */
-  $("demoport").addEventListener("click", ()=>{
-    // Refusing because no authority is chosen made the button do nothing at
-    // all on a fresh page, which is where it is most likely to be pressed.
-    // It picks one, exactly as the worked example does, and says which.
-    if(!S.gss){
-      S.gss = keys.find(k => LB[k].o > 100) || keys[0];
-      $("council").value = S.gss;
-      loanRows();
-    }
-    const base = LB[S.gss].o, r1 = v => Math.round(v*10)/10;
-    S.loans = [{pwlb:true, name:"PWLB", amt:base, profile:"actual"},
-      {name:"Barclays",              type:"LOBO",             amt:r1(base*0.09), mat:S.fy0+28, rate:4.55, profile:"bullet"},
-      {name:"Dexia",                 type:"LOBO",             amt:r1(base*0.04), mat:S.fy0+31, rate:4.80, profile:"bullet"},
-      {name:"Market loan",           type:"Market",           amt:r1(base*0.05), mat:S.fy0+9,  rate:4.10, profile:"bullet"},
-      {name:"Kent County Council",   type:"Local authority",  amt:r1(base*0.03), mat:S.fy0+2,  rate:4.35, profile:"bullet"},
-      {name:"Salix (interest free)", type:"Government",       amt:r1(base*0.01), mat:S.fy0+6,  rate:0.00, profile:"amort"}];
-    const pot = Math.max(6, base*0.06);
-    S.portfolio = [
-      {name:"Debt Management Office",   type:"DMADF",           amt:r1(pot*0.22), rate:3.95, mat:S.fy0+1},
-      {name:"Money market funds",       type:"MMF",             amt:r1(pot*0.28), rate:3.88, mat:null},
-      {name:"Other local authorities",  type:"Local authority", amt:r1(pot*0.20), rate:4.05, mat:S.fy0+2},
-      {name:"Call accounts",            type:"Call account",    amt:r1(pot*0.12), rate:3.60, mat:null},
-      {name:"Covered bonds",            type:"Covered bond",    amt:r1(pot*0.10), rate:4.20, mat:S.fy0+4},
-      {name:"Pooled property fund",     type:"Pooled fund",     amt:r1(pot*0.08), rate:4.40, mat:null}];
-    S.portfolioNote = `6 holdings, £${m1(pot)}m in total, grouped by type.`;
-    if(S.g.gf && S.g.gf.inv) S.g.gf.inv[0] = r1(pot);
-    loanRows(); syncLedger(true); renderSections(); render();
-    flash(`Demonstration filled for ${LB[S.gss].n} — six debt sources and six investment `
-        + `holdings, every one with a rate. Change anything.`);
-  });
+
 
   $("showloans").addEventListener("click", ()=>{
     const b = $("pwlbloans");
@@ -6155,7 +6138,32 @@ function stampSaved(word){
     // because a demonstration should show the tool with its features on.
     S.choices = {adviser:"", mrpmethod:"asset", cycle:"thrice", vrp:"no", advance:"no",
                  resched:"no", pooled:"no", nontreas:"no", mifid:"yes",
-                 commprop:"no", commborrow:"no", pwlbtoday:"yes"};
+                 commprop:"no", commborrow:"no", pwlbtoday:"yes",
+                 committee:"Audit and Governance Committee",
+                 wrapsummary:"yes", wrapfin:"yes", wraplegal:"yes", wraprisk:"yes",
+                 wrapconsult:"yes", wrapoptions:"yes",
+                 wrapauthor:"A. Officer, Head of Finance"};
+
+    // A counterparty policy, because the demonstration is meant to be a
+    // finished report and the policy is a section of one. Limits are the
+    // survey's own common figures, which is what an authority sees as the
+    // starting point anyway.
+    const cpb = (typeof CPB !== "undefined" && CPB.sectors) ? CPB.sectors : {};
+    const med = (label, f) => (cpb[label] && cpb[label][f]) ? String(cpb[label][f].med) : "";
+    S.cp = {
+      sec:{
+        gov:  {on:true, cash:med("UK Government / DMADF","cash"), months:"12",  basis:"counterparty"},
+        la:   {on:true, cash:med("Other local authorities","cash"), months:"36", basis:"counterparty"},
+        bank: {on:true, cash:med("Banks — unsecured","cash"), months:"13", basis:"group", rating:"A-"},
+        bs:   {on:true, cash:med("Building societies","cash"), months:"13", basis:"counterparty", rating:"A-"},
+        mmf:  {on:true, cash:med("Money market funds","cash"), basis:"manager", rating:"AAA"},
+        pool: {on:true, cash:med("Pooled / bond funds","cash"), basis:"sector"}
+      },
+      basis:{}, instr:{tbills:true, cds:true, supra:true}, pool:{bond:true, prop:true},
+      country:"sovereign", floor:"AA-", pct:"25",
+      agencies:{Fitch:true, "Moody's":true}, groupnote:true,
+      split:true, nonspec:"20", ltrating:"A-", mmfrating:"AAA"
+    };
 
     // Every section of commentary, from the draft wording, so the demo is a
     // finished report rather than a form with the answers left out.
@@ -6167,12 +6175,22 @@ function stampSaved(word){
     S.asAt = MKT.as_at; if($("asat")) $("asat").value = MKT.as_at || "";
     $("hra").value = S.hra;
     fundTabs(); buildLedger(); loanRows(); renderChoices(); renderSections();
-    syncLedger(true); render();
+    if(typeof cpRender === "function") cpRender();
+    syncLedger(true); render(); renderRail();
     $("saved").textContent = `Demonstration filled — ${D.label}, every section written. `
+      + `Every step is filled, including the counterparty policy. `
       + `Change anything; nothing here is fixed.`;
   }
 
-  $("example").addEventListener("click", ()=>fillDemo($("demokind") ? $("demokind").value : "nohra"));
+  /* ONE SWITCH, ON THE FIRST STEP. The demonstration used to be two controls
+     buried in the steps it happened to fill -- a portfolio button on "what you
+     hold" and a preset picker on "your figures" -- so a new reader met the
+     tool empty, and the thing that would have shown them what it does was two
+     steps further in and looked like it only filled that step. It fills every
+     step, so it belongs where the report is set up. */
+  if($("demokind")) $("demokind").addEventListener("change", e => {
+    if(e.target.value) fillDemo(e.target.value);
+  });
 
   // Choices. Each one either lets a clause in or keeps it out, so the count
   // moves as they answer and the draft changes underneath.
