@@ -852,6 +852,30 @@ svg.ctip .hits rect{cursor:crosshair}
 .cklink{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--accent);
   background:none;border:0;padding:0;cursor:pointer;text-decoration:underline}
 @media(max-width:660px){.ckrow{grid-template-columns:1fr;gap:4px}}
+/* The period-performance grid: three columns, and a blank line simply does
+   not appear in the report. Narrow inputs, because these are single figures
+   rather than a fifty-year row. */
+.perfwrap{overflow-x:auto;margin:4px 0 8px}
+.perf{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px}
+.perf th{font-family:var(--sans);font-size:10.5px;font-weight:600;color:var(--ink2);
+  text-transform:uppercase;letter-spacing:.06em;text-align:right;padding:0 8px 7px;
+  border-bottom:1px solid var(--line2)}
+.perf th:first-child{text-align:left}
+.perf td{padding:3px 8px;border-bottom:1px solid var(--hair);text-align:right}
+.perf td.pl{text-align:left;font-family:var(--sans);font-size:12.5px;color:var(--ink2);
+  white-space:nowrap;padding-right:18px}
+.perf td.pl b{font-weight:600;color:var(--ink);display:block;font-size:13px}
+.perf td.pl span{font-size:11px;color:var(--muted)}
+.perf input{width:104px;text-align:right;font-family:var(--mono);font-size:12.5px;
+  padding:5px 8px;border:1px solid var(--line2);border-radius:var(--r-sm);
+  background:var(--card);color:var(--ink);font-variant-numeric:tabular-nums}
+.perf input:focus{outline:none;border-color:var(--accent)}
+.perf td.nask{background:repeating-linear-gradient(135deg,transparent,transparent 4px,
+  var(--hair) 4px,var(--hair) 5px)}
+/* A derived figure is shown, not typed into: it must not look like an input
+   the authority filled, and typing over it is what the note explains. */
+.perf td.drv{color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums;
+  padding-right:16px}
 .ltop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .ltop .sp{flex:1;min-width:8px}
 /* The two Excel buttons. They were bare <button>s taking the browser's own
@@ -4058,6 +4082,164 @@ function complianceTable(){
       period end, against a maximum of <b>£${m1(L.inv_max)}m</b>.`:""}</p>`;
 }
 
+/* ===========================================================================
+ * WHAT ACTUALLY HAPPENED, AND WHAT HAPPENED LAST YEAR.
+ *
+ * Choosing "Annual outturn" used to change which prose sections appeared and
+ * nothing else. The inputs were identical for all four report types -- a
+ * forecast grid whichever report you picked -- so an outturn came out with
+ * correct indicators, a correct benchmark and a correct limits table, and no
+ * statement of what actually happened, which is the thing an outturn exists
+ * to say.
+ *
+ * The lines were chosen by reading the corpus rather than by guessing. Across
+ * 298 outturns and 161 mid-year reviews on disk: financing costs appear in
+ * 85% and 67%, a rate of return achieved in 65% and 60%, a benchmark to
+ * measure it against in 61% and 63%, and a prior-year comparative in 58% and
+ * 47%. Average investment balance (22%) is here because it is the
+ * denominator of a return, and new borrowing and debt repaid because they are
+ * conditional on the year having any -- a council that borrowed nothing
+ * leaves them blank and the row does not appear.
+ *
+ * THREE COLUMNS, AND THE THIRD IS A CODE REQUIREMENT. Prudential Code E9:
+ * indicators for previous years are taken from the statement of accounts. The
+ * register claimed that was covered by "ledger columns and the balance sheet
+ * section"; there was no prior-year column anywhere in the tool, so it was
+ * not. A comparative is what turns a number into a movement.
+ *
+ * Nothing is derived unless the arithmetic is exact. A rate of return is
+ * computed from income over average balance only when BOTH are entered, and
+ * it is shown as derived so nobody mistakes it for a figure they gave.
+ * ======================================================================== */
+const PERF = [
+  {k:"intpay",  l:"Interest payable",        u:"£m", s:"on borrowing and leases"},
+  {k:"intinc",  l:"Investment income",       u:"£m", s:"earned in the period"},
+  {k:"avginv",  l:"Average investments held", u:"£m", s:"the denominator of a return",
+   noBudget:true},
+  {k:"avgdebt", l:"Average debt outstanding", u:"£m", noBudget:true},
+  {k:"ret",     l:"Rate of return achieved",  u:"%",  s:"derived where income and balance allow",
+   pct:true},
+  {k:"bench",   l:"Benchmark return",         u:"%",  s:"SONIA, 7-day, or your own measure",
+   pct:true, noBudget:true},
+  {k:"newborr", l:"New borrowing taken",      u:"£m", s:"leave blank if none", noBudget:true},
+  {k:"newrate", l:"Average rate on it",       u:"%",  pct:true, noBudget:true},
+  {k:"repaid",  l:"Debt repaid or matured",   u:"£m", noBudget:true}
+];
+const PERF_COLS = [["budget","Budget"], ["actual","Actual"], ["prior","Prior year"]];
+
+/* A return we can compute: income over the average balance held. Only when
+   both are there, and never overwriting a figure the authority entered. */
+function perfDerive(col){
+  const P = (S.perf || {});
+  const g = k => { const v = P[k] && P[k][col]; return (v == null || v === "") ? null : +v; };
+  const inc = g("intinc"), bal = g("avginv");
+  if(g("ret") != null) return {v: g("ret"), derived:false};
+  if(inc == null || !bal) return {v: null, derived:false};
+  return {v: inc / bal * 100, derived:true};
+}
+
+function perfRows(){
+  const P = S.perf || {};
+  return PERF.map(x => {
+    const cells = {};
+    PERF_COLS.forEach(([c]) => {
+      if(x.noBudget && c === "budget"){ cells[c] = {v:null, na:true}; return; }
+      const raw = P[x.k] && P[x.k][c];
+      let v = (raw == null || raw === "") ? null : +raw, derived = false;
+      if(x.k === "ret"){ const d = perfDerive(c); v = d.v; derived = d.derived; }
+      cells[c] = {v, derived};
+    });
+    return Object.assign({}, x, {cells,
+      any: PERF_COLS.some(([c]) => cells[c].v != null)});
+  });
+}
+
+function perfPanel(){
+  S.perf = S.perf || {};
+  const rows = perfRows();
+  return `<div class="perfwrap"><table class="perf">
+    <thead><tr><th>The period</th>${PERF_COLS.map(([,t])=>`<th>${esc(t)}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td class="pl"><b>${esc(r.l)}</b>${r.s?`<span>${esc(r.s)}</span>`:""}</td>
+      ${PERF_COLS.map(([c])=>{
+        if(r.cells[c].na) return `<td class="nask" title="a budget is not set for this"></td>`;
+        if(r.k === "ret" && r.cells[c].derived)
+          return `<td class="drv" title="income over average balance">${
+            r.cells[c].v.toFixed(2)}%</td>`;
+        const raw = (S.perf[r.k]||{})[c];
+        return `<td><input type="text" inputmode="decimal" data-p="${r.k}" data-pc="${c}"
+          value="${raw == null ? "" : raw}" placeholder="${r.u === "%" ? "—" : "—"}"
+          aria-label="${esc(r.l)} ${c}"></td>`;
+      }).join("")}</tr>`).join("")}</tbody></table></div>
+    <p class="hintline">Leave a line blank and it does not appear in the report. The rate of
+      return fills itself from investment income over average investments held; type over it
+      to use your own.</p>`;
+}
+
+/* The table the report carries. Variance is stated with its direction named,
+   because "£0.4m" against a budget is meaningless without knowing which way
+   is good news. */
+function perfTable(){
+  const rows = perfRows().filter(r => r.any);
+  if(!rows.length)
+    return `<p class="gap">To be completed: enter what the period actually cost and earned,
+      and the comparison against budget and against last year is made here.</p>`;
+  const f = (r, c) => {
+    const x = r.cells[c];
+    if(x.na || x.v == null) return "–";
+    return r.pct ? `${x.v.toFixed(2)}%` : `£${m1(x.v)}m`;
+  };
+  const varc = r => {
+    const b = r.cells.budget, a = r.cells.actual;
+    if(b.na || b.v == null || a.v == null) return "–";
+    const d = a.v - b.v;
+    if(Math.abs(d) < 0.005) return "on budget";
+    // Spending more than budgeted on interest is adverse; earning more than
+    // budgeted is favourable. The sign alone does not say which.
+    const adverse = (r.k === "intpay") ? d > 0 : d < 0;
+    return `${r.pct ? Math.abs(d).toFixed(2)+" pts" : "£"+m1(Math.abs(d))+"m"} `
+         + `${adverse ? "adverse" : "favourable"}`;
+  };
+  /* Header and body both walk PERF_COLS, with the variance inserted after the
+     actual. The report table used to name its four columns by hand while the
+     input grid derived its three -- two lists to keep in step, which is how
+     the chart legend came to describe lines it was not drawing. */
+  const cells = fn => PERF_COLS.map(([c]) =>
+    fn(c) + (c === "actual" ? fn("__var") : "")).join("");
+  return `<div style="overflow-x:auto"><table class="otable">
+    <thead><tr><th>The period</th>${cells(c => `<th>${
+      c === "__var" ? "Variance" : esc(PERF_COLS.find(x=>x[0]===c)[1])}</th>`)}</tr></thead>
+    <tbody>${rows.map(r=>`<tr><td class="w">${esc(r.l)}</td>${
+      cells(c => `<td>${c === "__var" ? varc(r) : f(r, c)}</td>`)}</tr>`).join("")}</tbody>
+    </table></div>
+    ${perfNote(rows)}`;
+}
+
+function perfNote(rows){
+  const get = (k,c) => { const r = rows.find(x=>x.k===k); return r ? r.cells[c].v : null; };
+  const bits = [];
+  const ret = get("ret","actual"), bench = get("bench","actual");
+  if(ret != null && bench != null){
+    const d = ret - bench;
+    bits.push(`Treasury investments returned <b>${ret.toFixed(2)}%</b> against a benchmark of
+      <b>${bench.toFixed(2)}%</b> — ${Math.abs(d) < 0.005 ? "in line with it"
+        : `<b>${Math.abs(d).toFixed(2)} points ${d > 0 ? "above" : "below"}</b> it`}.`);
+  }
+  const ip = get("intpay","actual"), ipb = get("intpay","budget");
+  if(ip != null && ipb != null)
+    bits.push(`Interest payable was <b>£${m1(ip)}m</b> against a budget of <b>£${m1(ipb)}m</b>.`);
+  const nb = get("newborr","actual"), nr = get("newrate","actual");
+  if(nb) bits.push(`New borrowing of <b>£${m1(nb)}m</b> was taken`
+    + (nr != null ? ` at an average of <b>${nr.toFixed(2)}%</b>` : "") + ".");
+  const rp = get("repaid","actual");
+  if(rp) bits.push(`<b>£${m1(rp)}m</b> of debt was repaid or matured.`);
+  const py = get("intpay","prior");
+  if(ip != null && py != null && py)
+    bits.push(`Against <b>£${m1(py)}m</b> the year before, financing costs moved
+      <b>${ip > py ? "up" : "down"} £${m1(Math.abs(ip - py))}m</b>.`);
+  return bits.length ? `<p class="note">${bits.join(" ")}</p>` : "";
+}
+
 function limitsPanel(){
   const L = S.limits || (S.limits = {});
   return `<div class="setup">${LIMITS.map(x=>
@@ -4197,6 +4379,13 @@ const SECTIONS = [
         d:DRAFT.compliance_body, ph:"If a limit was exceeded, when, by how much, why, and what was done. If none were, "
            +"say so plainly — members are entitled to a clear statement either way."}]},
 
+  {k:"performance", n:"7d", t:"Performance against budget and against last year",
+   kind:"both", in:BACK,
+   lead:"What the period cost and earned, against what was budgeted and against last year. "
+       +"A comparative is what turns a number into a movement.",
+   qs:[{k:"performance_body", l:"Commentary on the variances",
+        ph:"Why the outturn differs from the budget, and what changed against the year "
+          +"before. A variance without an explanation is a number members cannot use."}]},
   {k:"activity", n:"8", t:"Borrowing and investment activity", kind:"yours", in:BACK,
    lead:"For an outturn or mid-year report: what actually happened.",
    qs:[{k:"activity_body", l:"Borrowing and investment activity",
@@ -4319,6 +4508,13 @@ function renderSections(){
     if(i>=0){ if(RATE_ON.length>1) RATE_ON.splice(i,1); } else RATE_ON.push(k);
     renderSections(); render();
   });
+  $("secbody").querySelectorAll("[data-p]").forEach(el=>
+    el.addEventListener("input", e=>{
+      const k=e.target.dataset.p, c=e.target.dataset.pc, v=e.target.value.trim();
+      S.perf = S.perf || {}; S.perf[k] = S.perf[k] || {};
+      S.perf[k][c] = (v==="") ? null : num(v);
+      clearTimeout(S._p); S._p=setTimeout(()=>{ renderSections(); render(); }, 600);
+    }));
   $("secbody").querySelectorAll("[data-L]").forEach(el=>
     el.addEventListener("input", e=>{
       const v=e.target.value.trim();
@@ -4393,6 +4589,8 @@ function autoNote(k){
       benchmark in LB5 wherever the authority is net indebted.`);
   if(k==="compliance")
     return box("Limits and actuals", limitsPanel()) + complianceTable();
+  if(k==="performance")
+    return box("What the period actually did", perfPanel()) + perfTable();
   if(k==="training")
     return box("Why this is here", `The Treasury Management Code requires the authority to
       address the knowledge and skills of the officers who carry out treasury management and
@@ -5260,6 +5458,16 @@ function docSections(){
     b: clausesFor("7b") + complianceTable()
       + (t("compliance_body")?para(t("compliance_body")):"")},
 
+   {k:"performance", n:"7d", t:"Performance against budget and against last year",
+    b: `<p>The table below sets what the period actually cost and earned against the budget
+        set for it and against the year before. A comparative is what turns a figure into a
+        movement, and the Prudential Code expects previous years' indicators to be taken from
+        the authority's statement of accounts.</p>`
+      + perfTable()
+      + (t("performance_body") ? para(t("performance_body"))
+                              : gap("why the outturn differs from budget, and what changed "
+                                  + "against last year"))},
+
    {k:"activity", n:"8", t:"Borrowing and investment activity",
     b: clausesFor("8")
      + (t("activity_body")?para(t("activity_body")):"")
@@ -5929,6 +6137,45 @@ const CHECKS = [
    }},
 
   /* ---- required of every report ------------------------------------------ */
+  {k:"perf", src:"TMC 8", g:"The period", in:CK_BACK,
+   t:"What the period cost and earned is reported, against the budget set for it",
+   run(){
+     const rows = (typeof perfRows === "function" ? perfRows() : []).filter(r => r.any);
+     if(!rows.length) return {v:"gap", go:6,
+       note:"Nothing entered. A report on a period that has ended is expected to say what it "
+          + "cost and what it earned, not only that the limits held."};
+     const withB = rows.filter(r => r.cells.budget && r.cells.budget.v != null
+                                 && r.cells.actual.v != null);
+     return withB.length
+       ? {v:"met", note:`${rows.length} line${rows.length===1?"":"s"} entered, `
+          + `${withB.length} compared against budget.`}
+       : {v:"gap", go:6, note:`${rows.length} line${rows.length===1?"":"s"} entered, but none `
+          + `against a budget — so no variance can be shown.`};
+   }},
+  {k:"prior", src:"PC E9", g:"The period", in:CK_BACK,
+   t:"Prior-year comparatives are given, as the Code expects from the statement of accounts",
+   run(){
+     const rows = (typeof perfRows === "function" ? perfRows() : []);
+     const n = rows.filter(r => r.cells.prior && r.cells.prior.v != null).length;
+     return n
+       ? {v:"met", note:`${n} line${n===1?"":"s"} carry last year's figure.`}
+       : {v:"gap", go:6, note:"None entered. E9 expects previous years' indicators to be taken "
+          + "from the statement of accounts; a figure without a comparative is not a movement."};
+   }},
+  {k:"bench", src:"TMC 8", g:"The period", in:CK_BACK,
+   t:"The return achieved is measured against a benchmark",
+   run(){
+     const rows = (typeof perfRows === "function" ? perfRows() : []);
+     const g = k => { const r = rows.find(x=>x.k===k); return r ? r.cells.actual.v : null; };
+     const ret = g("ret"), bench = g("bench");
+     if(ret == null) return {v:"gap", go:6,
+       note:"No rate of return — enter investment income and the average balance held and it "
+          + "computes itself, or type your own."};
+     if(bench == null) return {v:"gap", go:6,
+       note:`A return of ${ret.toFixed(2)}% is reported against nothing. 61% of outturns in the `
+          + `corpus name a benchmark; without one the figure cannot be judged.`};
+     return {v:"met", note:`${ret.toFixed(2)}% against ${bench.toFixed(2)}%.`};
+   }},
   {k:"wording", src:"TMC", g:"The document", in:CK_ALL,
    t:"Every section this report needs has been written",
    run(){
@@ -6479,7 +6726,7 @@ function saveVersion(){
   try{
     localStorage.setItem(KEY(), JSON.stringify({
       v:3, gss:S.gss, report:S.report, fy0:S.fy0, hra:S.hra, years:S.years,
-      loans:S.loans, g:S.g, text:S.text, limits:S.limits, choices:S.choices,
+      loans:S.loans, g:S.g, text:S.text, limits:S.limits, perf:S.perf, choices:S.choices,
       portfolio:S.portfolio, portfolioText:S.portfolioText, portfolioNote:S.portfolioNote,
       logo:S.logo, asAt:S.asAt, minliq:S.minliq, cp:S.cp,
       at:new Date().toISOString()}));
@@ -6512,7 +6759,7 @@ function restoreVersion(){
     const d = JSON.parse(raw);
     S.fy0=d.fy0; S.hra=d.hra; S.years=d.years||51; S.loans=d.loans||[];
     S.g=migrateGrid(d.g, d.years||51);
-    S.text=d.text||{}; S.limits=d.limits||{};
+    S.text=d.text||{}; S.limits=d.limits||{}; S.perf=d.perf||{};
     if(d.choices) S.choices=d.choices;
     S.portfolio=d.portfolio||[]; S.portfolioText=d.portfolioText||"";
     S.portfolioNote=d.portfolioNote||"";
@@ -6846,6 +7093,23 @@ function stampSaved(word){
       debt_close:  r1(dbt),
       inv_close:   r1(pot),
       inv_max:     r1(pot * 1.35)
+    };
+    /* The demonstration has to fill this too, or an outturn opened from the
+       demo shows the new section as an empty grid -- which is exactly the
+       hole the check found in the old demo. Budget slightly under actual on
+       interest and slightly over on income, because a demonstration where
+       everything came in on budget teaches nothing about how a variance
+       reads. */
+    const inc0 = r1(pot * 0.039), pay0 = r1(dbt * 0.041);
+    S.perf = {
+      intpay:  {budget: r1(pay0 * 0.96), actual: pay0,             prior: r1(pay0 * 0.92)},
+      intinc:  {budget: r1(inc0 * 1.05), actual: inc0,             prior: r1(inc0 * 0.88)},
+      avginv:  {actual: r1(pot * 1.12),  prior: r1(pot * 0.97)},
+      avgdebt: {actual: r1(dbt * 1.01),  prior: r1(dbt * 0.98)},
+      bench:   {actual: 3.72,            prior: 4.15},
+      newborr: {actual: r1(dbt * 0.06)},
+      newrate: {actual: 4.48},
+      repaid:  {actual: r1(dbt * 0.04)}
     };
     S.minliq = S.g.gf.liq[0] || null;
     if($("minliq")) $("minliq").value = S.minliq == null ? "" : S.minliq;
