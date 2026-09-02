@@ -442,6 +442,79 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
 .cptable.tight .cprow input:placeholder-shown{color:var(--faint)}
 table.dtab td.wrap{white-space:normal;line-height:1.5}
 
+
+/* ---- counterparty: dense, and using the width ----------------------------
+ * The shell runs to 1500px. A single stacked column left two thirds of it
+ * empty and pushed every question after the first below the fold, which for a
+ * step with six of them is the difference between a page you can see and a
+ * page you have to remember.
+ */
+.cpsplit{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.cppair{display:grid;grid-template-columns:1fr 1fr;gap:14px 26px;align-items:start}
+@media (max-width:1000px){.cpsplit,.cppair{grid-template-columns:1fr}}
+.cppair > section{min-width:0}
+.cppair .cph{margin-top:22px}
+
+.cptable.tight .cprow{grid-template-columns:minmax(0,1fr) 72px 78px;gap:8px;padding:5px 11px}
+.cptable.tight .cprow .cpt{padding-top:3px;font-size:12px;line-height:1.3}
+.cptable.tight .cprow input{max-width:100%;padding:3px 7px;font-size:12px}
+.cptable.tight .cprow.cphead{padding:6px 11px;font-size:9.5px}
+
+.cpchecks.tight{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.cpchecks.tight.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.cpchecks.tight.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:1000px){.cpchecks.tight.five{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cpchecks.tight.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cpchecks.tight .cpchk{padding:7px 9px;gap:7px}
+.cpchecks.tight .cpchk b{font-size:12px;line-height:1.3}
+.cpchecks.tight .cpchk em{font-size:10.5px;margin-top:1px}
+.cpchecks.tight .cpchk .cpb{margin-top:2px}
+
+.cpopts.tight{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.cpopts.tight .cpopt{padding:8px 10px;gap:8px}
+.cpopts.tight .cpopt b{font-size:12px;line-height:1.3}
+
+/* Fields that belong together, on one line. */
+.cprowflex{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 18px;margin-top:10px}
+.cprowflex label{font-family:var(--sans);font-size:11.5px;color:var(--ink2);font-weight:600;
+  display:flex;flex-direction:column;gap:4px}
+.cprowflex label.cpmini{flex-direction:row;align-items:center;gap:6px;font-weight:500}
+.cprowflex select,.cprowflex input[type=text]{font-family:var(--mono);font-size:12px;
+  padding:4px 7px;border:1px solid var(--line2);border-radius:3px;
+  background:var(--card);color:var(--ink)}
+.cpags{display:flex;gap:12px;align-items:center;padding-bottom:3px}
+.cph{margin:24px 0 4px;padding-top:13px}
+.cpsub{margin-bottom:10px}
+
+
+/* Reference, not input: folded away so it costs a line rather than a screen. */
+.cpwrap{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}
+.cpwrap summary{cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:600;
+  color:var(--ink);list-style:none;display:flex;align-items:baseline;gap:10px}
+.cpwrap summary::-webkit-details-marker{display:none}
+.cpwrap summary::before{content:"\25B8";color:var(--accent);font-size:11px;
+  transition:transform .15s ease;display:inline-block}
+.cpwrap[open] summary::before{transform:rotate(90deg)}
+.cpwrap summary i{font-style:normal;font-weight:400;font-size:11.5px;color:var(--muted)}
+.cpwrap .cpwords{margin-top:12px}
+.cpnote{padding:9px 14px;font-size:12.5px;margin-bottom:18px}
+.cpsum{padding:11px 14px;margin-bottom:14px}
+
+
+/* Five columns: the type, then the four decisions about it. */
+.cptable.wide .cprow{grid-template-columns:minmax(0,1.6fr) 62px 66px 132px 92px;
+  gap:8px;align-items:center;padding:4px 11px}
+.cptable.wide .cprow.cphead{align-items:end}
+.cptable.wide .cprow .cpt{padding-top:0}
+.cptable.wide select{width:100%;font-family:var(--sans);font-size:11.5px;padding:3px 5px;
+  border:1px solid var(--line2);border-radius:3px;background:var(--card);color:var(--ink2)}
+.cptable.wide select:focus{outline:2px solid var(--accent);outline-offset:-2px}
+@media (max-width:1000px){
+  .cptable.wide .cprow{grid-template-columns:minmax(0,1fr) 1fr;row-gap:4px}
+  .cptable.wide .cprow.cphead{display:none}}
+.cplbl{font-family:var(--sans);font-size:11.5px;color:var(--ink2);font-weight:600;
+  margin-right:4px}
+
 /* ---- the step rail --------------------------------------------------------
  * Sticky, because the one question it answers — where am I, and what is left
  * — is the question you have while you are in the middle of a step, not the
@@ -4115,6 +4188,12 @@ const CP_INSTRUMENTS = [
   ["frn","Floating rate notes"], ["mba","Municipal Bonds Agency"]
 ];
 
+/* What a limit is measured against, per row. */
+const CP_BASIS_OPTS = [["counterparty","per counterparty"],["sector","per sector"],
+  ["group","per ownership group"],["manager","per fund manager"]];
+const CP_RATINGS = [["","—"],["AAA","AAA"],["AA+","AA+"],["AA","AA"],["AA-","AA-"],
+  ["A+","A+"],["A","A"],["A-","A-"],["BBB+","BBB+"],["none","not rated"]];
+
 const CP_POOL_TYPES = [["bond","Bond funds"],["prop","Property funds"],
   ["multi","Multi-asset / diversified"],["equity","Equity funds"]];
 
@@ -4180,8 +4259,9 @@ function cpSummary(){
   if(st.tighter) bits.push(`<b class="t">${st.tighter}</b> tighter than most`);
   if(st.typical) bits.push(`<b class="m">${st.typical}</b> within the middle half`);
   if(st.looser)  bits.push(`<b class="l">${st.looser}</b> looser than most`);
+  const rated = CP_SECTORS.filter(s => (c.sec[s.k]||{}).rating).length;
   const done = [c.country && "country policy",
-                Object.keys(c.agencies).some(a=>c.agencies[a]) && "credit criteria",
+                rated && `${rated} rating floor${rated===1?"":"s"}`,
                 Object.keys(c.instr).some(k=>c.instr[k]) && "instruments",
                 Object.keys(c.pool).some(k=>c.pool[k]) && "pooled funds"].filter(Boolean);
   return `<div class="cpsum">
@@ -4212,115 +4292,115 @@ function cpRender(){
       data-f="${f}" value="${esc(String((c.sec[k]||{})[f] ?? ""))}"
       placeholder="${esc(String(ph))}">`;
 
+  /* ONE TABLE, NOT THREE SECTIONS. The limit, the duration, what the limit
+     applies to and the rating floor were three separate questions asked about
+     the same ten sectors, which forced a reader to hold a sector in mind
+     across three blocks and made the commonest real policy impossible to
+     express: a per-counterparty limit on banks, a per-sector cap on pooled
+     funds, and a higher rating floor for money market funds than for anything
+     else. Each is now a column, so a row states one sector's whole policy —
+     which is also how councils publish it. */
+  const sel = (k, field, opts) => `<select data-cp="${k}" data-f="${field}">${
+      opts.map(o => `<option value="${esc(o[0])}" ${
+        ((c.sec[k]||{})[field] || opts[0][0]) === o[0] ? "selected" : ""}>${esc(o[1])}</option>`
+      ).join("")}</select>`;
+
+  // Used by the pooled-fund and instrument grids below. It lived in the block
+  // that became the merged table, and taking it out with that block left both
+  // grids calling a function that no longer existed.
+  const chk = (attr, k, t, d, n) => `<label class="cpchk ${
+      (attr==="cpi"?c.instr:c.pool)[k] ? "on" : ""}">
+      <input type="checkbox" data-${attr}="${k}" ${
+      (attr==="cpi"?c.instr:c.pool)[k] ? "checked" : ""}>
+      <span><b>${esc(t)}</b>${d?`<em>${esc(d)}</em>`:""}${
+        n!=null?`<i class="cpb">${n}</i>`:""}</span></label>`;
+
+  const row = x => `<div class="cprow">
+      <span class="cpt">${esc(x.t)}</span>
+      <span>${num(x.k,"cash", cpDefault(x.b,"cash"))}</span>
+      <span>${num(x.k,"months", cpDefault(x.b,"months"))}</span>
+      <span>${sel(x.k,"basis", CP_BASIS_OPTS)}</span>
+      <span>${sel(x.k,"rating", CP_RATINGS)}</span>
+    </div>`;
+
   host.innerHTML = cpSummary() + `
-    <div class="cpnote">Starting points come from <b>${CPB.councils || 0} authorities'</b>
-      ${esc(CPB.basis_note || "current strategies")}, surveyed
-      ${esc(CPB.as_at || "")}. What is common is not what is right for you — every figure
-      here is yours to set.</div>
+    <div class="cpnote">Grey figures are the common starting point from
+      <b>${CPB.councils || 0} authorities'</b> ${esc(CPB.basis_note || "current strategies")},
+      surveyed ${esc(CPB.as_at || "")} — type over them. What is common is not what is
+      right for you.</div>
 
-    <h3 class="cph">1 · Limits by sector</h3>
-    <p class="cpsub">The cash limit is the most that may sit with any one name in that
-      sector. The duration is the longest it may sit there, <b>in months</b>. Figures
-      start at what is most common and are meant to be changed.</p>
-    <div class="cptable tight">
-      <div class="cprow cphead"><span>Sector</span><span>Cash limit £m</span>
-        <span>Max duration, months</span></div>
-      ${CP_SECTORS.map(s => `
-        <div class="cprow">
-          <span class="cpt">${esc(s.t)}</span>
-          <span>${num(s.k,"cash", cpDefault(s.b,"cash"))}</span>
-          <span>${num(s.k,"months", cpDefault(s.b,"months"))}</span>
-        </div>`).join("")}
+    <h3 class="cph">1 · Limits, duration, basis and credit floor</h3>
+    <p class="cpsub">One line per counterparty type. The limit is the most that may be held,
+      the duration the longest term, the basis what the limit is measured against, and the
+      floor the minimum long-term rating accepted.</p>
+    <div class="cptable tight wide">
+      <div class="cprow cphead"><span>Counterparty type</span><span>£m</span>
+        <span>Months</span><span>Limit applies</span><span>Min rating</span></div>
+      ${CP_SECTORS.map(row).join("")}
     </div>
-    <p class="cphint">Where a figure is grey it is the common starting point rather than
-      your policy. Type over it. Unsecured bank and building society durations cluster
-      hard at 13 months across the sector; secured exposure to the same institutions runs
-      very much longer.</p>
-
-    <h3 class="cph">2 · What the limit applies to</h3>
-    <p class="cpsub">A per-counterparty cap and a per-group cap control different things.</p>
-    <div class="cpchecks">
-      ${CP_BASIS.map(b => `<label class="cpchk ${c.basis[b.k]?"on":""}">
-        <input type="checkbox" data-cpb="${b.k}" ${c.basis[b.k]?"checked":""}>
-        <span><b>${esc(b.t)}</b><em>${esc(b.d)}</em>
-        <i class="cpb">${b.n() || 0} councils</i></span></label>`).join("")}
-    </div>
-
-    <h3 class="cph">3 · Credit criteria</h3>
-    <p class="cpsub">${CPB.ratings ? CPB.ratings.tiered : 0} authorities hold some
-      counterparties to a higher bar than others — typically AAA of a money market fund
-      and a lower floor for a bank.</p>
-    <div class="cpgrid">
-      <label>Minimum long-term rating
-        <select data-cps="ltrating">${["AAA","AA+","AA","AA-","A+","A","A-","BBB+"]
-          .map(r=>`<option ${c.ltrating===r?"selected":""}>${r}</option>`).join("")}</select></label>
-      <label>Money market funds
-        <select data-cps="mmfrating">${["AAA","AA+","AA","same as above"]
-          .map(r=>`<option ${c.mmfrating===r?"selected":""}>${r}</option>`).join("")}</select></label>
-      <label class="cpwide">Rating agencies used
-        <span class="cpinline">${["Fitch","Moody's","S&P"].map(a=>`
+    <div class="cprowflex">
+      <span class="cpags"><b class="cplbl">Rating agencies used</b>
+        ${["Fitch","Moody's","S&P"].map(a=>`
           <label class="cpmini"><input type="checkbox" data-cpa="${a}"
             ${c.agencies[a]?"checked":""}> ${a}
             <i class="cpb">${CPB.ratings ? (a==="Fitch"?CPB.ratings.fitch:
               a==="Moody's"?CPB.ratings.moodys:CPB.ratings.sp) : 0}</i></label>`).join("")}
-        </span></label>
+      </span>
+      <label class="cpmini"><input type="checkbox" data-cps="groupnote"
+        ${c.groupnote?"checked":""}> Treat a group under common ownership as one name
+        <i class="cpb">${(CPB.structure||{}).group_limits || 0}</i></label>
     </div>
 
-    <h3 class="cph">4 · Counterparties outside the UK</h3>
-    <p class="cpsub">Four postures, and they are different policies rather than different
-      levels of the same one. Only ${(CPB.geography||{})["excluded outright"] || 0} of
-      ${CPB.councils || 0} authorities rule it out entirely.</p>
-    <div class="cpopts">
-      ${CP_COUNTRY.map(o => `<label class="cpopt ${c.country===o.k?"on":""}">
-        <input type="radio" name="cpcountry" data-cpc="${o.k}" ${c.country===o.k?"checked":""}>
-        <span><b>${esc(o.t)}</b><em>${esc(o.d)}</em>
-        <i class="cpb">${(CPB.geography||{})[
-          o.k==="sovereign"?"sovereign rating floor":
-          o.k==="share"?"capped as a share of funds":
-          o.k==="conditions"?"permitted, other conditions":"excluded outright"] || 0} councils</i>
-        </span></label>`).join("")}
-    </div>
-    <div class="cpgrid">
-      <label>Sovereign floor <select data-cps="floor">${["AAA","AA+","AA","AA-","A+"]
-        .map(r=>`<option ${c.floor===r?"selected":""}>${r}</option>`).join("")}</select></label>
-      <label>Or a cap, % of funds <input type="text" data-cps="pct"
-        value="${esc(c.pct)}" inputmode="decimal"></label>
-    </div>
-
-    <h3 class="cph">5 · Pooled funds</h3>
-    <p class="cpsub">The one class where the usual framework does not apply: these funds
-      have no maturity date, so a duration limit means nothing and the control moves to the
-      manager and the sector cap.</p>
-    <div class="cpchecks">
-      ${CP_POOL_TYPES.map(([k,t]) => `<label class="cpchk ${c.pool[k]?"on":""}">
-        <input type="checkbox" data-cpp="${k}" ${c.pool[k]?"checked":""}>
-        <span><b>${esc(t)}</b></span></label>`).join("")}
-    </div>
-
-    <h3 class="cph">6 · Structure and instruments</h3>
-    <div class="cpgrid">
-      <label class="cpwide"><span class="cpinline">
-        <label class="cpmini"><input type="checkbox" data-cps="split" ${c.split?"checked":""}>
-          Specified / non-specified split
-          <i class="cpb">${(CPB.structure||{}).specified_split || 0} councils</i></label>
-        </span></label>
-      <label>Aggregate limit on non-specified investments £m
-        <input type="text" data-cps="nonspec" value="${esc(c.nonspec)}" inputmode="decimal"></label>
-    </div>
-    <div class="cpchecks">
-      ${CP_INSTRUMENTS.map(([k,t]) => `<label class="cpchk ${c.instr[k]?"on":""}">
-        <input type="checkbox" data-cpi="${k}" ${c.instr[k]?"checked":""}>
-        <span><b>${esc(t)}</b><i class="cpb">${(CPB.instruments||{})[
-          {tbills:"treasury bills / gilts",cds:"certificates of deposit",
-           property:"property funds",supra:"supranational / MDB bonds",
-           corpbond:"corporate bonds",notice:"notice / call accounts",
-           covered:"covered bonds / repo",reits:"REITs",frn:"floating rate notes",
-           mba:"municipal bonds agency"}[k]] || 0} councils</i></span></label>`).join("")}
+    <div class="cppair">
+      <section>
+        <h3 class="cph">2 · Counterparties outside the UK</h3>
+        <div class="cpopts tight">
+          ${CP_COUNTRY.map(o => `<label class="cpopt ${c.country===o.k?"on":""}">
+            <input type="radio" name="cpcountry" data-cpc="${o.k}" ${c.country===o.k?"checked":""}>
+            <span><b>${esc(o.t)}</b><i class="cpb">${(CPB.geography||{})[
+              o.k==="sovereign"?"sovereign rating floor":
+              o.k==="share"?"capped as a share of funds":
+              o.k==="conditions"?"permitted, other conditions":"excluded outright"] || 0}
+              councils</i></span></label>`).join("")}
+        </div>
+        <div class="cprowflex">
+          <label>Sovereign floor <select data-cps="floor">${["AAA","AA+","AA","AA-","A+"]
+            .map(r=>`<option ${c.floor===r?"selected":""}>${r}</option>`).join("")}</select></label>
+          <label>Or cap, % of funds <input type="text" data-cps="pct" value="${esc(c.pct)}"
+            inputmode="decimal" size="4"></label>
+        </div>
+      </section>
+      <section>
+        <h3 class="cph">3 · Pooled funds &amp; structure</h3>
+        <div class="cpchecks tight four">
+          ${CP_POOL_TYPES.map(([k,t]) => chk("cpp", k, t)).join("")}
+        </div>
+        <div class="cprowflex">
+          <label class="cpmini"><input type="checkbox" data-cps="split" ${c.split?"checked":""}>
+            Specified / non-specified split
+            <i class="cpb">${(CPB.structure||{}).specified_split || 0}</i></label>
+          <label>Non-specified cap £m <input type="text" data-cps="nonspec"
+            value="${esc(c.nonspec)}" inputmode="decimal" size="5"></label>
+        </div>
+      </section>
     </div>
 
-    ${(CPB.wording||[]).length ? `<h3 class="cph">How others have written it</h3>
+    <h3 class="cph">4 · Approved instruments</h3>
+    <div class="cpchecks tight five">
+      ${CP_INSTRUMENTS.map(([k,t]) => chk("cpi", k, t, null, (CPB.instruments||{})[
+        {tbills:"treasury bills / gilts",cds:"certificates of deposit",
+         property:"property funds",supra:"supranational / MDB bonds",
+         corpbond:"corporate bonds",notice:"notice / call accounts",
+         covered:"covered bonds / repo",reits:"REITs",frn:"floating rate notes",
+         mba:"municipal bonds agency"}[k]] || 0)).join("")}
+    </div>
+
+    ${(CPB.wording||[]).length ? `<details class="cpwrap">
+      <summary>How other authorities have worded this
+        <i>${CPB.wording.length} examples from published strategies</i></summary>
       <div class="cpwords">${CPB.wording.map(w=>`<blockquote>${esc(w.text)}
-        <cite>${esc(w.topic)} — ${esc(w.posture||"")}</cite></blockquote>`).join("")}</div>` : ""}
+        <cite>${esc(w.topic)} — ${esc(w.posture||"")}</cite></blockquote>`).join("")}</div>
+      </details>` : ""}
   `;
 }
 
@@ -4344,7 +4424,8 @@ function cpWire(){
   });
   host.addEventListener("change", e => {
     const c = cpState(), el = e.target;
-    if(el.dataset.cpb){ c.basis[el.dataset.cpb] = el.checked; }
+    if(el.dataset.cp){ (c.sec[el.dataset.cp] = c.sec[el.dataset.cp] || {})[el.dataset.f] = el.value; }
+    else if(el.dataset.cpb){ c.basis[el.dataset.cpb] = el.checked; }
     else if(el.dataset.cpi){ c.instr[el.dataset.cpi] = el.checked; }
     else if(el.dataset.cpp){ c.pool[el.dataset.cpp] = el.checked; }
     else if(el.dataset.cpa){ c.agencies[el.dataset.cpa] = el.checked; }
@@ -4362,7 +4443,8 @@ function cpSectionHTML(){
   const c = cpState();
   const rows = CP_SECTORS.filter(s => (c.sec[s.k]||{}).cash || (c.sec[s.k]||{}).months);
   if(!rows.length && !c.country) return "";
-  const basis = CP_BASIS.filter(b => c.basis[b.k]);
+  const BAS = {counterparty:"per counterparty", sector:"per sector",
+               group:"per ownership group", manager:"per fund manager"};
   const ags = Object.keys(c.agencies).filter(a => c.agencies[a]);
   const instr = CP_INSTRUMENTS.filter(([k]) => c.instr[k]).map(([,t]) => t.toLowerCase());
   const pools = CP_POOL_TYPES.filter(([k]) => c.pool[k]).map(([,t]) => t.toLowerCase());
@@ -4379,13 +4461,21 @@ function cpSectionHTML(){
       A limit applies to the amount held with any one name at any one time, and the
       duration is the longest remaining term the authority will accept at the point of
       investment.</p>`;
+    // Every column the reader needs to act on the row, in the order a
+    // strategy states them. The rating column is dropped entirely when no row
+    // sets one, rather than printing a table of dashes.
+    const anyRating = rows.some(s => (c.sec[s.k]||{}).rating);
     out += `<table class="dtab"><thead><tr><th>Counterparty type</th>
-      <th>Cash limit</th><th>Maximum duration</th></tr></thead><tbody>` +
+      <th>Cash limit</th><th>Maximum duration</th><th>Limit applies</th>` +
+      (anyRating ? `<th>Minimum rating</th>` : "") + `</tr></thead><tbody>` +
       rows.map(s => {
         const v = c.sec[s.k] || {};
         return `<tr><td>${esc(s.t)}</td>
           <td>${v.cash ? "£" + esc(v.cash) + "m" : "—"}</td>
-          <td>${v.months ? esc(v.months) + " months" : "—"}</td></tr>`;
+          <td>${v.months ? esc(v.months) + " months" : "—"}</td>
+          <td>${esc(BAS[v.basis || "counterparty"])}</td>` +
+          (anyRating ? `<td>${v.rating === "none" ? "not rated"
+                              : v.rating ? esc(v.rating) : "—"}</td>` : "") + `</tr>`;
       }).join("") + `</tbody></table>`;
   }
 
@@ -4393,15 +4483,14 @@ function cpSectionHTML(){
      that lists four controls in one sentence is unreadable and impossible to
      amend; a table can be lifted straight into a committee report. */
   const controls = [];
-  basis.forEach(b => controls.push([b.t, b.d]));
-  if(c.basis.per_group)
+  if(c.groupnote)
     controls.push(["Common ownership",
       "A group of entities under the same ownership is treated as a single organisation for limit purposes."]);
   if(ags.length)
     controls.push(["Credit assessment",
-      `Ratings from ${ags.join(", ")}, with a minimum long-term rating of ${esc(c.ltrating)}` +
-      (c.mmfrating && c.mmfrating !== "same as above"
-        ? `, and a minimum of ${esc(c.mmfrating)} for money market funds` : "") + "."]);
+      `Counterparties are assessed on ratings published by ${ags.join(", ")}. Where a ` +
+      `minimum rating is shown against a counterparty type above, it is the lowest ` +
+      `long-term rating the authority will accept for that type.`]);
   if(country)
     controls.push(["Counterparties outside the UK",
       natText(country.w.replace("[[FLOOR]]", c.floor).replace("[[PCT]]", c.pct))]);
@@ -4434,7 +4523,8 @@ function cpSectionHTML(){
 function cpProgress(){
   const c = cpState();
   const limits = CP_SECTORS.filter(s => (c.sec[s.k]||{}).cash).length;
-  const parts = [limits > 0, !!c.country, Object.keys(c.agencies).some(a=>c.agencies[a]),
+  const parts = [limits > 0, !!c.country,
+                 CP_SECTORS.some(s => (c.sec[s.k]||{}).rating),
                  Object.keys(c.instr).some(k=>c.instr[k])];
   return {limits, done: parts.filter(Boolean).length, of: parts.length};
 }
