@@ -4893,6 +4893,15 @@ adequate to current activity, but that the retirement of one senior officer in 2
 concentrates the authority's experience of long-dated borrowing in a single post. A successor is \
 being trained during the year and the assessment will be repeated once that is complete.`,
 
+group_body:
+`The authority's group indicators are set out above alongside the single-entity figures. \
+Income from the housing development company covers the interest it pays the authority with \
+headroom of £1.4m, and the company's business plan shows that headroom widening as units are \
+completed. The energy services company does not yet cover its debt cost from operations and is \
+funded from the authority's general reserves; its position is reviewed at each quarter and a \
+decision on its future is expected in 2027/28. The authority is satisfied that the group's \
+indicators do not disclose a risk that the single-entity indicators conceal.`,
+
 advisers:
 `The authority retains Arlingclose as its external treasury management adviser under a contract \
 running to 31 March 2028. The scope of the contract covers credit advice, interest rate views, \
@@ -4919,14 +4928,6 @@ reversed at whatever rate then applied. Borrowing the whole requirement in 2026/
 that exposure but would carry the cost of holding cash the authority does not yet need. The \
 strategy recommended takes the requirement in tranches as it arises, which is the approach that \
 keeps the maturity profile even and leaves the timing decision to be taken on the rate available.`,
-
-group: `The authority's group indicators are set out above alongside the single-entity figures. \
-Income from the housing development company covers the interest it pays the authority with \
-headroom of £1.4m, and the company's business plan shows that headroom widening as units are \
-completed. The energy services company does not yet cover its debt cost from operations and is \
-funded from the authority's general reserves; its position is reviewed at each quarter and a \
-decision on its future is expected in 2027/28. The authority is satisfied that the group's \
-indicators do not disclose a risk that the single-entity indicators conceal.`,
 
 wfin: `The 2026/27 budget provides £22.9m for interest payable and £31.2m for minimum revenue \
 provision, and assumes £1.9m of investment income. A one percentage point movement in short-term \
@@ -5958,6 +5959,14 @@ const DRAFT = {
   training_body: "The authority recognises that the effective management of treasury risk depends on officers and members having the knowledge and skills to exercise it, and on those responsible for scrutiny being able to challenge what is put to them.\n\nThe [[officer]] maintains a record of the training undertaken by treasury officers and by members of the {{committee}}, and assesses annually whether it remains adequate to the authority's treasury activity. Officers involved in treasury management hold {{qualifications}} and undertook {{hours / courses}} of continuing professional development in the year.\n\nTraining delivered in the period comprised {{list: sessions, dates, and who delivered them}}. Members receiving treasury reports were offered {{session}} in advance of the strategy being presented.\n\n{{Say how the assessment was made and what it concluded, not only that training took place — the Code asks for the assessment.}}",
   nontreasury_body: '{{Delete this section if the authority holds no non-treasury investments.}}\n\nThe authority holds investments that are not treasury investments: {{property held for rental return, loans to subsidiaries and joint ventures, loans to third parties in pursuit of service objectives, and equity in companies}}. These are held for {{service / regeneration / financial}} purposes and are not made in pursuit of a treasury return.\n\nThe total held is {{£m}} at {{date}}, against which the authority has set aside {{£m}}. The income they generate is {{£m}} a year, representing {{%}} of the net revenue budget; the authority is satisfied that this dependence is {{proportionate / being reduced}}, and the plan for reducing it is {{set out at ...}}.\n\nEach is reviewed at least annually for its contribution to the objective it was made for and for any indication of impairment. The authority does not borrow in order to make investments primarily for financial return. {{If any part of the portfolio was acquired with borrowing, say so and set out the plan required by the Prudential Code.}}',
   gov_body: "Responsibility for treasury management rests with the [[officer]], who exercises it under the scheme of delegation approved by members and within the treasury management practices adopted by the authority.\n\nMembers receive this strategy before the start of the year, {{a mid-year review and an outturn report after the year end / quarterly monitoring reports}}. {{Committee}} scrutinises treasury management activity and reports to {{full council / cabinet}}. The authority's treasury management practices and the schedules beneath them are reviewed {{annually}} and are available to members on request.\n\nDay-to-day dealing is undertaken by {{officers}}, with each transaction authorised and recorded separately from the officer who arranged it. {{State the separation of duties you operate, and the limits above which a second authorisation is required.}}",
+  /* THE ONE SECTION THAT HAD NO STARTING TEXT. Every other commentary field
+     carries draft wording; this one carried none, so an authority that turned
+     group indicators on met an empty box, and the wording step could never
+     reach 14 of 14 however much was written. The Code's argument here is
+     Annex 1's: a subsidiary that stops covering what it pays the authority
+     disappears from single-entity reporting, so the group figures are shown
+     beside the single-entity ones and this paragraph says what they mean. */
+  group_body: 'The authority has group undertakings whose borrowing and income bear on its own position, so the indicators above are shown on a group basis as well as for the authority alone.\n\nIncome received from {{name the subsidiaries}} is {{sustainable and based on their own operations / dependent on continued support from the authority}}. {{Say, for each, whether the income it pays the authority is covered by its own trading and what the headroom is. Where it is not covered, say how the shortfall is met and for how long.}}\n\nThird-party debt held by a subsidiary for which the authority is ultimately responsible is {{£m}}, and is {{included in / excluded from}} the group indicators above. Intra-group income has been excluded from the group figures, as the Code requires, so that income the authority pays itself is not counted as covering the cost of the debt behind it.\n\n{{State what the authority is exposed to if a subsidiary stops performing, when each company\'s position is next reviewed, and by whom.}}',
   advisers: "The authority retains {{adviser}} as its external treasury management adviser under a contract running to {{date}}. The scope of the contract covers {{credit advice, interest rate views, technical guidance, and training}}.\n\nThe authority recognises that responsibility for its treasury management decisions remains with it at all times and that undue reliance must not be placed on external advice. Decisions are taken having regard to all available information, of which the adviser's view is one source among several. The value obtained from the contract is assessed {{annually, by ...}}, and the appointment was made following {{a competitive process in ...}}.",
 };
 
@@ -6054,6 +6063,7 @@ const SECTIONS = [
    lead:"Only where there are significant group undertakings. A subsidiary that stops "
        +"performing disappears from single-entity reporting.",
    qs:[{k:"group_body", l:"Commentary on the group position",
+        d:DRAFT.group_body,
         ph:"Whether income from subsidiaries is sustainable and based on their own "
           +"operations, and what the authority is exposed to if it is not."}]},
   {k:"indicators", n:"7", t:"Treasury management prudential indicators", kind:"auto", in:ALL,
@@ -9436,7 +9446,14 @@ function stepStatus(k){
     const built = el && !_docDirty;
     if(!built) return {state:"", note:"Open it to build the draft", need:null};
     const words = (el.innerText || "").trim().split(/\s+/).filter(Boolean).length;
-    const gaps = ((el.innerText||"").match(/\{\{/g) || []).length;
+    /* COUNT THE MARKUP, NOT THE BRACES. This matched "{{" in the rendered
+       text, and the braces stopped reaching the text the moment the draft
+       began marking an author's prompt up as a span instead of printing it
+       raw. It reported "0 figures still to supply" over a draft with
+       fifty-nine of them — a count that is wrong in the reassuring
+       direction, which is the worst way for one to be wrong. */
+    const gaps = el.querySelectorAll(".fillin").length
+               + el.querySelectorAll(".gap").length;
     return {state: words > 400 ? "done" : "part",
             note: `${words.toLocaleString("en-GB")} words · ${gaps} figure${gaps===1?"":"s"} still to supply`,
             need: null};
@@ -10554,6 +10571,25 @@ function stampSaved(word){
     /* Stamped LAST, once everything is in place, so the fingerprint is of the
        finished demonstration. Any edit afterwards moves it and the guard comes
        back — which is what it is for. */
+    /* BUILD THE DRAFT, don't just make it buildable. render() skips the
+       document while it is off screen, so a filled demonstration left the
+       rail saying "open it to build the draft" — the one step of eight that
+       looked unfinished on a demonstration whose whole point is to be
+       finished. Building it here means the word count the rail then shows is
+       a real one, which is the reason it refused to show a count before. */
+    const _doc = $("doc");
+    if(_doc && typeof documentHTML === "function"){
+      _doc.innerHTML = `<div class="dh"><span>Draft — ${esc(LB[S.gss] ? LB[S.gss].n
+          : "your authority")}</span><span>Assembled from your ledger and your commentary</span></div>`
+        + documentHTML(false);
+      if(typeof _docDirty !== "undefined") _docDirty = false;
+      if(typeof wireDocNav === "function") wireDocNav();
+      // The rail was drawn before this, while the draft was still unbuilt, so
+      // it is holding "open it to build the draft". Draw it again now there
+      // is a word count to report.
+      if(typeof renderRail === "function") renderRail();
+    }
+
     S.demoStamp = workFingerprint();
     if(typeof autoSave === "function") autoSave();
     $("saved").textContent = `Demonstration filled — ${D.label}, every section written. `
