@@ -376,7 +376,7 @@ html.reel p:has(.ph-inline){display:none !important}
 .dsec h4{letter-spacing:-.004em;font-size:13.5px}
 .gap{font-family:var(--sans);font-size:12.5px;color:var(--alert);font-style:italic;
   background:rgba(179,53,42,.06);border-left:3px solid var(--alert);padding:7px 11px;
-  border-radius:var(--r-sm);max-width:68ch}
+  border-radius:var(--r-sm)}
 .src{font-family:var(--sans);font-size:11.5px;color:var(--muted)}
 .ph-inline{background:rgba(194,87,8,.12);color:var(--yours);border-radius:3px;
   padding:1px 5px;font-family:var(--sans);font-size:12.5px;font-style:italic}
@@ -763,9 +763,13 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 /* A disagreement between two tables the reader can both see. Amber, not red:
    it is a thing to look at, not a thing that has gone wrong — and nothing
    about it prevents saving, exporting or moving on. */
-.mismatch{margin:12px 0 2px;padding:10px 13px;background:rgba(194,87,8,.09);
+/* A BOX SPANS. A reading measure is right for a paragraph and wrong for a
+   notice with a background and a rule down its side: the box visibly stops
+   short of the panel it sits in, which reads as a mistake, and the text wraps
+   into three lines where two would do. Full width, and shorter for it. */
+.mismatch{margin:12px 0 2px;padding:9px 13px;background:rgba(194,87,8,.09);
   border-left:3px solid var(--yours);border-radius:var(--r-sm);
-  font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--ink2);max-width:78ch}
+  font-family:var(--sans);font-size:12.5px;line-height:1.5;color:var(--ink2)}
 .mismatch b{color:var(--ink)}
 .mgrid{table-layout:fixed;margin:2px 0 0}
 .mgrid th,.mgrid td{padding:2px 8px;height:auto}
@@ -1487,9 +1491,7 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
   </div>
 
   <section class="panel" data-step="2">
-    <div class="phead"><span class="n">2</span><h2>What you hold now</h2>
-      <span class="why">What you owe and what you hold, by category, and when each
-        falls due. Paste from your spreadsheet if that is easier.</span></div>
+    <div class="phead"><span class="n">2</span><h2>What you hold now</h2></div>
     <div class="pbody">
 
       <div class="fundtabs" id="holdtabs" role="group" aria-label="What you hold">
@@ -1503,22 +1505,8 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
           <th style="width:18%" class="num">Rate %</th><th></th>
         </tr></thead><tbody id="loanrows"></tbody></table>
         <div class="ltools"><button type="button" id="addloan">Add a source</button>
-          <button type="button" id="pasteloans">Paste your loans</button>
-          <button type="button" class="ghost" id="tmplloans">Template .csv</button>
         </div>
         <div id="debtcost"></div>
-        <div class="pastebox" id="loanpaste" hidden>
-          <label for="loantext">Paste your loans<span class="hint">Copy the block out of
-            Excel and paste it here. Any order, any detail — every loan, or one row per type.
-            Lender, type, fund, amount, rate, maturity. A header row is read if you give one.
-            <br>Like this: <code>Barclays &nbsp;LOBO&nbsp; 12,000,000 &nbsp;4.35&nbsp;
-            2041</code></span></label>
-          <textarea id="loantext" rows="5" placeholder="Paste here"></textarea>
-          <div class="ltools"><button type="button" class="primary" id="loanread">Read it</button>
-            <button type="button" id="loancancel">Cancel</button>
-            <span class="hintline" id="loannote"></span></div>
-        </div>
-
         <h3 class="sub">When the debt falls due</h3>
         <div id="matdebt"></div>
         <div id="matdwarn"></div>
@@ -1530,22 +1518,8 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
           <th style="width:18%" class="num">Rate %</th><th></th>
         </tr></thead><tbody id="invrows"></tbody></table>
         <div class="ltools"><button type="button" id="addinv">Add a source</button>
-          <button type="button" id="pasteinv">Paste your portfolio</button>
-          <button type="button" class="ghost" id="tmplinv">Template .csv</button>
         </div>
         <div id="invcost"></div>
-        <div class="pastebox" id="invpaste" hidden>
-          <label for="invtext">Paste your investment portfolio<span class="hint">Copy the
-            block out of Excel and paste it here. As much or as little as you like — every
-            holding, or one row per instrument type. What you paste replaces the rows above.
-            <br>Like this: <code>Lloyds &nbsp;Call account&nbsp; 5,000,000 &nbsp;3.60</code>
-            </span></label>
-          <textarea id="invtext" rows="5" placeholder="Paste here"></textarea>
-          <div class="ltools"><button type="button" class="primary" id="invread">Read it</button>
-            <button type="button" id="invcancel">Cancel</button>
-            <span class="hintline" id="invnote"></span></div>
-        </div>
-
         <h3 class="sub">When the investments come back</h3>
         <div id="matinv"></div>
         <div id="matiwarn"></div>
@@ -1557,7 +1531,7 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
   <section class="panel" data-step="3">
     <div class="phead"><span class="n">3</span><h2>Your projections</h2>
       <span class="why">Years down, measures across. The loans and investments rows are your own
-        projection of year-end balances across the whole portfolio — paste them from Excel.</span></div>
+        projection of year-end balances across the whole portfolio.</span></div>
     <div class="pbody">
       <div class="ltop">
         <div class="fundtabs" id="fundtabs" role="group" aria-label="Fund"></div>
@@ -1616,8 +1590,7 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
   </section>
 
   <section class="panel" data-step="5">
-    <div class="phead"><span class="n">5</span><h2>Counterparty policy</h2>
-      <span class="why">Who you will lend to, for how long, and how much.</span></div>
+    <div class="phead"><span class="n">5</span><h2>Counterparty policy</h2></div>
     <div class="pbody">
       <div class="cpindex" id="cpindex"></div>
       <div id="cpbody"></div>
@@ -3620,57 +3593,22 @@ function marketFacts(){
 }
 
 /* ===========================================================================
- * Pasting a loan book and an investment portfolio.
+ * What is held, and what it costs.
  *
- * An authority's non-PWLB debt and its investments live in a spreadsheet
- * already. Retyping them into a form is the surest way to have the tool
- * ignored, so both accept a pasted block in whatever shape the spreadsheet
- * happens to be — tabs or commas, a header row or none, dates in any of the
- * four ways a British finance team writes them.
+ * This file used to be the paste parsers: a loan book and an investment
+ * portfolio arriving as a block from a spreadsheet, identified column by
+ * column from what the values looked like. Both are gone. The tables ask for
+ * four kinds of debt and six kinds of investment, three columns each, and
+ * typing twelve figures is quicker than finding the file, filling it in and
+ * pasting it back — which was the round trip that produced two of today's
+ * bugs on its own.
  *
- * The parser is deliberately forgiving about ORDER and strict about MEANING:
- * it identifies each column by what its values look like rather than by
- * position, because no two councils order their columns the same way. What it
- * cannot identify it says so about, rather than guessing and being quietly
- * wrong about somebody's debt.
+ * What is left is what the two tables need: reading a figure a person typed,
+ * grouping the holdings, drawing them as bars, and the blended cost of each
+ * side. The figures grid keeps its own Excel round trip, which is a different
+ * shape of problem — a rectangle of years, not a list of deals — and reads
+ * through readLedgerBlock below.
  * ======================================================================== */
-/* A CSV field can contain the separator, and ours routinely does.
- *
- * This split on every comma, quotes or not. Our own downloadable template
- * writes amounts as "10,000,000" — quoted, because that is what CSV requires
- * of a field containing a comma — so the template came back as three fields
- * where the amount should be, the amount column was destroyed, and the parser
- * reported "0 loans read, 4 rows without an amount ignored". The tool could
- * not read the file the tool had just written, which is the round trip the
- * page advertises.
- *
- * Quotes are honoured for both separators, not just the comma: a lender
- * called "Smith, Jones and Co" pasted from a spreadsheet arrives quoted
- * whichever way it was copied. "" inside a quoted field is a literal quote,
- * as the format says.
- */
-function splitLine(line, sep){
-  const out = []; let cur = "", inq = false;
-  for(let i = 0; i < line.length; i++){
-    const ch = line[i];
-    if(inq){
-      if(ch === '"'){
-        if(line[i+1] === '"'){ cur += '"'; i++; } else inq = false;
-      } else cur += ch;
-    }
-    else if(ch === '"') inq = true;
-    else if(ch === sep){ out.push(cur); cur = ""; }
-    else cur += ch;
-  }
-  out.push(cur);
-  return out.map(x => x.trim());
-}
-
-function splitRows(txt){
-  return txt.replace(/\r\n?/g, "\n").split("\n").filter(l => l.trim())
-    .map(l => splitLine(l, l.indexOf("\t") >= 0 ? "\t" : ","))
-    .filter(c => c.some(x => x !== ""));
-}
 const MONEY = /^[£$]?\s*-?[\d,]+(\.\d+)?\s*(m|k|bn)?$/i;
 function money(v){
   const t=String(v).trim().replace(/[£$,\s]/g,"");
@@ -3686,303 +3624,6 @@ function money(v){
   else if(!u && Math.abs(n) >= 100000) n/=1e6;
   return n;
 }
-function asYear(v){
-  const t=String(v).trim();
-  let m=t.match(/^(\d{4})$/);                        if(m) return +m[1];
-  m=t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
-  if(m){ let y=+m[3]; if(y<100) y+=2000; return y; }
-  m=t.match(/^(\d{4})-(\d{2})-(\d{2})$/);            if(m) return +m[1];
-  m=t.match(/(\d{1,2})\s+[A-Za-z]{3,9}\s+(\d{4})/);  if(m) return +m[2];
-  m=t.match(/^(\d{4})\/(\d{2})$/);                   if(m) return +m[1];
-  return null;
-}
-/* The DATE, not just the year it falls in.
- *
- * asYear throws away the day and the month, which is all the projection ever
- * needed: a balance is a year-end figure. A liquidity ladder is a different
- * question — "under a month" and "six to twelve months" cannot be answered
- * from a year — so a full date is kept whenever one is given, and a bare year
- * stays a bare year rather than being invented into 1 January. */
-const MONTHS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
-function asDate(v){
-  const t = String(v).trim();
-  const iso = (y, m, d) => (m >= 1 && m <= 12 && d >= 1 && d <= 31)
-    ? `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}` : null;
-  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if(m) return iso(+m[1], +m[2], +m[3]);
-  // British order, and only British order. 06/07/2029 is 6 July everywhere in
-  // a council's spreadsheet; reading it as 7 June would move a loan a month
-  // and never once look wrong.
-  m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
-  if(m){ let y = +m[3]; if(y < 100) y += 2000; return iso(y, +m[2], +m[1]); }
-  m = t.match(/^(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})$/);
-  if(m){ const mi = MONTHS.indexOf(m[2].slice(0,3).toLowerCase());
-         return mi < 0 ? null : iso(+m[3], mi + 1, +m[1]); }
-  m = t.match(/^([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})$/);
-  if(m){ const mi = MONTHS.indexOf(m[1].slice(0,3).toLowerCase());
-         return mi < 0 ? null : iso(+m[3], mi + 1, +m[2]); }
-  return null;
-}
-
-const isRate = v => { const n=parseFloat(String(v).replace("%","")); 
-  return isFinite(n) && n>=0 && n<=25 && /[.%]/.test(String(v)); };
-
-/* Work out what each column is from its contents, over the whole block. */
-function classify(rows){
-  const n = Math.max(...rows.map(r=>r.length));
-  const kind = [];
-  for(let c=0;c<n;c++){
-    const col = rows.map(r=>r[c]).filter(v=>v!=null && v!=="");
-    if(!col.length){ kind.push(null); continue; }
-    const yr = col.filter(asYear).length / col.length;
-    const rt = col.filter(isRate).length / col.length;
-    const mn = col.filter(v=>MONEY.test(String(v))).length / col.length;
-    const tx = col.filter(v=>/[A-Za-z]{3}/.test(String(v))).length / col.length;
-    if(yr>0.6)      kind.push("year");
-    else if(rt>0.6) kind.push("rate");
-    else if(mn>0.6) kind.push("amount");
-    else if(tx>0.5) kind.push("name");
-    else            kind.push(null);
-  }
-  // A header row names things that later rows do not. Where one is present it
-  // BEATS the content sniffing: a column headed "Fund" holding "GF" and "HRA"
-  // sniffs as a name, and a "Type" column beside a "Lender" column cannot be
-  // told from it by content at all. Our own templates carry headers precisely
-  // so that this path is the one that runs.
-  const HEAD = [
-    [/^(lender|counterpart|name|borrower|issuer|institution|bank)/i, "name"],
-    [/^(type|category|group|instrument|class|product)/i,             "type"],
-    [/^(fund|pool|gf|hra)$/i,                                        "fund"],
-    [/^(amount|principal|balance|value|£|gbp|nominal|outstanding)/i, "amount"],
-    [/^(rate|coupon|interest|yield)/i,                               "rate"],
-    [/^(maturity|matures|repay|end|expiry|due)/i,                    "year"]
-  ];
-  let head = false;
-  if(rows.length > 1){
-    const hits = rows[0].map(v => { const t=String(v).trim();
-      const h = HEAD.find(([re]) => re.test(t)); return h ? h[1] : null; });
-    if(hits.filter(Boolean).length >= 2){
-      head = true;
-      hits.forEach((h,i) => { if(h) kind[i] = h; });
-    }
-  }
-  if(!head) head = rows.length>1 && rows[0].some(v=>/^(lender|counterparty|amount|principal|rate|maturity|name|type|fund)/i.test(String(v)));
-  // Without a header, a second text column is the grouping — a council pasting
-  // "Barclays, LOBO, 10.0" means the middle one is what kind of debt it is.
-  if(!head){
-    const txt = kind.map((k,i)=>k==="name"?i:-1).filter(i=>i>=0);
-    if(txt.length > 1) kind[txt[1]] = "type";
-  }
-  return {kind, body: head ? rows.slice(1) : rows};
-}
-
-function parseLoans(txt){
-  const rows = splitRows(txt);
-  if(!rows.length) return {loans:[], note:"Nothing pasted."};
-  const {kind, body} = classify(rows);
-  if(kind.indexOf("amount")<0)
-    return {loans:[], note:"No column of amounts recognised. Include one column of principal "
-                          +"— £m, or full pounds — and a maturity year."};
-  const iA=kind.indexOf("amount"), iY=kind.indexOf("year"),
-        iN=kind.indexOf("name"), iR=kind.indexOf("rate"),
-        iT=kind.indexOf("type"), iF=kind.indexOf("fund");
-  const loans=[]; let skipped=0;
-  body.forEach(r=>{
-    const amt=money(r[iA]);
-    if(amt==null || !amt){ skipped++; return; }
-    loans.push({name: iN>=0 && r[iN] ? String(r[iN]).slice(0,44) : "Market loan",
-                amt, mat: (iY>=0 ? asYear(r[iY]) : null),
-                matd: (iY>=0 ? asDate(r[iY]) : null),
-                rate: iR>=0 ? parseFloat(String(r[iR]).replace("%","")) : null,
-                type: iT>=0 && r[iT] ? String(r[iT]).slice(0,28) : null,
-                fund: iF>=0 && r[iF] ? fundOf(r[iF]) : null,
-                profile:"bullet"});
-  });
-  const noMat = loans.filter(l=>l.mat==null).length;
-  return {loans, note:`${loans.length} loan${loans.length===1?"":"s"} read`
-    + (iN<0?", no lender column found":"") + (iT>=0?", grouped by type":"")
-    + (noMat?`, ${noMat} without a maturity`:"")
-    + (skipped?`, ${skipped} row${skipped===1?"":"s"} without an amount ignored`:"")
-    + ". These are presented as you gave them; they do not drive the projection."};
-}
-
-function parseInvestments(txt){
-  const rows = splitRows(txt);
-  if(!rows.length) return {inv:[], note:"Nothing pasted."};
-  const {kind, body} = classify(rows);
-  if(kind.indexOf("amount")<0)
-    return {inv:[], note:"No column of amounts recognised. Include one column of principal."};
-  const iA=kind.indexOf("amount"), iN=kind.indexOf("name"),
-        iR=kind.indexOf("rate"), iY=kind.indexOf("year"),
-        iT=kind.indexOf("type"), iF=kind.indexOf("fund");
-  const inv=[];
-  body.forEach(r=>{
-    const amt=money(r[iA]); if(amt==null || !amt) return;
-    inv.push({name: iN>=0 && r[iN] ? String(r[iN]).slice(0,48) : "Counterparty",
-              amt, rate: iR>=0 ? parseFloat(String(r[iR]).replace("%","")) : null,
-              mat: iY>=0 ? asYear(r[iY]) : null,
-              matd: iY>=0 ? asDate(r[iY]) : null,
-              type: iT>=0 && r[iT] ? String(r[iT]).slice(0,28) : null,
-              fund: iF>=0 && r[iF] ? fundOf(r[iF]) : null});
-  });
-  const tot=inv.reduce((a,b)=>a+b.amt,0);
-  return {inv, total:tot,
-          note:`${inv.length} holding${inv.length===1?"":"s"}, £${m1(tot)}m in total`
-               + (iR<0?", no rate column found":"") + (iT>=0?", grouped by type":"") + "."};
-}
-
-
-/* GF or HRA, however they wrote it. Anything we cannot read stays null rather
-   than being guessed into a pool — see parseProjection on why that matters. */
-function fundOf(v){
-  const t = String(v).trim().toLowerCase();
-  if(/^(hra|housing|housing revenue|h)$/.test(t)) return "hra";
-  if(/^(gf|general|general fund|g)$/.test(t))     return "gf";
-  return null;
-}
-
-/* ---------------------------------------------------------------------------
- * A projection of year-end balances.
- *
- * This is the authority's own number, not ours. We know their PWLB book with
- * high confidence and can run it off contractually, but that is a starting
- * point they amend, not an answer: it says nothing about market debt, about
- * new borrowing they intend to take, or about which pool a loan sits in under
- * a two-pool HRA. So the projection is pasted, and whatever is pasted wins.
- *
- * Accepts either orientation, because a spreadsheet holds it both ways:
- *   vertical    a column of years beside a column of balances
- *   horizontal  a row of years above a row of balances
- * Years may be 2026, 2026/27 or 31/03/2027; balances in £m or full pounds.
- * ------------------------------------------------------------------------ */
-function parseProjection(txt){
-  const rows = splitRows(txt);
-  if(!rows.length) return {vals:null, note:"Nothing pasted."};
-  const pairs = [];
-
-  // Horizontal: a row that is mostly years, with a later row of amounts.
-  const yearRow = rows.findIndex(r => r.filter(asYear).length >= Math.max(2, r.length*0.6));
-  if(yearRow >= 0){
-    const yrs = rows[yearRow].map(asYear);
-    const amtRow = rows.slice(yearRow+1).find(r => r.filter(v=>MONEY.test(String(v))).length >= 2);
-    if(amtRow){
-      yrs.forEach((y,i) => { const a = money(amtRow[i]);
-        if(y!=null && a!=null) pairs.push([y,a]); });
-    }
-  }
-  // Vertical: a year column and an amount column.
-  if(!pairs.length){
-    const {kind, body} = classify(rows);
-    const iY = kind.indexOf("year"), iA = kind.indexOf("amount");
-    if(iY>=0 && iA>=0)
-      body.forEach(r => { const y=asYear(r[iY]), a=money(r[iA]);
-        if(y!=null && a!=null) pairs.push([y,a]); });
-  }
-  if(!pairs.length)
-    return {vals:null, note:"No year-and-balance pairs recognised. Paste a column of years "
-      + "beside a column of balances, or a row of years above a row of balances."};
-
-  // A year label may be the financial year it opens (2026 = 2026/27) or the
-  // 31 March it closes on (2027 = 2026/27). Both are written in the sector.
-  // Whichever reading puts more of the block inside the horizon is the one
-  // meant; ties go to the opening year, which is how our own grid is keyed.
-  const fit = off => pairs.filter(([y]) => y-off >= S.fy0 && y-off < S.fy0+S.years).length;
-  const off = fit(1) > fit(0) ? 1 : 0;
-  const vals = new Array(S.years).fill(null);
-  let used=0, outside=0;
-  pairs.forEach(([y,a]) => { const i = (y-off) - S.fy0;
-    if(i>=0 && i<S.years){ vals[i]=a; used++; } else outside++; });
-  if(!used) return {vals:null, note:`${pairs.length} figures read, but none fall inside `
-    + `${fy(S.fy0)} to ${fy(S.fy0+S.years-1)}. Check the opening year above the grid.`};
-
-  // Years between two given figures are held flat rather than interpolated:
-  // a balance the authority did not state is not a balance we will invent.
-  let last=null, held=0, lead=0;
-  for(let i=0;i<S.years;i++){
-    if(vals[i]==null){ if(last!=null){ vals[i]=last; held++; } else { vals[i]=0; lead++; } }
-    else last=vals[i];
-  }
-  // A gap BEFORE the first figure is not the same as a gap after it. Holding
-  // the last figure flat is a stated convention; leaving the opening years at
-  // zero is a hole, and a zero in year one drags every chart down. A year
-  // label can mean the year it opens or the 31 March it closes, and when both
-  // readings fit the horizon there is nothing in the data to settle it — so
-  // say which was taken and where the hole is, rather than let it pass.
-  const gap = lead
-    ? ` Nothing was given for ${lead===1?fy(S.fy0):fy(S.fy0)+" to "+fy(S.fy0+lead-1)}, `
-      + `left at zero — a bare ${S.fy0+1} is read as the year it opens. If that figure is `
-      + `${fy(S.fy0)}, label it ${fy(S.fy0)} and read it again.`
-    : "";
-  return {vals, used, lead, note:`${used} year-end balance${used===1?"":"s"} read`
-    + (off?", read as years ending 31 March":"")
-    + (held?`, ${held} later year${held===1?"":"s"} held flat at the last figure given`:"")
-    + (outside?`, ${outside} outside the horizon ignored`:"") + "." + gap};
-}
-
-/* ---------------------------------------------------------------------------
- * Spreadsheet templates.
- *
- * Downloaded as CSV because every finance team opens CSV in Excel without
- * being told how. The headers are the ones the parser above recognises, so a
- * template filled in and pasted back is read without a guess anywhere.
- * ------------------------------------------------------------------------ */
-const TEMPLATES = {
-  loans: {
-    file: "loan-book",
-    head: ["Lender","Type","Fund","Amount","Rate","Maturity"],
-    rows: [["PWLB","Maturity","GF","10,000,000","4.25","2041"],
-           ["PWLB","EIP","GF","5,000,000","3.90","2035"],
-           ["Barclays","LOBO","GF","8,000,000","4.55","2054"],
-           ["Another authority","Local authority","HRA","6,000,000","4.10","2028"]],
-    help: "One row per loan, or one row per type if you would rather group them. "
-        + "Amounts in £m or in full pounds. The Fund column only matters under a "
-        + "two-pool HRA; leave it out if you do not need it."
-  },
-  investments: {
-    file: "investment-portfolio",
-    head: ["Counterparty","Type","Fund","Amount","Rate","Maturity"],
-    rows: [["Debt Management Office","DMADF","GF","15,000,000","3.95","2027"],
-           ["Money market fund","MMF","GF","20,000,000","3.88",""],
-           ["Lloyds Bank","Call account","GF","5,000,000","3.60",""],
-           ["Pooled property fund","Pooled fund","GF","10,000,000","4.40",""]],
-    help: "As much or as little detail as you like — every holding, or one row per "
-        + "instrument type. A holding with no maturity is treated as instant access."
-  },
-  projection: {
-    file: "year-end-balances",
-    head: ["Year","External debt","Investments"],
-    rows: null,          // written from the live horizon
-    help: "Your own projection of year-end balances across the whole portfolio. "
-        + "This is what drives the benchmark charts — paste it back into the grid."
-  }
-};
-
-function templateCSV(kind){
-  const T = TEMPLATES[kind];
-  const q = v => /[",]/.test(String(v)) ? '"'+String(v).replace(/"/g,'""')+'"' : String(v);
-  let rows = T.rows;
-  if(kind === "projection"){
-    // Seeded with the PWLB run-off so the column is not blank, and labelled in
-    // the file itself as a starting point rather than an answer.
-    const c = LB[S.gss], run = c ? c.r : [];
-    rows = [];
-    for(let i=0;i<S.years;i++)
-      rows.push([fy(S.fy0+i), c && run[i]!=null ? run[i].toFixed(1) : "", ""]);
-  }
-  return [T.head, ...rows].map(r => r.map(q).join(",")).join("\r\n") + "\r\n";
-}
-
-function downloadTemplate(kind){
-  const c = LB[S.gss];
-  const who = c ? c.n.replace(/\W+/g,"-").toLowerCase() : "authority";
-  const blob = new Blob(["\ufeff" + templateCSV(kind)], {type:"text/csv;charset=utf-8"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `${TEMPLATES[kind].file}-${who}.csv`;
-  document.body.appendChild(a); a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 0);
-}
-
 /* The portfolio as a table for the investment section — whatever detail they
    gave us, and nothing we invented. */
 function portfolioTable(){
@@ -4091,14 +3732,6 @@ function debtHoldings(){
   });
   return out.filter(x=>x.amt);
 }
-
-function portfolioCharts(){
-  const d = groupHoldings(debtHoldings()), v = groupHoldings(S.portfolio||[]);
-  if(!d.length && !v.length) return "";
-  return (d.length ? `<h3 class="sub">Debt held, by ${debtHoldings().some(x=>x.type)?"type":"source"}</h3>${barChart(d,"debt")}` : "")
-       + (v.length ? `<h3 class="sub">Investments held, by ${(S.portfolio||[]).some(x=>x.type)?"type":"counterparty"}</h3>${barChart(v,"inv")}` : "");
-}
-
 
 /* ---------------------------------------------------------------------------
  * The advances behind the total.
@@ -4802,6 +4435,14 @@ function matTotals(which){
     (a, tr) => a + (+m[tr.cells[0].textContent.trim()] || 0), 0);
   const last = rows[rows.length - 1];
   if(last && last.cells[1]) last.cells[1].textContent = tot ? m1(tot) : "";
+  /* AND EVERYTHING ELSE THE GRID DECIDES. This is the one path that changes
+     the grid without a render — deliberately, because rebuilding the table
+     under a caret throws it to the end of the field — so it has to update
+     what a render would have updated. It refreshed the totals row and left
+     the warning underneath saying the two disagreed, seconds after the user
+     had typed the figure that made them agree. */
+  const warn = $(which === "d" ? "matdwarn" : "matiwarn");
+  if(warn) warn.innerHTML = matWarn(which);
 }
 
 /* ===========================================================================
@@ -10326,28 +9967,6 @@ function stampSaved(word){
    */
 
 
-  $("pasteloans").addEventListener("click", ()=>{
-    const b=$("loanpaste"); b.hidden=!b.hidden; if(!b.hidden) $("loantext").focus(); });
-  $("loancancel").addEventListener("click", ()=>{ $("loanpaste").hidden=true; });
-  $("loanread").addEventListener("click", ()=>{
-    const r=parseLoans($("loantext").value);
-    $("loannote").textContent=r.note;
-    if(!r.loans.length) return;
-    /* A PASTE REPLACES. It kept our PWLB row and appended to it, which is
-       double counting the moment the pasted book contains PWLB — and our own
-       template does, so pasting the template back gave the published £587m
-       book row PLUS the £15m of PWLB in the file, and a total three times
-       what the file said. What somebody pastes is their statement of what
-       they hold; it is not a supplement to ours.
-       The published book is not re-added afterwards either: pick the authority
-       again to get it back. */
-    S.loans = r.loans;
-    // Emptied once read. What was in it is in the table now, and finding
-    // yesterday's block still sitting there on the next visit invites reading
-    // it twice.
-    $("loantext").value = "";
-    loanRows(); applyLoans(); $("loanpaste").hidden=true;
-  });
   $("addloan").addEventListener("click", ()=>{
     S.loans.push({name:"", amt:0, rate:null}); holdRows("d"); applyLoans();
     const r = $("loanrows").lastElementChild; if(r) r.querySelector("input").focus(); });
@@ -10370,27 +9989,7 @@ function stampSaved(word){
   });
 
   /* ---- investments ------------------------------------------------------ */
-  $("pasteinv").addEventListener("click", ()=>{
-    const b=$("invpaste"); b.hidden=!b.hidden; if(!b.hidden) $("invtext").focus(); });
-  $("invcancel").addEventListener("click", ()=>{ $("invpaste").hidden=true; });
-  $("invread").addEventListener("click", ()=>{
-    const r=parseInvestments($("invtext").value);
-    $("invnote").textContent=r.note;
-    if(!r.inv.length) return;
-    S.portfolio = r.inv; S.portfolioText = $("invtext").value; S.portfolioNote = r.note;
-    // Today's portfolio is today's position, so it seeds the FIRST year of the
-    // existing-investments column and nothing beyond it. What the balance does
-    // in later years is a projection, and that is theirs.
-    if(r.total!=null && S.g[S.fund].inv) S.g[S.fund].inv[0]=Math.round(r.total*10)/10;
-    $("invtext").value = "";
-    $("invpaste").hidden=true;
-    holdRows("i");
-    syncLedger(true); renderSections(); render();
-  });
-
   /* ---- templates -------------------------------------------------------- */
-  $("tmplloans").addEventListener("click", ()=>downloadTemplate("loans"));
-  $("tmplinv").addEventListener("click",   ()=>downloadTemplate("investments"));
 
   /* ---- the authority's own projection ----------------------------------- */
 
