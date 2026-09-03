@@ -10277,8 +10277,17 @@ function stampSaved(word){
     const r=parseLoans($("loantext").value);
     $("loannote").textContent=r.note;
     if(!r.loans.length) return;
-    S.loans = S.loans.filter(l=>l.pwlb).concat(r.loans);
-    holdRows("d"); applyLoans(); $("loanpaste").hidden=true;
+    /* A PASTE REPLACES. It kept our PWLB row and appended to it, which is
+       double counting the moment the pasted book contains PWLB — and our own
+       template does, so pasting the template back gave the published £587m
+       book row PLUS the £15m of PWLB in the file, and a total three times
+       what the file said. What somebody pastes is their statement of what
+       they hold; it is not a supplement to ours.
+       If the paste carries no PWLB row, the offer to put the published one
+       back appears by itself — pwlbRowBack shows exactly when a council has a
+       book and no row is holding it. */
+    S.loans = r.loans;
+    loanRows(); applyLoans(); $("loanpaste").hidden=true;
   });
   $("addloan").addEventListener("click", ()=>{
     S.loans.push({name:"", amt:0, rate:null}); holdRows("d"); applyLoans();
