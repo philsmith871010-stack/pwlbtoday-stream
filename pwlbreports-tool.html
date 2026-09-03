@@ -715,11 +715,11 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 /* The bar charts sit under the tables and were on their own measure, so the
    label column started in one place in a table and another in a chart. Same
    246px label, same right edge, one grid down the page. */
-.doc .barwrap{max-width:min(100%,838px)}
-.doc .barrow{grid-template-columns:246px 58px 1fr 84px;gap:0}
-.doc .barrow.rated{grid-template-columns:246px 58px 1fr 84px}
+.doc .barwrap,#pvbody .barwrap{max-width:min(100%,838px)}
+.doc .barrow,#pvbody .barrow{grid-template-columns:246px 58px 1fr 84px;gap:0}
+.doc .barrow.rated,#pvbody .barrow.rated{grid-template-columns:246px 58px 1fr 84px}
 .doc .barrow .br{padding-right:10px}
-.doc .barrow:not(.rated){grid-template-columns:246px 1fr 84px}
+.doc .barrow:not(.rated),#pvbody .barrow:not(.rated){grid-template-columns:246px 1fr 84px}
 .doc .barrow .bv{text-align:right}
 .barrow .bn{font-family:var(--sans);font-size:12.5px;color:var(--ink2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -806,14 +806,16 @@ table.pwlbtab td.num,table.pwlbtab th.num{text-align:right}
    table starts where the longer one starts and simply ends sooner. */
 .otable{border-collapse:collapse;font-family:var(--mono);font-size:12.5px;
   font-variant-numeric:tabular-nums;margin:18px 0 6px;table-layout:fixed;width:100%}
-.doc .otable{margin:20px 0 8px;width:auto;min-width:min(100%,560px)}
+.doc .otable,#pvbody .otable{margin:20px 0 8px;width:auto;min-width:min(100%,560px)}
 /* A LABEL LONGER THAN ITS COLUMN MUST WRAP, NOT RUN INTO THE FIGURE.
    nowrap is right for a number and wrong for a name: "Existing investment
    commitments" is wider than 246px and was overprinting the first year's
    figure. The figures keep nowrap; the label wraps. */
-.doc .otable th:first-child,.doc .otable td:first-child{width:246px;
+.doc .otable th:first-child,.doc .otable td:first-child,
+#pvbody .otable th:first-child,#pvbody .otable td:first-child{width:246px;
   white-space:normal;padding-right:14px;line-height:1.28}
-.doc .otable th:not(:first-child),.doc .otable td:not(:first-child){width:74px}
+.doc .otable th:not(:first-child),.doc .otable td:not(:first-child),
+#pvbody .otable th:not(:first-child),#pvbody .otable td:not(:first-child){width:74px}
 .doc .otable td.w,.doc .otable th.w{width:246px;white-space:normal}
 .under .ugap td{height:9px;border:0;padding:0}
 .doc .chartwrap{margin:22px 0 10px}
@@ -6821,10 +6823,45 @@ function inlineColours(html){
  * rather than as a line, and says on the chart that beyond the first year it
  * is the HRA's requirement — to be met from the General Fund or by the HRA's
  * own new borrowing, which is a decision, not an arithmetic result. */
+/* ONE FUND CAN ONLY LEND WHAT IT ACTUALLY HAS.
+ *
+ * This was the HRA's benchmark less its external loans, which is the
+ * consultation's own words — and the consultation is describing THE POSITION
+ * AT THE BALANCE SHEET DATE, where that difference is a real internal loan
+ * because both sides are facts. Projected across fifty years the same
+ * subtraction stops being a loan and becomes the HRA's future borrowing
+ * REQUIREMENT, and labelling that "General Fund lending" asserts the General
+ * Fund has cash it does not have.
+ *
+ * The demonstration made it plain: the General Fund sits ON its own benchmark
+ * — £110.0m of loans against £110.1m — so it has nothing spare, and the chart
+ * still showed it lending £23.6m to the HRA. A fund that needs to borrow
+ * cannot lend.
+ *
+ * So the lending is capped at what the lender holds. The General Fund's
+ * capacity is its OVER-benchmark borrowing: cash it has already raised beyond
+ * its own need. Whatever the HRA is short beyond that is not an internal
+ * loan, it is the HRA's own borrowing requirement, and LB4 for the HRA is
+ * where it belongs.
+ *
+ * The other direction needs no cap. An HRA whose external loans EXCEED its
+ * own benchmark is holding money it does not need, and that money exists, so
+ * it can be lent to the General Fund in full.
+ */
 function crossFund(gf, hra){
   return gf.map((g,i)=>{
     const h = hra[i] || {lb:0, el:0};
-    return Object.assign({}, g, {cross: h.lb - h.el});
+    const hraShort  = (h.lb || 0) - (h.el || 0);      // HRA needs funding
+    const gfSpare   = Math.max(0, (g.el || 0) - (g.lb || 0));  // GF over its own benchmark
+    const cross = hraShort >= 0
+      ? Math.min(hraShort, gfSpare)   // the GF can only advance what it holds
+      : hraShort;                     // the HRA is over-borrowed: it can lend it all
+    return Object.assign({}, g, {
+      cross,
+      // What the cap left behind: the HRA's own requirement, which is not an
+      // inter-fund position and must not be drawn as one.
+      crossUnmet: hraShort > 0 ? Math.max(0, hraShort - gfSpare) : 0
+    });
   });
 }
 
@@ -6861,9 +6898,21 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
    * to arbitrate a question the label has already muddled. The quantity is
    * the HRA's position against the General Fund, so it is named from the
    * HRA's side and the sign means one thing. */
-  const XF = hraSet ? [{k:"cross", solo:true,
-    t:"HRA borrowing from the General Fund (memo — not additional external debt)",
+  /* AND IT IS ONLY DRAWN WHERE THERE IS ONE. With the lending capped at what
+     the General Fund actually holds, an authority where neither fund has
+     anything spare gets a series that is nil in every year — a flat line of
+     zero columns saying nothing, which a reader still has to decode. Where
+     there is no inter-fund position, the honest chart does not have the
+     series on it, and the note below says so. */
+  const anyCross = hraSet && D.some(r => Math.abs(r.cross || 0) > 0.05);
+  const XF = anyCross ? [{k:"cross", solo:true,
+    t:"HRA borrowing from / (lending to) the General Fund",
     c:"var(--l-strat)"}] : [];
+  const noCross = hraSet && !anyCross
+    ? `<p class="note">No inter-fund position arises: the General Fund holds no borrowing
+       above its own benchmark in any year, so it has nothing to advance to the HRA. The
+       HRA's shortfall against its benchmark is its own borrowing requirement and is shown
+       in its LB4.</p>` : "";
   /* The chart commences with the most recent actual year-end; the tables and
      every readout still start at the current year, which is what they mean. */
   const AF = O.fund || (fundLabel === "HRA" ? "hra" : (fundLabel ? "gf" : "all"));
@@ -6900,6 +6949,7 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
               {k:"ntp",t:"Net",c:"var(--l-ntp)",w:2.2}]})
      + otable(d,[{l:"Existing loan commitments",k:"el"},{l:"Liability benchmark",k:"lb",cls:"lb"},
                  {l:"Existing investment commitments",k:"ei"}])
+     + noCross
      + readoutHTML("LB3", d, fundLabel))}
    ${!want("LB4") ? "" : IND("LB4","Borrowing requirement / over-borrowing"+tag,
      // "as a single series", and a column chart: over-borrowed years hang
@@ -6933,7 +6983,7 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
                  {l:"Strategic treasury investments",k:"strategic"},
                  {l:"Excess treasury investments",k:"excess"}])
      + readoutHTML("LB5", d, fundLabel))}
-   ${!(want("LB6") && hraSet) ? "" : IND("LB6","General Fund / HRA treasury position",
+   ${!(want("LB6") && anyCross) ? "" : IND("LB6","General Fund / HRA treasury position",
      /* "LB3 (supplemental)" in the annex, and the sixth of the "Charts
         LB1-LB6" its own heading promises. Two-pool authorities only: it
         quantifies what one fund has lent the other, which under a single pool
