@@ -305,11 +305,6 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
 .qt{color:var(--muted);font-size:12px}
 .pill{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;
   background:rgba(26,127,75,.14);color:var(--ours);letter-spacing:.04em}
-.prefill{margin-top:12px;padding:10px 13px;background:var(--sunken);border-radius:var(--r-sm);
-  border-left:3px solid var(--ours);font-size:12px;line-height:1.55;color:var(--ink2)}
-.prefill b{color:var(--ink);font-family:var(--mono)}
-.prefill .t{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--ours);font-weight:600;margin-bottom:3px}
 
 /* output */
 .doc{padding:44px 60px 50px;font-family:var(--serif)}
@@ -728,6 +723,45 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 .barrow.inv .bt i{background:var(--l-inv)}
 .barrow .bv{font-family:var(--mono);font-size:12.5px;color:var(--ink);
   font-variant-numeric:tabular-nums}
+/* The typed maturity grids. Compact by design — seven periods by five kinds
+   of debt is 35 boxes, and at the row height of a reading table that is a
+   screenful of scrolling for a table you fill in once. Figures right-aligned
+   and tabular so a column can be read down, which is the whole reason for
+   laying it out as a grid rather than as a list of questions. */
+.mgrid{table-layout:fixed;margin:2px 0 0}
+.mgrid th,.mgrid td{padding:2px 8px;height:auto}
+.mgrid th{font-size:10.5px;letter-spacing:.04em;line-height:1.25;vertical-align:bottom}
+.mgrid td:first-child,.mgrid th:first-child{width:126px;font-size:12px}
+.mgrid input{width:100%;padding:3px 7px;font-family:var(--mono);font-size:12.5px;
+  text-align:right;font-variant-numeric:tabular-nums;border:1px solid var(--line2);
+  border-radius:var(--r-sm);background:var(--card);color:var(--ink)}
+.mgrid input:focus{border-color:var(--accent);outline:2px solid var(--accent-soft);
+  outline-offset:-1px}
+.mgrid td.num,.mgrid th.num{text-align:right}
+.mgrid td.qt{font-family:var(--mono);font-size:12.5px;color:var(--muted);
+  font-variant-numeric:tabular-nums}
+.mgrid tr.key td{font-family:var(--mono);font-size:12.5px;font-weight:600;
+  font-variant-numeric:tabular-nums;border-top:1px solid var(--line2)}
+.mgrid tr.key td:first-child{font-family:var(--sans);font-size:12px}
+.mgrid tr.none td:first-child{font-style:italic}
+/* The investment ladder is one column of figures, not five. Left to itself it
+   stretched an input across two thirds of the panel, which reads as a text
+   box rather than a number. */
+.mgrid.one td:first-child,.mgrid.one th:first-child{width:auto}
+.mgrid.one td:last-child,.mgrid.one th:last-child{width:118px}
+
+/* A ladder bar is one bar made of families, not one bar per family: the band
+   is the row, and how that band is composed is read along it. Segments butt
+   up against each other so the bar keeps its length; only the ends round. */
+.barrow .bt.lad{display:flex;overflow:hidden}
+.barrow .bt.lad i{border-radius:0;flex:0 0 auto;min-width:2px}
+.barrow .bt.lad i:first-child{border-radius:2px 0 0 2px}
+.barrow .bt.lad i:last-child{border-radius:0 2px 2px 0}
+.barrow.none .bn{font-style:italic}
+.ladkey{display:flex;flex-wrap:wrap;gap:4px 16px;margin:8px 0 2px;
+  font-family:var(--sans);font-size:11.5px;color:var(--ink2)}
+.ladkey span{display:inline-flex;align-items:center;gap:6px}
+.ladkey i{width:11px;height:11px;border-radius:2px;flex:0 0 auto}
 .barrow.rated{grid-template-columns:minmax(110px,175px) auto 1fr auto}
 .barrow .br{font-family:var(--mono);font-size:12px;color:var(--ink2);
   font-variant-numeric:tabular-nums;text-align:right;min-width:46px}
@@ -744,14 +778,6 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 .brbox .brd{display:block;font-family:var(--mono);font-size:11px;color:var(--muted)}
 .brbox .brd.up{color:var(--l-exc)}
 .brbox .brd.dn{color:var(--good)}
-/* The advances behind the total. Scrolls rather than growing the page: some
-   authorities hold nearly two hundred. */
-.loanlist{max-height:340px;overflow:auto;border:1px solid var(--line);
-  border-radius:var(--r-sm);margin-top:8px}
-table.pwlbtab{margin:0}
-table.pwlbtab thead th{position:sticky;top:0;background:var(--sunken);z-index:1}
-table.pwlbtab td.lnum{font-family:var(--mono);color:var(--muted)}
-table.pwlbtab td.num,table.pwlbtab th.num{text-align:right}
 .pastebox{margin-top:12px;padding:12px 14px;background:var(--sunken);
   border-radius:var(--r-sm);border-left:3px solid var(--accent)}
 .pastebox textarea{width:100%;min-height:96px;padding:9px 11px;border:1px solid var(--line2);
@@ -1148,21 +1174,71 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
   resize:vertical}
 .secbody .q{margin-bottom:22px}
 .secbody .q label{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:7px}
-/* Contents for the draft. Screen only — the exported document gets Word's own
-   navigation, and a list of links in a printed paper is dead ink. */
-.toc{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;margin:0 0 22px;
-  padding:13px 15px;background:var(--sunken);border:1px solid var(--line);
+/* The draft's section rail. Screen only — the exported document gets Word's
+   own navigation, and a list of links in a printed paper is dead ink. */
+/* THE PANEL CLIPS, AND CLIPPING KILLS STICKY. .panel carries overflow:hidden
+   so its header sits inside the rounded corner, and an ancestor with any
+   overflow but visible silently disables position:sticky on everything
+   beneath it — the rail scrolled away with the page and nothing said why.
+   The draft panel has nothing to clip: it is a document, and the two things
+   in it that can be wider than the page, tables and charts, each scroll
+   inside their own container. */
+.panel.doc{overflow:visible}
+.docwrap{display:flex;align-items:flex-start;gap:26px}
+.docbody{flex:1 1 auto;min-width:0}
+.docnav{flex:0 0 auto;position:sticky;top:calc(var(--railh,96px) + 12px);width:212px;
+  max-height:calc(100vh - var(--railh,96px) - 40px);display:flex;flex-direction:column;gap:8px}
+.docnav.shut{width:34px}
+/* The burger. Three lines that become a cross when the rail is open, so the
+   control says what pressing it does rather than what it opened. */
+.burger{width:34px;height:34px;flex:0 0 auto;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;gap:4px;padding:0;cursor:pointer;
+  background:var(--card);border:1px solid var(--line2);border-radius:var(--r-sm)}
+.burger:hover{border-color:var(--accent)}
+.burger i{display:block;width:15px;height:1.5px;background:var(--ink2);border-radius:2px;
+  transition:transform .16s ease,opacity .16s ease}
+.docnav:not(.shut) .burger i:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
+.docnav:not(.shut) .burger i:nth-child(2){opacity:0}
+.docnav:not(.shut) .burger i:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+.docnav.shut .dnl{display:none}
+.dnl{display:flex;flex-direction:column;gap:1px;overflow-y:auto;overscroll-behavior:contain;
+  padding:9px 8px 10px;background:var(--sunken);border:1px solid var(--line);
   border-radius:var(--r-sm)}
-.toc .tl{font-family:var(--sans);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
-  color:var(--muted);font-weight:700;margin-right:4px}
-.toc a{font-family:var(--sans);font-size:12.5px;color:var(--ink2);text-decoration:none;
-  padding:3px 9px;border:1px solid var(--line2);border-radius:99px;background:var(--card);
-  white-space:nowrap}
-.toc a:hover{border-color:var(--accent);color:var(--accent)}
-.toc a b{font-family:var(--mono);font-size:11px;color:var(--muted);margin-right:6px;
-  font-weight:600}
-.toc a:hover b{color:var(--accent)}
-.dsec{scroll-margin-top:96px}
+.dnh{font-family:var(--sans);font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;padding:0 6px 6px}
+.dnl a{display:flex;gap:8px;align-items:baseline;font-family:var(--sans);font-size:12px;
+  line-height:1.35;color:var(--ink2);text-decoration:none;padding:5px 7px;
+  border-radius:var(--r-sm);border-left:2px solid transparent}
+.dnl a b{font-family:var(--mono);font-size:10.5px;color:var(--muted);font-weight:600;
+  flex:0 0 auto;min-width:15px}
+.dnl a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dnl a:hover{background:var(--card);color:var(--accent)}
+/* WHERE YOU ARE, not merely where you can go. A contents list that cannot say
+   which section you are reading is a menu; this is navigation. */
+.dnl a[aria-current="true"]{background:var(--card);border-left-color:var(--accent);
+  color:var(--ink);font-weight:600}
+.dnl a[aria-current="true"] b{color:var(--accent)}
+@media (max-width:820px){
+  .docwrap{display:block}
+  .docnav{position:static;width:auto;max-height:none;margin:0 0 14px}
+  .docnav .dnl{max-height:44vh}
+}
+.dsec{scroll-margin-top:calc(var(--railh,96px) + 12px)}
+/* Jumping between sections glides.
+ *
+ * On the root, so it applies to anchor jumps — which is what the rail's links
+ * are — and NOT to the step navigation, which calls scrollTo with an explicit
+ * behavior:"auto" and therefore keeps its instant jump. That distinction is
+ * deliberate: gliding the page under a reader who only pressed "next step",
+ * when the step was already in view, is what the step nav was fixed to stop
+ * doing. Moving twenty sections down a document you are reading is the
+ * opposite case — the glide is what tells you how far you went.
+ *
+ * Turned off for anyone who has asked for less motion; a long smooth scroll
+ * is exactly the kind of movement that setting exists for. */
+@media (prefers-reduced-motion:no-preference){
+  html{scroll-behavior:smooth}
+}
 
 /* ---- colour as position ---------------------------------------------------
  * Each step owns a hue (--s1..--s8, set inline from the step number). The
@@ -1345,59 +1421,69 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
 
   <section class="panel" data-step="2">
     <div class="phead"><span class="n">2</span><h2>What you hold now</h2>
-      <span class="why">Your debt and your investments, in whatever detail you want to present
-        them — every loan, grouped by type, or a single summary line. Paste from your
-        spreadsheet; templates below if that is easier.</span></div>
+      <span class="why">What you owe and what you hold, by category, and when each
+        falls due. Paste from your spreadsheet if that is easier.</span></div>
     <div class="pbody">
 
-      <h3 class="sub">Debt</h3>
-      <table class="loans"><thead><tr>
-        <th style="width:28%">Source</th><th style="width:18%">Amount £m</th>
-        <th style="width:22%">Final maturity</th><th style="width:14%">Profile</th>
-        <th style="width:12%">Rate</th><th></th>
-      </tr></thead><tbody id="loanrows"></tbody></table>
-      <div class="ltools"><button type="button" id="addloan">Add a debt source</button>
-        <button type="button" id="pasteloans">Paste your loans</button>
-        <button type="button" class="ghost" id="tmplloans">Template .csv</button>
-        <button type="button" class="ghost" id="showloans">Show the PWLB advances</button>
-        <span class="hintline">PWLB is filled from the published book. Everything here is
-          yours to amend.</span></div>
-      <div id="debtcost"></div>
-      <div class="pastebox" id="pwlbloans" hidden>
-        <div id="pwlbloanbody"></div>
+      <div class="fundtabs" id="holdtabs" role="group" aria-label="What you hold">
+        <button type="button" data-h="d" aria-pressed="true">Debt</button>
+        <button type="button" data-h="i" aria-pressed="false">Investments</button>
       </div>
-      <div class="pastebox" id="loanpaste" hidden>
-        <label for="loantext">Paste your loans<span class="hint">Any order, any detail —
-          every loan, or one row per type. Lender, type, fund, amount, rate, maturity.
-          Tabs or commas. A header row is read if you give one.</span></label>
-        <textarea id="loantext" rows="5" placeholder="Lender&#9;Type&#9;Amount&#9;Rate&#9;Maturity
+
+      <div id="holdd">
+        <table class="loans"><thead><tr>
+          <th style="width:46%">Source</th><th style="width:22%" class="num">Amount £m</th>
+          <th style="width:18%" class="num">Rate %</th><th></th>
+        </tr></thead><tbody id="loanrows"></tbody></table>
+        <div class="ltools"><button type="button" id="addloan">Add a source</button>
+          <button type="button" id="addpwlb" hidden>Put the PWLB row back</button>
+          <button type="button" id="pasteloans">Paste your loans</button>
+          <button type="button" class="ghost" id="tmplloans">Template .csv</button>
+        </div>
+        <div id="debtcost"></div>
+        <div class="pastebox" id="loanpaste" hidden>
+          <label for="loantext">Paste your loans<span class="hint">Any order, any detail —
+            every loan, or one row per type. Lender, type, fund, amount, rate, maturity.
+            Tabs or commas. A header row is read if you give one.</span></label>
+          <textarea id="loantext" rows="5" placeholder="Lender&#9;Type&#9;Amount&#9;Rate&#9;Maturity
 Barclays&#9;LOBO&#9;12,000,000&#9;4.35&#9;2041
 Dexia&#9;Market&#9;£8.5m&#9;3.90&#9;15/06/2038
 Another authority&#9;Local authority&#9;5.0&#9;4.10&#9;2029"></textarea>
-        <div class="ltools"><button type="button" class="primary" id="loanread">Read it</button>
-          <button type="button" id="loancancel">Cancel</button>
-          <span class="hintline" id="loannote"></span></div>
+          <div class="ltools"><button type="button" class="primary" id="loanread">Read it</button>
+            <button type="button" id="loancancel">Cancel</button>
+            <span class="hintline" id="loannote"></span></div>
+        </div>
+
+        <h3 class="sub">When the debt falls due</h3>
+        <div id="matdebt"></div>
       </div>
 
-      <h3 class="sub">Investments</h3>
-      <div class="ltools"><button type="button" id="pasteinv">Paste your portfolio</button>
-        <button type="button" class="ghost" id="tmplinv">Template .csv</button>
-        <span class="hintline" id="invsummary">Nothing pasted yet.</span></div>
-      <div class="pastebox" id="invpaste" hidden>
-        <label for="invtext">Paste your investment portfolio<span class="hint">As much or as
-          little as you like — every holding, or one row per instrument type. A holding with
-          no maturity is treated as instant access.</span></label>
-        <textarea id="invtext" rows="5" placeholder="Counterparty&#9;Type&#9;Amount&#9;Rate&#9;Maturity
+      <div id="holdi" hidden>
+        <table class="loans"><thead><tr>
+          <th style="width:46%">Source</th><th style="width:22%" class="num">Amount £m</th>
+          <th style="width:18%" class="num">Rate %</th><th></th>
+        </tr></thead><tbody id="invrows"></tbody></table>
+        <div class="ltools"><button type="button" id="addinv">Add a source</button>
+          <button type="button" id="pasteinv">Paste your portfolio</button>
+          <button type="button" class="ghost" id="tmplinv">Template .csv</button>
+          <span class="hintline" id="invsummary">Nothing entered yet.</span></div>
+        <div class="pastebox" id="invpaste" hidden>
+          <label for="invtext">Paste your investment portfolio<span class="hint">As much or as
+            little as you like — every holding, or one row per instrument type. What you paste
+            replaces the rows above.</span></label>
+          <textarea id="invtext" rows="5" placeholder="Counterparty&#9;Type&#9;Amount&#9;Rate&#9;Maturity
 Debt Management Office&#9;DMADF&#9;15,000,000&#9;3.95&#9;2027
 Money market fund&#9;MMF&#9;20,000,000&#9;3.88
 Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
-        <div class="ltools"><button type="button" class="primary" id="invread">Read it</button>
-          <button type="button" id="invcancel">Cancel</button>
-          <span class="hintline" id="invnote"></span></div>
-      </div>
-      <div id="portfoliocharts"></div>
+          <div class="ltools"><button type="button" class="primary" id="invread">Read it</button>
+            <button type="button" id="invcancel">Cancel</button>
+            <span class="hintline" id="invnote"></span></div>
+        </div>
 
-      <div class="prefill" id="prefill"></div>
+        <h3 class="sub">When the investments come back</h3>
+        <div id="matinv"></div>
+      </div>
+
     </div>
   </section>
 
@@ -1695,6 +1781,26 @@ const COLS = [
 ];
 /* A column whose name changes with the country — Scotland charges loans fund
    repayments where England and Wales make MRP. */
+/* A figure, and nothing else. Keeps one leading minus and one decimal point,
+   drops everything else — currency signs, thousands separators, letters, a
+   second point. Applied as it is typed rather than on blur, so the cell never
+   shows a value the model does not hold. */
+function numeric(v){
+  let s = String(v == null ? "" : v).replace(/[^0-9.\-]/g, "");
+  const neg = s.startsWith("-");
+  s = s.replace(/-/g, "");
+  /* A SECOND POINT TRUNCATES; IT DOES NOT CLOSE UP. Dropping it turns
+     "12.3.4" into "12.34", which is a different number nobody typed. Stopping
+     at "12.3" loses the stray keystroke and shows the user where it stopped,
+     which is the failure they can see and correct. */
+  const i = s.indexOf(".");
+  if(i >= 0){
+    const rest = s.slice(i + 1), j = rest.indexOf(".");
+    s = s.slice(0, i + 1) + (j >= 0 ? rest.slice(0, j) : rest);
+  }
+  return (neg ? "-" : "") + s;
+}
+
 function colLabel(c){
   const n = (typeof S !== "undefined") ? (S.natOverride || nationOf(S.gss)) : "england";
   return (c.natl && c.natl[n]) || c.l;
@@ -1742,7 +1848,8 @@ const MTFP = 5;   // years most authorities actually forecast — marked, not en
 let S = {gss:"", report:"tmss", fy0:2026, asAt:null, natOverride:null,
          view:{ind:"all", fund:"all"}, hra:"no", fund:"gf", years:51,
          loans:[], g:{}, text:{}, sec:"intro",
-         choices:{mrpmethod:"asset", cycle:"thrice"}, rates:[], limits:{}, portfolio:[], portfolioText:"", portfolioNote:"", logo:null};
+         choices:{mrpmethod:"asset", cycle:"thrice"}, rates:[], limits:{}, portfolio:[], portfolioText:"", portfolioNote:"", logo:null,
+         mat:{d:{}, i:{}}, hold:"d"};
 const blank = () => { const o={}; COLS.forEach(c=>o[c.k]=Array(S.years).fill(0)); return o; };
 S.g = {gf:blank(), hra:blank()};
 
@@ -2130,6 +2237,100 @@ const IND=(n,t,b)=>`<section class="ind"><h3><span class="lbtag">${n}</span>${es
  * still track what is typed. Moving to the draft rebuilds it, so it is never
  * stale — showStep() calls render() on the way in.
  */
+/* ---------------------------------------------------------------------------
+ * The draft's section rail.
+ *
+ * render() rebuilds the whole document on every keystroke while step 7 is on
+ * screen, so the rail is rebuilt with it and has to be re-wired each time.
+ * Two things therefore CANNOT live in the DOM: whether it is folded, and
+ * which section you are reading. Both are held here and reapplied, or the
+ * rail would silently unfold itself and lose its place every time a character
+ * was typed anywhere in the tool.
+ * ------------------------------------------------------------------------ */
+/* How tall the step rail actually is, published to CSS.
+ *
+ * It was written into the stylesheet as 92px for the section rail and 96px
+ * for scroll-margin, and it is neither: the step chips wrap onto a second row
+ * on a narrow window, and the header is 195px there. Both numbers were
+ * guesses at one window size — so a jump to a section landed underneath the
+ * header, and the rail's own heading was hidden behind it. Measured once per
+ * render and on resize, which is the only way it can be right at every width. */
+function railHeight(){
+  const r = document.querySelector(".railwrap");
+  const h = r ? Math.round(r.getBoundingClientRect().height) : 0;
+  if(h) document.documentElement.style.setProperty("--railh", h + "px");
+}
+let _railResize = null;
+function watchRailHeight(){
+  if(_railResize) return;
+  _railResize = () => railHeight();
+  window.addEventListener("resize", _railResize, {passive:true});
+}
+
+let DOCNAV_SHUT = null;
+function docNavShut(){
+  if(DOCNAV_SHUT !== null) return DOCNAV_SHUT;
+  try{ const v = localStorage.getItem("lb:docnav");
+       if(v !== null) return (DOCNAV_SHUT = v === "1"); }catch(e){}
+  // Folded by default on a long report, open on a short one: a rail is help
+  // on twenty sections and clutter on five.
+  const n = document.querySelectorAll("#docnavlist a").length;
+  return (DOCNAV_SHUT = n >= 14);
+}
+
+function docNavMark(){
+  const links = [...document.querySelectorAll("#docnavlist a")];
+  if(!links.length) return;
+  // The LAST heading whose top has passed the line, not the first one still
+  // visible: on a long section the heading leaves the screen entirely and a
+  // "topmost visible" rule would jump the mark forward to the next one while
+  // you are still reading this one.
+  let cur = links[0];
+  for(const a of links){
+    const el = document.getElementById(a.dataset.ds);
+    const line = (parseInt(getComputedStyle(document.documentElement)
+      .getPropertyValue("--railh"), 10) || 96) + 44;
+    if(el && el.getBoundingClientRect().top <= line) cur = a; else break;
+  }
+  links.forEach(a => a.setAttribute("aria-current", String(a === cur)));
+  if(cur.parentElement && cur.offsetParent){
+    const box = cur.parentElement, t = cur.offsetTop - box.offsetTop;
+    if(t < box.scrollTop || t > box.scrollTop + box.clientHeight - cur.offsetHeight)
+      box.scrollTop = Math.max(0, t - box.clientHeight / 2);
+  }
+}
+
+let _docNavScroll = null;
+function wireDocNav(){
+  const nav = $("docnav"), btn = $("docnavtoggle");
+  if(!nav || !btn) return;
+  const apply = () => {
+    nav.classList.toggle("shut", docNavShut());
+    btn.setAttribute("aria-expanded", String(!docNavShut()));
+    btn.title = docNavShut() ? "Show the sections" : "Hide the sections";
+  };
+  apply();
+  railHeight(); watchRailHeight();
+  btn.addEventListener("click", () => {
+    DOCNAV_SHUT = !docNavShut();
+    try{ localStorage.setItem("lb:docnav", DOCNAV_SHUT ? "1" : "0"); }catch(e){}
+    apply();
+  });
+  if(!_docNavScroll){
+    // One listener for the life of the page, not one per render: the document
+    // is rebuilt on every keystroke and stacking a listener each time is how a
+    // page gets slower the longer it is used.
+    let queued = false;
+    _docNavScroll = () => {
+      if(queued) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; docNavMark(); });
+    };
+    window.addEventListener("scroll", _docNavScroll, {passive:true});
+  }
+  docNavMark();
+}
+
 let _docDirty = true;
 function render(){
   const c = LB[S.gss];
@@ -2141,6 +2342,7 @@ function render(){
         <span>Assembled from your ledger and your commentary</span></div>`
       + documentHTML(false);
     _docDirty = false;
+    wireDocNav();
   } else {
     _docDirty = true;
   }
@@ -2150,10 +2352,23 @@ function render(){
   if(typeof autoSave === "function") autoSave();
   const dc = $("debtcost");
   if(dc) dc.innerHTML = (typeof debtCostNote === "function") ? debtCostNote() : "";
-  const iv = $("invsummary");
-  if(iv && typeof portfolioNote === "function") iv.textContent = portfolioNote();
-  const pc = $("portfoliocharts");
-  if(pc) pc.innerHTML = portfolioCharts();
+  /* STEP 2 IS INPUT, AND ONLY INPUT. It used to carry its own copies of the
+     debt-by-type and investment-by-type bars, which meant a reader met every
+     chart twice — once beside the boxes they were typing into and again in
+     the draft — and the two were laid out differently, so they read as two
+     different findings. The charts belong to the report. */
+  if(typeof STEP === "undefined" || STEP === 2){
+    const w = S.hold === "i" ? "i" : "d";
+    const host = $(w === "d" ? "matdebt" : "matinv");
+    // Only the pane on screen. Rebuilding the hidden one replaces inputs
+    // nobody can see, and would drop the caret out of the one they are in.
+    if(host){
+      host.innerHTML = matGrid(w);
+      wireMatGrid();
+    }
+    const iv = $("invsummary");
+    if(iv && typeof portfolioNote === "function") iv.textContent = portfolioNote();
+  }
   // The figures step's live chart. Drawn only while that step is on screen —
   // three buildModel calls and an SVG on every keystroke is cheap, but not
   // when nobody is looking at the result.
@@ -2164,12 +2379,6 @@ function render(){
   if(pv && pvw && !pvw.classList.contains("shut")
      && (pvw.classList.contains("full") || (typeof STEP === "undefined") || STEP === 3))
     pv.innerHTML = previewHTML();
-  $("prefill").innerHTML = c
-    ? `<span class="t">From the published loan book</span><b>£${m1(c.o)}m</b> across <b>${c.l}</b>
-       PWLB loan${c.l===1?"":"s"}. We hold this with high confidence, but it is a starting
-       point: amend it, and add whatever else you hold. Your own projection of year-end
-       balances is what drives the benchmark.`
-    : `<span class="t">Nothing filled yet</span>Pick an authority above.`;
 }
 
 /* ===========================================================================
@@ -3360,6 +3569,34 @@ function asYear(v){
   m=t.match(/^(\d{4})\/(\d{2})$/);                   if(m) return +m[1];
   return null;
 }
+/* The DATE, not just the year it falls in.
+ *
+ * asYear throws away the day and the month, which is all the projection ever
+ * needed: a balance is a year-end figure. A liquidity ladder is a different
+ * question — "under a month" and "six to twelve months" cannot be answered
+ * from a year — so a full date is kept whenever one is given, and a bare year
+ * stays a bare year rather than being invented into 1 January. */
+const MONTHS = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+function asDate(v){
+  const t = String(v).trim();
+  const iso = (y, m, d) => (m >= 1 && m <= 12 && d >= 1 && d <= 31)
+    ? `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}` : null;
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if(m) return iso(+m[1], +m[2], +m[3]);
+  // British order, and only British order. 06/07/2029 is 6 July everywhere in
+  // a council's spreadsheet; reading it as 7 June would move a loan a month
+  // and never once look wrong.
+  m = t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){ let y = +m[3]; if(y < 100) y += 2000; return iso(y, +m[2], +m[1]); }
+  m = t.match(/^(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})$/);
+  if(m){ const mi = MONTHS.indexOf(m[2].slice(0,3).toLowerCase());
+         return mi < 0 ? null : iso(+m[3], mi + 1, +m[1]); }
+  m = t.match(/^([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})$/);
+  if(m){ const mi = MONTHS.indexOf(m[1].slice(0,3).toLowerCase());
+         return mi < 0 ? null : iso(+m[3], mi + 1, +m[2]); }
+  return null;
+}
+
 const isRate = v => { const n=parseFloat(String(v).replace("%","")); 
   return isFinite(n) && n>=0 && n<=25 && /[.%]/.test(String(v)); };
 
@@ -3428,6 +3665,7 @@ function parseLoans(txt){
     if(amt==null || !amt){ skipped++; return; }
     loans.push({name: iN>=0 && r[iN] ? String(r[iN]).slice(0,44) : "Market loan",
                 amt, mat: (iY>=0 ? asYear(r[iY]) : null),
+                matd: (iY>=0 ? asDate(r[iY]) : null),
                 rate: iR>=0 ? parseFloat(String(r[iR]).replace("%","")) : null,
                 type: iT>=0 && r[iT] ? String(r[iT]).slice(0,28) : null,
                 fund: iF>=0 && r[iF] ? fundOf(r[iF]) : null,
@@ -3456,6 +3694,7 @@ function parseInvestments(txt){
     inv.push({name: iN>=0 && r[iN] ? String(r[iN]).slice(0,48) : "Counterparty",
               amt, rate: iR>=0 ? parseFloat(String(r[iR]).replace("%","")) : null,
               mat: iY>=0 ? asYear(r[iY]) : null,
+              matd: iY>=0 ? asDate(r[iY]) : null,
               type: iT>=0 && r[iT] ? String(r[iT]).slice(0,28) : null,
               fund: iF>=0 && r[iF] ? fundOf(r[iF]) : null});
   });
@@ -3747,8 +3986,6 @@ function portfolioCharts(){
  *   [loan number, method, maturity, £m outstanding, rate]
  * Method: M maturity, E equal instalments of principal, A annuity.
  * ------------------------------------------------------------------------ */
-const METHOD = {M:"Maturity", E:"EIP", A:"Annuity"};
-
 function pwlbSummary(){
   const c = LB[S.gss];
   if(!c || !c.d || !c.d.length) return null;
@@ -3759,45 +3996,6 @@ function pwlbSummary(){
   c.d.forEach(L => { byM[L[1]] = (byM[L[1]]||0) + L[3]; });
   return {tot, wavg, first:Math.min(...yrs), last:Math.max(...yrs), byM, n:c.d.length};
 }
-
-/* Maturities in bands, which is what a report can carry — a hundred and ninety
-   rows is a schedule, not an indicator. */
-function pwlbBands(){
-  const c = LB[S.gss];
-  if(!c || !c.d) return [];
-  const B = [[0,1,"Within a year"], [1,2,"1 to 2 years"], [2,5,"2 to 5 years"],
-             [5,10,"5 to 10 years"], [10,20,"10 to 20 years"],
-             [20,30,"20 to 30 years"], [30,99,"Over 30 years"]];
-  return B.map(([lo,hi,lab]) => ({
-    k: lab,
-    v: c.d.filter(L => { const y = +L[2].slice(0,4) - S.fy0; return y >= lo && y < hi; })
-          .reduce((a,L)=>a+L[3], 0)
-  })).filter(x => x.v > 0.05);
-}
-
-function pwlbLoanTable(){
-  const c = LB[S.gss];
-  if(!c || !c.d || !c.d.length)
-    return `<p class="note">No PWLB advances are held for this authority in the published
-      book. Add whatever debt you hold above.</p>`;
-  const s = pwlbSummary();
-  const rows = c.d.map(L => `<tr>
-      <td class="lnum">${esc(L[0])}</td>
-      <td>${esc(METHOD[L[1]] || L[1])}</td>
-      <td>${esc(L[2])}</td>
-      <td class="num">${m1(L[3])}</td>
-      <td class="num">${L[4].toFixed(2)}%</td></tr>`).join("");
-  return `<p class="note"><b>${s.n}</b> advances, <b>£${m1(s.tot)}m</b> outstanding at a
-      weighted average of <b>${s.wavg.toFixed(2)}%</b>, maturing between
-      <b>${s.first}</b> and <b>${s.last}</b>.
-      ${Object.keys(s.byM).map(k=>`${esc(METHOD[k]||k)} £${m1(s.byM[k])}m`).join(" · ")}.
-      Figures are the balance outstanding, not the original advance.</p>
-    <div class="loanlist"><table class="otable pwlbtab">
-      <thead><tr><th>Loan</th><th>Method</th><th>Maturity</th><th class="num">£m</th>
-        <th class="num">Rate</th></tr></thead>
-      <tbody>${rows}</tbody></table></div>`;
-}
-
 
 /* What the debt costs, blended.
  *
@@ -3846,7 +4044,8 @@ function investYield(){
 
 function portfolioNote(){
   const v = investYield();
-  if(!v.n) return "Nothing pasted yet.";
+  // Not "nothing pasted": the rows are typed into as often as they are pasted.
+  if(!v.n) return "Nothing entered yet.";
   const d = debtCost();
   const spread = (v.wavg != null && d.wavg != null)
     ? ` Debt costs ${d.wavg.toFixed(2)}%, so the carry is `
@@ -4004,6 +4203,423 @@ function readLedgerBlock(txt){
               + (bits.length ? ` ${bits.join("; ")} — skipped.` : "")
             : "Nothing in that block matched a column of this grid."
               + (bits.length ? ` ${bits.join("; ")}.` : "")};
+}
+
+/* ===========================================================================
+ * Maturity ladders — what falls due, and when.
+ *
+ * The report used to carry ONE maturity chart and it was drawn from the
+ * published PWLB book alone. For an authority whose debt is all PWLB that is
+ * the right picture; for one holding LOBOs, market loans and money borrowed
+ * from other authorities it is a picture of part of the book presented as the
+ * whole of it, which is worse than no picture. And there was nothing at all
+ * for investments, where the question a member actually asks — how much of
+ * this could we have back next week — is a maturity question.
+ *
+ * So there are two ladders, on the same footing:
+ *
+ *   BORROWING, in years, over every loan held, split by what kind of debt it
+ *   is. The bands are the ones the sector's own maturity-structure indicator
+ *   uses, so a treasurer can read our table against theirs without arithmetic.
+ *
+ *   INVESTMENTS, in months at the short end, because that is where the
+ *   liquidity actually is. A portfolio that is 60% instant access and one that
+ *   is 60% twelve-month deposits have the same weighted average life and are
+ *   not the same portfolio.
+ *
+ * WHAT IS NOT STATED IS NOT INVENTED. A holding with no maturity lands in its
+ * own row and is counted in the total, so the ladder always adds to what is
+ * held. For investments a missing maturity IS the answer — an instant-access
+ * account has no maturity date — but for debt it is a hole, and a hole says so
+ * rather than being distributed across the bands on some rule of ours.
+ * ======================================================================== */
+
+/* Years from the opening 31 March. The existing PWLB chart measured from the
+   opening financial year and the sector's tables are struck at 31 March, so
+   both agree: a loan maturing during the year the report opens is "within a
+   year". */
+function yearsOut(iso){
+  if(!iso) return null;
+  const t = Date.parse(iso);
+  if(!isFinite(t)) return null;
+  const base = Date.UTC(S.fy0, 2, 31);           // 31 March, month index 2
+  return (t - base) / (365.2425 * 86400000);
+}
+
+/* ---------------------------------------------------------------------------
+ * The categories a treasury report is written in.
+ *
+ * An empty table with an "add a row" button asks the reader to remember what
+ * the categories ARE, and every council answers slightly differently — which
+ * is how a sector ends up with reports that cannot be read against each other.
+ * Seeding the rows makes the shape of the answer the same everywhere, and
+ * every one of them stays editable: the label, the amount, the rate. A row
+ * left at zero is not shown in any chart, so an authority holding no LOBOs
+ * pays nothing for the row being there.
+ * ------------------------------------------------------------------------ */
+const DEBT_SEED = [
+  {name:"PWLB",        type:"PWLB",            pwlb:true},
+  {name:"LOBO",        type:"LOBO"},
+  {name:"Market debt", type:"Market"},
+  {name:"Intra-LA",    type:"Local authority"}
+];
+const INV_SEED = [
+  {name:"Call",     type:"Call"},
+  {name:"MMF",      type:"MMF"},
+  {name:"Notice",   type:"Notice"},
+  {name:"Intra-LA", type:"Local authority"},
+  {name:"Banks",    type:"Bank"},
+  {name:"Other",    type:"Other"}
+];
+
+/* Seeded only into an EMPTY list. A council that has pasted its book, or typed
+   its own categories, or opened last year's file must not have our four rows
+   pushed in beside theirs. */
+function seedHoldings(){
+  const c = LB[S.gss];
+  if(!(S.loans || []).length)
+    S.loans = DEBT_SEED.filter(r => !r.pwlb || (c && c.l))
+      .map(r => Object.assign({}, r, {amt: r.pwlb && c ? c.o : 0, rate: null}));
+  if(!(S.portfolio || []).length)
+    S.portfolio = INV_SEED.map(r => Object.assign({}, r, {amt: 0, rate: null}));
+}
+
+const DEBT_BANDS = [
+  [0, 1, "Within a year"], [1, 2, "1 to 2 years"], [2, 5, "2 to 5 years"],
+  [5, 10, "5 to 10 years"], [10, 20, "10 to 20 years"],
+  [20, 30, "20 to 30 years"], [30, 1e4, "Over 30 years"]
+];
+
+/* The short end in months, because that is the question being asked. "Instant
+   access" is not a band on this scale — it is the absence of a maturity — so
+   it is handled before the bands are consulted. */
+const INV_BANDS = [
+  [0, 1/12, "Under a month"], [1/12, 0.25, "1 to 3 months"],
+  [0.25, 0.5, "3 to 6 months"], [0.5, 1, "6 to 12 months"],
+  [1, 5, "1 to 5 years"], [5, 1e4, "Over 5 years"]
+];
+
+/* What kind of debt this is, from whatever the authority called it.
+ *
+ * Order matters, as it does in doctypes: "PWLB maturity loan" is PWLB, and a
+ * LOBO from Barclays is a LOBO before it is a bank loan. Anything unrecognised
+ * keeps its own name rather than being swept into "Other" — a family we cannot
+ * identify is still a family the reader may recognise. */
+/* ---------------------------------------------------------------------------
+ * Every loan held.
+ *
+ * The PWLB book is expanded loan by loan rather than carried as one line: it
+ * is the one part of the book we hold at that detail, and a ladder built from
+ * a single "PWLB, £819m, final maturity 2071" row would put the whole of it in
+ * the last band. Where the authority has overridden the PWLB amount, the book
+ * is scaled to what they said — their figure is the true one, and dropping the
+ * detail to honour it would lose the ladder entirely.
+ * ------------------------------------------------------------------------ */
+function debtLoans(){
+  const out = [];
+  (S.loans || []).forEach(L => {
+    if(!L.pwlb){
+      if(L.amt) out.push({amt:+L.amt, iso: L.matd || (L.mat ? L.mat + "-03-31" : null),
+                          method: L.profile === "amort" ? "E" : "M"});
+      return;
+    }
+    const c = LB[S.gss];
+    if(!c || !c.d || !c.d.length){
+      if(L.amt) out.push({amt:+L.amt, iso:null, method:"M"});
+      return;
+    }
+    const book = c.d.reduce((a, R) => a + R[3], 0);
+    const want = L.amt != null ? +L.amt : book;
+    const k = book ? want / book : 0;
+    c.d.forEach(R => out.push({amt: R[3] * k, iso: R[2], method: R[1]}));
+  });
+  return out.filter(x => x.amt);
+}
+
+/* ---------------------------------------------------------------------------
+ * A ladder: how much falls due in each period, and nothing else.
+ *
+ * It carried a second dimension — what kind of debt each band was made of —
+ * and it has been taken out. Crossing seven periods with five kinds of debt
+ * asks for thirty-five figures to be typed where seven will do, and produces a
+ * stacked bar that has to be decoded against a key. The composition of the
+ * book is already shown, on its own chart, by type. Maturity is a different
+ * question and reads better asked on its own.
+ *
+ * WHAT IS NOT STATED IS NOT INVENTED. A holding with no maturity lands in its
+ * own row and is counted in the total, so the ladder always adds to what is
+ * held. For investments a missing maturity IS the answer — money on call has
+ * no maturity date — but for debt it is a hole, and a hole says so rather than
+ * being distributed across the bands on some rule of ours.
+ * ------------------------------------------------------------------------ */
+function ladder(items, bands, opts){
+  const o = opts || {};
+  const rows = bands.map(([lo, hi, lab]) => ({k:lab, lo, hi, v:0}));
+  const none = {k: o.noneLabel || "Maturity not stated", v:0, none:true};
+  let total = 0, amort = 0;
+
+  items.forEach(x => {
+    const y = yearsOut(x.iso);
+    total += x.amt;
+    if(x.method === "E" || x.method === "A") amort += x.amt;
+    let row;
+    if(y == null) row = none;
+    else {
+      // A maturity already past is money due now, not money in a band behind
+      // us: a book struck before 31 March carries loans that have since
+      // matured, and dropping them would make the ladder disagree with the
+      // total it is drawn from.
+      const yy = Math.max(0, y);
+      row = rows.find(r => yy >= r.lo && yy < r.hi) || rows[rows.length - 1];
+    }
+    row.v += x.amt;
+  });
+
+  const out = rows.filter(r => Math.abs(r.v) > 0.05);
+  // Instant access is the SHORTEST rung, not a footnote after the longest.
+  // Reading down an investment ladder the eye expects liquidity first, and
+  // money repayable on demand is as liquid as money gets.
+  if(Math.abs(none.v) > 0.05){ if(o.noneFirst) out.unshift(none); else out.push(none); }
+  return {rows: out, total, amort, placed: total - none.v, unplaced: none.v};
+}
+
+/* ---------------------------------------------------------------------------
+ * Entered, or derived.
+ *
+ * A ladder CAN be derived where every loan carries a maturity date, and for an
+ * authority whose debt is the PWLB book that is most of it. But it cannot be
+ * derived in general: a council that holds its book as summary lines, or whose
+ * market debt sits in a spreadsheet we never see, has nothing to derive from,
+ * and a chart that quietly showed a third of the book would be worse than no
+ * chart. So the ladder is TYPED, and what can be derived is offered as a fill.
+ *
+ * One rule, and it is the same one the PWLB seeding uses: what the authority
+ * entered wins, always, and nothing overwrites it without being asked.
+ * ------------------------------------------------------------------------ */
+/* A grid saved while the ladder still had a type dimension is keyed
+   "band|family". Read as-is those keys match no period and the whole grid
+   reads as empty — the authority's typed figures would be silently gone and
+   the ladder would quietly fall back to the derived one. So they are collapsed
+   onto the period, which is the same money asked for less finely. */
+function matMigrate(m){
+  if(!m) return m;
+  let old = false;
+  for(const k in m) if(k.indexOf("|") > 0){ old = true; break; }
+  if(!old) return m;
+  const out = {};
+  for(const k in m){
+    const band = k.indexOf("|") > 0 ? k.slice(0, k.indexOf("|")) : k;
+    const v = +m[k];
+    if(isFinite(v) && v) out[band] = (out[band] || 0) + v;
+  }
+  return out;
+}
+
+function matEntered(which){
+  if(S.mat) S.mat[which] = matMigrate(S.mat[which]);
+  const m = (S.mat || {})[which];
+  if(!m) return null;
+  let any = false;
+  for(const k in m) if(isFinite(m[k]) && m[k]) { any = true; break; }
+  return any ? m : null;
+}
+
+/* An entered grid, in the shape ladder() returns, so every reader downstream
+   cannot tell which it got — and nothing has to be written twice. */
+function fromEntered(m, bands, o){
+  const rows = [];
+  const push = (k, none) => {
+    const v = +m[k];
+    if(isFinite(v) && Math.abs(v) > 0.0005) rows.push({k, v, none: !!none});
+  };
+  if(o.noneFirst && o.noneLabel) push(o.noneLabel, true);
+  bands.forEach(([, , lab]) => push(lab));
+  if(!o.noneFirst && o.noneLabel) push(o.noneLabel, true);
+  const total = rows.reduce((a, r) => a + r.v, 0);
+  const none = rows.find(r => r.none);
+  return {rows, total, amort: 0, entered: true,
+          unplaced: none && o.noneLabel !== "Instant access" ? none.v : 0,
+          placed: total - (none ? none.v : 0)};
+}
+
+function debtLadder(){
+  const m = matEntered("d");
+  return m ? fromEntered(m, DEBT_BANDS, {noneLabel: null})
+           : ladder(debtLoans(), DEBT_BANDS, {noneLabel: "Maturity not stated"});
+}
+
+/* Investments, where a missing maturity is an answer rather than a gap: a call
+   account and a money market fund are repayable on demand and have no maturity
+   date to give. So the unplaced row is named for what it means. */
+function invLadder(){
+  const m = matEntered("i");
+  if(m) return fromEntered(m, INV_BANDS, {noneLabel: "Instant access", noneFirst: true});
+  const items = (S.portfolio || []).filter(x => x.amt).map(x => ({
+    amt: +x.amt, iso: x.matd || (x.mat ? x.mat + "-03-31" : null)
+  }));
+  return ladder(items, INV_BANDS, {noneLabel: "Instant access", noneFirst: true});
+}
+
+/* ---------------------------------------------------------------------------
+ * Filling the grid from the maturity dates the holdings carry.
+ *
+ * Only the demonstration uses this. A real authority types its own profile —
+ * the dates are not asked for holding by holding any more, so for most
+ * councils there is nothing to derive from. But a demonstration is meant to
+ * be a FINISHED report, and a finished report whose maturity profile is blank
+ * while its debt table is full shows the newest half of the tool as an empty
+ * grid. It also has to RECONCILE: the check step compares the two, and a
+ * demonstration that fails its own compliance check teaches the wrong thing.
+ *
+ * The undated row is skipped for debt — its label is not one of the grid's
+ * periods, so a figure written against it would sit where nothing reads it.
+ * For investments "Instant access" IS a period, and money on call belongs in
+ * it, so it is kept.
+ * ------------------------------------------------------------------------ */
+function matFromHoldings(){
+  const out = {d:{}, i:{}}, r1 = v => Math.round(v * 10) / 10;
+  ladder(debtLoans(), DEBT_BANDS, {noneLabel:"Maturity not stated"})
+    .rows.filter(r => !r.none).forEach(r => { out.d[r.k] = r1(r.v); });
+  const inv = (S.portfolio || []).filter(x => x.amt).map(x => ({
+    amt: +x.amt, iso: x.matd || (x.mat ? x.mat + "-03-31" : null)
+  }));
+  ladder(inv, INV_BANDS, {noneLabel:"Instant access", noneFirst:true})
+    .rows.forEach(r => { out.i[r.k] = r1(r.v); });
+  return out;
+}
+
+/* ---------------------------------------------------------------------------
+ * Drawing one.
+ *
+ * The same bar row as everything else that is HELD, segmented by family. A
+ * segment carries its own title so the hover names the family and the figure
+ * — the alternative is a legend the reader has to hold in their head while
+ * their eye travels along a bar, which is how a chart becomes decoration.
+ *
+ * Segments under about a fiftieth of the widest band are still drawn, at a
+ * minimum width, because a £2m LOBO inside a £600m ladder is exactly the thing
+ * a reader is looking for and a segment rounded to nothing cannot be hovered.
+ * ------------------------------------------------------------------------ */
+function ladderChart(L, kind){
+  if(!L.rows.length) return "";
+  const max = Math.max(...L.rows.map(r => Math.abs(r.v)));
+  if(!max) return "";
+  const col = kind === "inv" ? "var(--l-inv)" : "var(--l-debt)";
+  const rows = L.rows.map(r => `<div class="barrow ${kind === "inv" ? "inv" : ""}${
+        r.none ? " none" : ""}">
+      <span class="bn" title="${esc(r.k)}">${esc(r.k)}</span>
+      <span class="bt"><i style="width:${(Math.abs(r.v) / max * 100).toFixed(2)
+        }%;background:${col}"></i></span>
+      <span class="bv">£${m1(r.v)}m</span></div>`).join("");
+  return `<div class="barwrap lad">${rows}
+    <div class="barrow ${kind === "inv" ? "inv" : ""}"
+         style="border-top:1px solid var(--line);margin-top:4px">
+      <span class="bn"><b>Total</b></span><span class="bt" style="background:none"></span>
+      <span class="bv"><b>£${m1(L.total)}m</b></span></div></div>`;
+}
+
+function ladderNote(L, kind){
+  const bits = [];
+  if(kind === "debt" && L.amort > 0.05)
+    bits.push(`£${m1(L.amort)}m of this repays by instalments through the life of the loan; `
+      + `it is shown at its FINAL maturity, as the sector's maturity-structure tables are, `
+      + `so the long bands overstate what is outstanding in those years`);
+  if(kind === "debt" && L.unplaced > 0.05)
+    bits.push(`£${m1(L.unplaced)}m carries no maturity date and could not be placed — `
+      + `add one against the loan above and it will fall into its band`);
+  if(kind === "inv" && L.unplaced > 0.05)
+    bits.push(`£${m1(L.unplaced)}m is repayable on demand — call accounts, money market `
+      + `funds and anything else pasted without a maturity`);
+  return bits.length ? `<p class="note">${bits.join(". ")}.</p>` : "";
+}
+
+/* Both ladders, wherever there is something to draw. */
+function ladderCharts(){
+  const d = debtLadder(), v = invLadder();
+  const one = (L, kind, head) => L.rows.length
+    ? `<h3 class="sub">${head}</h3>${ladderChart(L, kind)}${ladderNote(L, kind)}` : "";
+  return one(d, "debt", "When the debt falls due")
+       + one(v, "inv", "When the investments come back");
+}
+
+/* ---------------------------------------------------------------------------
+ * The typed grid.
+ *
+ * One column of figures against the periods, for each of debt and
+ * investments. It was seven periods crossed with five kinds of debt, which is
+ * thirty-five boxes to fill where seven will do — and the composition of the
+ * book by type is already asked for, and charted, on the holdings above.
+ * ------------------------------------------------------------------------ */
+function matGrid(which){
+  if(S.mat) S.mat[which] = matMigrate(S.mat[which]);
+  const debt = which === "d";
+  const bands = debt ? DEBT_BANDS : INV_BANDS;
+  const m = (S.mat || {})[which] || {};
+  const labs = debt ? bands.map(b => b[2])
+                    : ["Instant access"].concat(bands.map(b => b[2]));
+  const tot = labs.reduce((a, b) => a + (+m[b] || 0), 0);
+  return `<div style="overflow-x:auto"><table class="otable mgrid one">
+    <thead><tr><th>${debt ? "Maturing in" : "Available"}</th>
+      <th class="num">£m</th></tr></thead>
+    <tbody>${labs.map(b => `<tr${b === "Instant access" ? ' class="none"' : ""}>
+      <td>${esc(b)}</td>
+      <td class="num"><input type="text" inputmode="decimal" data-mat="${which}"
+        data-band="${esc(b)}" value="${m[b] == null || m[b] === "" ? "" : m1(m[b])}"
+        aria-label="${esc(b)}"></td></tr>`).join("")}
+      <tr class="key"><td>Total</td>
+        <td class="num">${tot ? m1(tot) : ""}</td></tr>
+    </tbody></table></div>`;
+}
+
+/* ---------------------------------------------------------------------------
+ * Typing into it.
+ *
+ * Numbers only, as everywhere else a figure is entered: num() would read the
+ * 12.4 out of "£12.4m" and drop the rest without saying so, and a figure that
+ * is right by luck is the kind that is wrong on the one report nobody checks.
+ *
+ * The grid is NOT redrawn on every keystroke — the totals row is, by hand.
+ * Redrawing replaces the input under the caret, which on a numeric field with
+ * a formatter reads as the cursor jumping to the end of what you are still
+ * halfway through typing.
+ * ------------------------------------------------------------------------ */
+function wireMatGrid(){
+  document.querySelectorAll("[data-mat]").forEach(el => {
+    if(el._matwired) return;
+    el._matwired = true;
+    el.addEventListener("input", e => {
+      const t = e.target, at = t.selectionStart, was = t.value;
+      const clean = typeof numeric === "function" ? numeric(was) : was;
+      if(clean !== was){
+        t.value = clean;
+        const back = was.length - clean.length;
+        try{ t.setSelectionRange(Math.max(0, at - back), Math.max(0, at - back)); }catch(_){}
+      }
+      S.mat = S.mat || {d:{}, i:{}};
+      S.mat[t.dataset.mat] = S.mat[t.dataset.mat] || {};
+      const k = t.dataset.band;
+      if(clean.trim() === "") delete S.mat[t.dataset.mat][k];
+      else S.mat[t.dataset.mat][k] = num(clean);
+      matTotals(t.dataset.mat);
+      if(typeof autoSave === "function") autoSave();
+    });
+  });
+  // A matrix is navigated with the arrow keys, like every other grid here.
+  ["matdebt","matinv"].forEach(id => { const h = $(id);
+    if(h && typeof arrowNav === "function") arrowNav(h.querySelector("table") || h); });
+}
+
+/* Redraw the arithmetic without touching the field being typed into. */
+function matTotals(which){
+  const host = $(which === "d" ? "matdebt" : "matinv");
+  const tb = host && host.querySelector("tbody");
+  if(!tb) return;
+  const m = (S.mat || {})[which] || {};
+  const rows = [...tb.querySelectorAll("tr")];
+  const tot = rows.slice(0, -1).reduce(
+    (a, tr) => a + (+m[tr.cells[0].textContent.trim()] || 0), 0);
+  const last = rows[rows.length - 1];
+  if(last && last.cells[1]) last.cells[1].textContent = tot ? m1(tot) : "";
 }
 
 /* ===========================================================================
@@ -6264,20 +6880,36 @@ function docSections(){
       + (debtHoldings().length
          ? `<h4>Debt held at ${fy(S.fy0)}</h4>` + barChart(groupHoldings(debtHoldings()), "debt")
          : "")
-      // When the PWLB book is the debt, its maturity profile is worth a
-      // committee's attention: it is the refinancing risk in one picture.
-      // Banded, because a schedule of a hundred and ninety advances is a
-      // schedule and not an indicator.
-      + (pwlbBands().length
-         ? `<h4>PWLB maturities</h4>` + barChart(pwlbBands(), "debt")
-           + `<p class="src">${(() => { const s = pwlbSummary(); return s
-               ? `${s.n} advances, weighted average ${s.wavg.toFixed(2)}%, maturing between `
-                 + `${s.first} and ${s.last}. Balances outstanding, from the published loan `
-                 + `book at ${esc(PWLB_AS_AT)}.` : ""; })()}</p>`
-         : "")
+      // The refinancing risk in one picture, and it has to be a picture of the
+      // WHOLE book. This was the PWLB advances alone, which is the right chart
+      // for an authority whose debt is all PWLB and a chart of part of the
+      // book presented as the whole of it for one that holds LOBOs and market
+      // loans. Banded, because a schedule of a hundred and ninety advances is
+      // a schedule and not an indicator.
+      + (() => { const L = debtLadder(); return L.rows.length
+         ? `<h4>When the debt falls due</h4>` + ladderChart(L, "debt") + ladderNote(L, "debt")
+           /* SAY WHERE IT CAME FROM, and the two answers are different.
+              A ladder the authority typed owes nothing to the published loan
+              book, and crediting the book underneath it would be a provenance
+              claim that is simply false — the reader would check our figures
+              against the book and find they do not reconcile. */
+           + `<p class="src">${L.entered
+               ? `As entered by the authority.`
+               : (() => { const s = pwlbSummary(); return s
+                 ? `Includes ${s.n} PWLB advances, weighted average ${s.wavg.toFixed(2)}%, `
+                   + `maturing between ${s.first} and ${s.last}, from the published loan `
+                   + `book at ${esc(PWLB_AS_AT)}; every other loan as you entered it.`
+                 : `Every loan as you entered it.`; })()}</p>`
+         : ""; })()
       + ((S.portfolio||[]).length
          ? `<h4>Investments held at ${fy(S.fy0)}</h4>` + barChart(groupHoldings(S.portfolio), "inv")
-         : "")},
+         : "")
+      // The liquidity question, which the composition chart above cannot
+      // answer: two portfolios of identical counterparties are not the same
+      // portfolio if one is on call and the other is out to twelve months.
+      + (() => { const L = invLadder(); return L.rows.length
+         ? `<h4>When the investments come back</h4>` + ladderChart(L, "inv") + ladderNote(L, "inv")
+         : ""; })()},
 
    {k:"borrow", n:"4", t:"Borrowing strategy",
     b: (peakNeed.need>0.05
@@ -6336,7 +6968,7 @@ function docSections(){
         how the authority moves from one to the other, so the table can be checked from top
         to bottom.</p>` + underpinningAll()},
 
-   {k:"afford", n:"7c", t:"Affordability", b: affordBlock(d)},
+   {k:"afford", n:"7c", t:"Affordability", b: affordBlock()},
 
    {k:"compliance", n:"7b", t:"Compliance with treasury and prudential limits",
     b: clausesFor("7b") + complianceTable()
@@ -6478,52 +7110,110 @@ function docSections(){
  * the ratio cannot be computed, and the section says so rather than showing a
  * plausible number built out of a guess.
  */
-function affordBlock(d){
-  const have = d.filter(r => r.nrs > 0);
+/* ---------------------------------------------------------------------------
+ * Affordability, per fund.
+ *
+ * This was fed buildModel(S,"gf") and said "the ratio of financing costs to
+ * the net revenue stream is 5.0%" — the GENERAL FUND's ratio, presented
+ * without qualification as the authority's. For a housing authority that is
+ * simply a wrong number in the report, and the wrongness is invisible: a
+ * blended figure at least looks like a blend, whereas a GF figure labelled as
+ * the authority's looks like an answer.
+ *
+ * Section 13 already splits it — its own comment says a single ratio "is not
+ * a fact a housing authority can act on" — so the report was giving the same
+ * indicator two different treatments in two places, and the earlier of them
+ * was the unlabelled one.
+ *
+ * The Code does not require the split here: the consultation's GF/HRA
+ * splitting is all about LB1 to LB6. It is required by the figure being
+ * different — an HRA is debt-financed housing and its ratio runs far above
+ * the General Fund's, which is the whole reason a housing authority looks at
+ * it. What the Code does not require, arithmetic does.
+ * ------------------------------------------------------------------------ */
+function affordBlock(){
   const N = NAT();
+  const hasHRA = S.hra !== "no";
+  const FUNDS = hasHRA ? [["all","Whole authority"], ["gf","Non-HRA"], ["hra","HRA"]]
+                       : [["gf", ""]];
+  const M = {};
+  FUNDS.forEach(([f]) => { M[f] = buildModel(S, f).filter(r => r.nrs > 0); });
+  const lead = M[hasHRA ? "all" : "gf"];
+
+  /* GROSS. The model stopped netting investment income off when the
+     consultation's Section 8 definition was read properly, and this sentence
+     was left behind describing the old arithmetic for every report written
+     since. A note that says how a figure was worked out, and is wrong about
+     it, is worse than no note: it is the thing a reader checks the figure
+     against. test_coverage now pins the two together. */
   const basis = `<p class="src">Financing costs are interest payable plus the
-    ${esc(N.mrp)} charged in the year, less investment income, as entered in the ledger.
-    Depreciation on finance leases and gains or losses on the repurchase of debt are not
-    held in the ledger and are not imputed — add them to interest payable if they are
-    material to you.</p>`;
-  if(!have.length)
+    ${esc(N.mrp)} charged in the year, as entered in the ledger. They are gross:
+    investment income is not netted off. Depreciation on finance leases and gains or
+    losses on the repurchase of debt are not held in the ledger and are not imputed —
+    add them to interest payable if they are material to you.${hasHRA
+      ? ` Each fund is measured against its own net revenue stream — the General Fund's
+         against taxpayer and grant income, the HRA's against rents.` : ""}</p>`;
+
+  if(!lead.length)
     return `<p>The ratio of financing costs to the net revenue stream is the Prudential
       Code's indicator of affordability.</p>
       <p class="gap">To be completed: enter the net revenue stream, interest payable and
-      investment income in the ledger and the ratio is calculated here for every year.</p>`
-      + basis;
-  const n = Math.min(have.length, MTFP);
-  const first = have[0], last = have[n-1];
+      ${esc(N.mrp).toLowerCase()} in the ledger and the ratio is calculated here for every
+      year.</p>` + basis;
+
+  const first = lead[0], last = lead[Math.min(lead.length, MTFP) - 1];
   const dir = Math.abs(last.afford - first.afford) < 0.1 ? "holds broadly flat at"
             : last.afford > first.afford ? "rises to" : "falls to";
-  const peak = have.reduce((a,b)=> b.afford > a.afford ? b : a, have[0]);
-  return `<p>The ratio of financing costs to the net revenue stream is
+  const peak = lead.reduce((a,b) => b.afford > a.afford ? b : a, lead[0]);
+  const who = hasHRA ? "Across the authority as a whole, the" : "The";
+
+  // The HRA's own ratio, said out loud. It is the number a housing authority
+  // is actually asked about, and it is usually the higher of the two.
+  const h = M.hra || [];
+  const hraLine = (hasHRA && h.length)
+    ? `<p>Split by fund, the ratio in ${fy(first.fy)} is
+        <b>${(M.gf[0] ? M.gf[0].afford.toFixed(1) : "–")}%</b> on the General Fund and
+        <b>${h[0].afford.toFixed(1)}%</b> on the Housing Revenue Account. The HRA's is
+        measured against its rental income, and an HRA carrying the debt on its stock will
+        ordinarily show the higher of the two; what matters is the direction of travel and
+        the headroom in the business plan.</p>` : "";
+
+  const nCols = Math.min(lead.length, 6);
+  const ratioRows = FUNDS.filter(([f]) => (M[f] || []).length).map(([f, l]) =>
+    `<tr${f === (hasHRA ? "all" : "gf") ? ' class="key"' : ""}><td>${
+      esc(l || "Financing costs to net revenue stream")}</td>${
+      M[f].slice(0, nCols).map(r => `<td>${r.afford.toFixed(1)}%</td>`).join("")}</tr>`).join("");
+
+  return `<p>${who} ratio of financing costs to the net revenue stream is
       <b>${first.afford.toFixed(1)}%</b> in ${fy(first.fy)}, and ${esc(dir)}
       <b>${last.afford.toFixed(1)}%</b> by ${fy(last.fy)}. Across the whole projection it
       peaks at <b>${peak.afford.toFixed(1)}%</b> in ${fy(peak.fy)}. This is the proportion of
-      the authority's net revenue stream committed to servicing and repaying debt before any
-      service is delivered${have.length < d.length
-        ? `, over the ${have.length} year${have.length===1?"":"s"} for which a net revenue
+      the net revenue stream committed to servicing and repaying debt before any
+      service is delivered${lead.length < buildModel(S, hasHRA ? "all" : "gf").length
+        ? `, over the ${lead.length} year${lead.length===1?"":"s"} for which a net revenue
            stream has been entered` : ""}.</p>`
-    + `<div class="chartwrap">${chart(have.map(r=>({fy:fy(r.fy).slice(2), i:r.i, afford:r.afford})),
-        {label:"Financing costs as a share of net revenue stream", h:210, zero:"tight",
-         fmt:v=>v.toFixed(1)+"%", lines:[{k:"afford",t:"Financing costs as a share of net revenue", c:"var(--l-lb)", w:2.2}]})}</div>`
-    + otable(have,[{l:"Interest payable",k:"intpay"},
-                   {l:NAT().mrpCap+" charged",k:"mrp"},
+    + hraLine
+    /* NO CHART HERE. The consultation's instruction to "present these
+       indicators primarily in a graphical time-series format" is in Section 6
+       and its subject is the liability benchmark framework — LB1 to LB6, a
+       series of inter-related outputs whose whole argument is the shape of
+       the lines against each other. Affordability is a single ratio over a
+       handful of years, and the Code asks only that it be reported. A chart
+       of one series that the table beside it already states, year by year,
+       is a second copy of the same six numbers taking up half a page. */
+    + otable(lead,[{l:"Interest payable",k:"intpay"},
+                   {l:N.mrpCap+" charged",k:"mrp"},
                    {l:"Investment income",k:"intinc"},
                    {l:"Financing costs",k:"fincost",cls:"key"},
-                   {l:"Net revenue stream",k:"nrs"}], Math.min(have.length,6))
-    + `<div style="overflow-x:auto"><table class="otable"><thead><tr><th>Ratio</th>${
-        have.slice(0,6).map(r=>`<th>${fy(r.fy)}</th>`).join("")}</tr></thead>
-      <tbody><tr class="key"><td>Financing costs to net revenue stream</td>${
-        have.slice(0,6).map(r=>`<td>${r.afford.toFixed(1)}%</td>`).join("")}</tr></tbody></table></div>`
-    + propBlock(have)
+                   {l:"Net revenue stream",k:"nrs"}], nCols)
+    + `<div style="overflow-x:auto"><table class="otable"><thead><tr><th>${
+        hasHRA ? "Financing costs to net revenue stream" : "Ratio"}</th>${
+        lead.slice(0,nCols).map(r=>`<th>${fy(r.fy)}</th>`).join("")}</tr></thead>
+      <tbody>${ratioRows}</tbody></table></div>`
+    + propBlock(M.gf || lead)
     + basis;
 }
 
-/* Proportionality. Only drawn where there is income to be proportionate about
-   — a council with none should not be shown a row of zeroes and invited to
-   worry about them. */
 function propBlock(have){
   const any = have.some(r => r.comminc);
   if(!any) return "";
@@ -6729,7 +7419,7 @@ function documentHTML(forExport){
   const warn = outstanding && !forExport
     ? `<div class="warn">${outstanding} section${outstanding===1?"":"s"} still to be written —
        shown in the draft as gaps so nothing reads as finished when it is not.</div>` : "";
-  /* A contents, not a set of tabs.
+  /* A rail, not a set of tabs.
    *
    * This is a document. It will be exported to Word and read start to finish
    * by people who did not write it, and the argument runs in order — the
@@ -6738,13 +7428,27 @@ function documentHTML(forExport){
    * as one paper impossible to read as one paper, and would hide from the
    * author how long it actually is.
    *
-   * So: jump links, screen only. The document stays whole and becomes
-   * navigable, which is the part that was missing. */
-  const toc = secs.length > 3 ? `<nav class="toc no-print">
-      <span class="tl">Contents</span>
-      ${secs.map(x=>`<a href="#ds-${x.k}"><b>${x.n}</b>${esc(natText(x.t))}</a>`).join("")}
+   * It was a row of chips above the document, which is a contents list that
+   * scrolls away the moment you use it — so from the second section onwards
+   * there was no navigation at all, on a paper that runs to twenty. The rail
+   * stays with you, marks where you are, and folds away when the page is the
+   * thing you want. Screen only: the exported document gets Word's own
+   * navigation, and a list of links in a printed paper is dead ink.
+   *
+   * Fourteen sections or more and it starts folded. A rail is help on a long
+   * document and clutter on a short one, and the tool holds reports of both
+   * kinds — an outturn is a handful of sections, a strategy is twenty-odd. */
+  const nav = secs.length > 3 ? `<nav class="docnav no-print" id="docnav">
+      <button type="button" class="burger" id="docnavtoggle" aria-expanded="true"
+        aria-controls="docnavlist" title="Sections"><i></i><i></i><i></i></button>
+      <div class="dnl" id="docnavlist">
+        <span class="dnh">Sections</span>
+        ${secs.map(x=>`<a href="#ds-${x.k}" data-ds="ds-${x.k}"><b>${x.n}</b><span>${
+          esc(natText(x.t))}</span></a>`).join("")}
+      </div>
     </nav>` : "";
-  if(!forExport) return head + warn + toc + body + caveat();
+  if(!forExport) return head + warn
+    + `<div class="docwrap">${nav}<div class="docbody">${body}${caveat()}</div></div>`;
   // Charts are drawn with CSS custom properties, which resolve only inside
   // this page. Exported to Word they would be undefined and every line would
   // vanish — a chart that silently loses its data is the worst thing we could
@@ -6928,6 +7632,7 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
   /* The chart commences with the most recent actual year-end; the tables and
      every readout still start at the current year, which is what they mean. */
   const AF = O.fund || (fundLabel === "HRA" ? "hra" : (fundLabel ? "gf" : "all"));
+  const isHRA = AF === "hra";
   const P = (spec, body) => `<div class="chartwrap">${chart(
     withActual(S, AF, spec.data || D), spec)}${legendFor(spec)}</div>${body || ""}`;
 
@@ -6954,13 +7659,19 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
        // Investments below the line, as the consultation's own table
        // brackets them; the figure in our tables keeps its sign.
        // A position stacks with the other positions; the benchmarks stay lines.
-       bars:[{k:"el",t:"Existing loans",c:"var(--l-debt)"}].concat(XF).concat([
-             {k:"ei",t:"Existing investments",c:"var(--l-ei)",neg:true}]),
-       lines:[{k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.2},
-              {k:"tib",t:"Investment benchmark",c:"var(--l-inv)",w:2.2,neg:true},
-              {k:"ntp",t:"Net",c:"var(--l-ntp)",w:2.2}]})
-     + otable(d,[{l:"Existing loan commitments",k:"el"},{l:"Liability benchmark",k:"lb",cls:"lb"},
-                 {l:"Existing investment commitments",k:"ei"}])
+       /* AN HRA HOLDS NO TREASURY INVESTMENTS. The consultation says so in
+          terms — "as the HRA does not hold treasury investments" — and the
+          grid has never asked it for any, so both the investment series and
+          the benchmark measured against them are structurally nil on an HRA
+          chart. Drawing a flat line of noughts and labelling it is not
+          neutral: it invites a reader to wonder what happened to the money. */
+       bars:[{k:"el",t:"Existing loans",c:"var(--l-debt)"}].concat(XF).concat(
+             isHRA ? [] : [{k:"ei",t:"Existing investments",c:"var(--l-ei)",neg:true}]),
+       lines:[{k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.2}].concat(
+              isHRA ? [] : [{k:"tib",t:"Investment benchmark",c:"var(--l-inv)",w:2.2,neg:true}])
+              .concat([{k:"ntp",t:"Net",c:"var(--l-ntp)",w:2.2}])})
+     + otable(d,[{l:"Existing loan commitments",k:"el"},{l:"Liability benchmark",k:"lb",cls:"lb"}]
+                .concat(isHRA ? [] : [{l:"Existing investment commitments",k:"ei"}]))
      + noCross
      + readoutHTML("LB3", d, fundLabel))}
    ${!want("LB4") ? "" : IND("LB4","Borrowing requirement / over-borrowing"+tag,
@@ -7531,6 +8242,9 @@ function libSeed(k){
   S.loans = (d.loans || []).map(x => Object.assign({}, x));
   S.portfolio = (d.portfolio || []).map(x => Object.assign({}, x));
   S.portfolioText = d.portfolioText || ""; S.portfolioNote = d.portfolioNote || "";
+  // The maturity ladders are typed, not derived, so they are exactly the kind
+  // of work a previous version exists to save doing again.
+  S.mat = d.mat ? JSON.parse(JSON.stringify(d.mat)) : {d:{}, i:{}};
   S.minliq = d.minliq == null ? S.minliq : d.minliq;
   S.logo = d.logo || S.logo;
   S.hra = d.hra || S.hra;
@@ -7848,6 +8562,45 @@ const CHECKS = [
        ? {v:"met", note:`£${m1(S.minliq || (g.liq||[])[0] || 0)}m applied across every year.`}
        : {v:"gap", note:"Not set. Without it the liability benchmark is the net treasury "
           + "position, which is a different indicator.", go:3};
+   }},
+  /* The maturity ladders are the one part of the report the tool cannot derive
+     and cannot check against anything except itself. What it CAN do is notice
+     that the ladder and the holdings, which measure the same money, disagree —
+     and say so here rather than publish two charts with different totals and
+     leave the reader to find it in committee. */
+  {k:"matdebt", src:"TMC 2026 consultation", g:"Portfolio", in:CK_ALL,
+   t:"The debt maturity ladder reconciles with the debt held",
+   run(){
+     const held = debtLoans().reduce((a,x)=>a+x.amt, 0);
+     const L = debtLadder();
+     if(!L.rows.length) return {v:"gap", go:2,
+       note:"No maturity ladder. Enter one, or give a maturity date against each loan."};
+     if(!held) return {v:"yours", note:`£${m1(L.total)}m entered, with no debt held above `
+       + `to check it against.`};
+     const gap = L.total - held;
+     return Math.abs(gap) < Math.max(0.05, held * 0.005)
+       ? {v:"met", note:`£${m1(L.total)}m across ${L.rows.length} periods, against `
+          + `£${m1(held)}m held.`}
+       : {v:"gap", go:2, note:`£${m1(L.total)}m in the ladder against £${m1(held)}m held — `
+          + `a difference of £${m1(Math.abs(gap))}m. Both charts go in the report.`};
+   }},
+  {k:"matinv", src:"TMC 2026 consultation", g:"Portfolio", in:CK_ALL,
+   t:"The investment ladder reconciles with the investments held",
+   run(){
+     const held = (S.portfolio||[]).reduce((a,x)=>a+(+x.amt||0), 0);
+     const L = invLadder();
+     if(!L.rows.length) return held
+       ? {v:"gap", go:2, note:"No liquidity ladder, so the report cannot say when the "
+          + "money comes back — which is the question members ask about investments."}
+       : {v:"n/a", note:"No investments held."};
+     if(!held) return {v:"yours", note:`£${m1(L.total)}m entered, with no holdings above `
+       + `to check it against.`};
+     const gap = L.total - held;
+     return Math.abs(gap) < Math.max(0.05, held * 0.005)
+       ? {v:"met", note:`£${m1(L.total)}m across ${L.rows.length} periods, against `
+          + `£${m1(held)}m held.`}
+       : {v:"gap", go:2, note:`£${m1(L.total)}m in the ladder against £${m1(held)}m held — `
+          + `a difference of £${m1(Math.abs(gap))}m.`};
    }},
   {k:"nrs", src:"PC E10", g:"Figures", in:CK_ALL,
    t:"A net revenue stream is entered, so affordability can be computed",
@@ -8170,6 +8923,24 @@ let STEP = 1;
 const DRAFT_STEP = STEPS.find(s => s.k === "draft").n;
 const CHECK_STEP = STEPS.find(s => s.k === "check").n;
 
+/* Steps whose content render() builds ONLY while they are on screen.
+ *
+ * render() skips expensive work for a step nobody is looking at — the draft,
+ * the compliance check, the live figures chart, and the maturity ladders,
+ * which expand the PWLB book loan by loan and some authorities hold nearly two
+ * hundred. The cost of that is that arriving at such a step finds it empty,
+ * because goStep's render happens before anyone asks for it.
+ *
+ * So the gate and the arrival trigger must ask the SAME question, and this is
+ * it. They used to be two hand-kept lists: a set of `STEP === n` gates down in
+ * render(), and a literal `if(STEP === DRAFT_STEP || ... || STEP === 3)` here.
+ * Adding the ladders to the first and not the second left them rendering only
+ * on the SECOND visit to step 2 — visibly empty on arrival, correct after any
+ * later keystroke, which is the shape of bug that gets called intermittent.
+ * Add a step here when you gate anything on it in render(); test_coverage
+ * checks the two agree. */
+const LIVE_STEPS = new Set([2, 3, DRAFT_STEP, CHECK_STEP]);
+
 /* What each step can honestly say about itself.
  *   state: "done" | "part" | "" — drives the mark on the rail
  *   note:  what is true right now, in a few words
@@ -8186,7 +8957,14 @@ function stepStatus(k){
   }
 
   if(k === "portfolio"){
-    const nLoans = (S.loans||[]).length, nInv = (S.portfolio||[]).length;
+    /* ROWS WITH A FIGURE IN THEM, not rows. The categories are seeded — PWLB,
+       LOBO, Market debt, Intra-LA and six for investments — so counting rows
+       reported "3 debt sources" and a green tick on a tool nobody had typed
+       into yet. A step that says it is done before it has been opened is
+       worse than one that says nothing: it is the rail's only job to be
+       believed. */
+    const filled = a => (a || []).filter(x => x && x.amt).length;
+    const nLoans = filled(S.loans), nInv = filled(S.portfolio);
     if(!nLoans && !nInv) return {state:"", note:"Nothing entered", need:"Add your debt, or paste it — the PWLB book fills itself once an authority is chosen."};
     const bits = [];
     if(nLoans) bits.push(`${nLoans} debt source${nLoans===1?"":"s"}`);
@@ -8314,7 +9092,7 @@ function showStep(n){
   // saying "open it to build the draft" on the step you are standing on.
   // The same is true of the figures step's live chart, which render() also
   // skips while it is off screen.
-  if(STEP === DRAFT_STEP || STEP === CHECK_STEP || STEP === 3) render();
+  if(LIVE_STEPS.has(STEP)) render();
   renderRail();
   renderNav();
   // Scroll only if the step is not already where you can see it. Smooth-
@@ -8323,8 +9101,17 @@ function showStep(n){
   const sh = $("stepwrap");
   if(sh){
     const top = sh.getBoundingClientRect().top;
-    if(top < 0 || top > window.innerHeight * 0.5)
-      window.scrollTo({top: Math.max(0, top + window.scrollY - 96), behavior: "auto"});
+    if(top < 0 || top > window.innerHeight * 0.5){
+      /* The measured header, not 96. The step chips wrap onto a second row on
+         a narrow window and the header is 195px there, so this landed the
+         panel a hundred pixels underneath it — the same wrong constant that
+         was in the stylesheet twice. behavior stays "auto": gliding the page
+         under someone who pressed "next step" is what this was fixed to stop
+         doing, and html{scroll-behavior:smooth} would otherwise apply here. */
+      const off = parseInt(getComputedStyle(document.documentElement)
+        .getPropertyValue("--railh"), 10) || 96;
+      window.scrollTo({top: Math.max(0, top + window.scrollY - off - 12), behavior: "auto"});
+    }
   }
 }
 
@@ -8386,8 +9173,16 @@ function actualCell(k, v){
 }
 function buildLedger(){
   const CS = colsFor(S.fund, S.hra);
+  /* UNDER ONE POOL THE HRA HAS NO LOANS OF ITS OWN, so this column is not the
+     General Fund's — it is the authority's, and the HRA's tab does not carry
+     it at all. A column headed the same on both tabs, present on one and
+     absent from the other, invites somebody to enter the General Fund's share
+     and wonder where the rest went. */
+  const pooledNote = c => (c.k === "loans" && S.hra === "one" && S.fund === "gf")
+    ? "<small>whole authority — debt is pooled</small>" : "";
   let h = `<thead><tr><th class="yr">Year end</th>` + CS.map(c=>
-    `<th>${colLabel(c)}${c.s?`<small>${esc(c.s)}</small>`:""}</th>`).join("") + `</tr></thead><tbody>`;
+    `<th>${colLabel(c)}${pooledNote(c) || (c.s?`<small>${esc(c.s)}</small>`:"")}</th>`)
+      .join("") + `</tr></thead><tbody>`;
   // The most recent actual year-end, which the Code asks the tables and
   // charts to commence with.
   h += `<tr class="actualrow"><th class="yr">${fy(S.fy0-1)}<small>actual</small></th>` +
@@ -8418,6 +9213,17 @@ function buildLedger(){
   $("ledger").innerHTML = h + "</tbody>";
   $("ledger").querySelectorAll("input").forEach(inp=>{
     inp.addEventListener("input", e=>{
+      /* NUMBERS ONLY. These were text inputs with a decimal keyboard hint,
+         which is a hint and not a rule: a pasted "£12.4m" or a stray letter
+         went in, num() read what it could and the rest was silently lost.
+         Anything that is not a figure is stripped as it is typed, so the cell
+         always shows exactly what the model holds. */
+      const cleaned = numeric(e.target.value);
+      if(cleaned !== e.target.value){
+        const at = e.target.selectionStart - (e.target.value.length - cleaned.length);
+        e.target.value = cleaned;
+        try { e.target.setSelectionRange(Math.max(0, at), Math.max(0, at)); } catch(err){}
+      }
       const k = e.target.dataset.k, i = +e.target.dataset.i;
       const v = e.target.value.trim();
       if(i === A_IDX) actualCell(k, v === "" ? null : num(v));
@@ -8543,39 +9349,89 @@ function seedLoansFromBook(){
 }
 function applyLoans(){ syncLedger(true); render(); }
 
-/* ---- loans --------------------------------------------------------------- */
-function loanRows(){
-  $("loanrows").innerHTML = S.loans.map((L,ix)=>`<tr>
-    <td>${L.pwlb?`<b>PWLB</b> <span class="pill">from the loan book</span>`
-      :`<input type="text" data-f="name" data-i="${ix}" value="${esc(L.name)}" aria-label="Source">`}</td>
-    <td class="num"><input type="text" inputmode="decimal" data-f="amt" data-i="${ix}"
-      value="${m1(L.amt)}" aria-label="Amount"></td>
-    <td>${L.pwlb?`<span class="qt">loan by loan</span>`
-      :`<input type="number" data-f="mat" data-i="${ix}" value="${L.mat}"
-         min="${S.fy0+1}" max="${S.fy0+60}" aria-label="Final maturity">`}</td>
-    <td>${L.pwlb?`<span class="qt">actual</span>`
-      :`<select data-f="profile" data-i="${ix}" aria-label="Profile">
-         <option value="amort"${L.profile==="amort"?" selected":""}>Amortising</option>
-         <option value="bullet"${L.profile==="bullet"?" selected":""}>Bullet</option></select>`}</td>
-    <td class="num"><input type="text" inputmode="decimal" data-f="rate" data-i="${ix}"
-        value="${L.rate == null ? "" : L.rate}"
-        placeholder="${L.pwlb ? (() => { const s = pwlbSummary();
-          return s ? s.wavg.toFixed(2) : "—"; })() : "—"}" aria-label="Rate"></td>
-    <td>${L.pwlb?"":`<button type="button" class="rm" data-rm="${ix}" aria-label="Remove">×</button>`}</td>
-  </tr>`).join("");
-  $("loanrows").querySelectorAll("input,select").forEach(el=>
-    el.addEventListener("input", e=>{
-      const L=S.loans[+e.target.dataset.i], f=e.target.dataset.f;
-      L[f]= f==="amt" ? num(e.target.value)
-          : f==="mat"  ? (parseInt(e.target.value)||S.fy0+10)
-          : f==="rate" ? (e.target.value.trim()==="" ? null : num(e.target.value))
-          : e.target.value;
-      applyLoans(); }));
-  if(typeof arrowNav === "function") arrowNav($("loanrows").closest("table") || $("loanrows"));
-  $("loanrows").querySelectorAll("[data-rm]").forEach(b=>
-    b.addEventListener("click", e=>{ S.loans.splice(+e.target.dataset.rm,1); loanRows(); applyLoans(); }));
+/* ---- what is held -------------------------------------------------------
+ *
+ * Two tables of the same shape — source, amount, rate — one for debt and one
+ * for investments, each seeded with the categories a treasury report is
+ * actually written in. Every cell is editable, including the label: the seed
+ * is a common vocabulary, not a taxonomy anyone has to argue with.
+ *
+ * FINAL MATURITY AND PROFILE ARE GONE from this table. They were asked for
+ * loan by loan and used for exactly one thing — placing that loan in a
+ * maturity band — and the maturity profile is now typed directly, in periods,
+ * on its own grid. Asking for the same fact twice, at two different
+ * granularities, gives two answers that can disagree and no rule for which
+ * wins. The PWLB book still carries its own dates and still fills the profile
+ * on request; nothing was lost but the typing.
+ * ------------------------------------------------------------------------ */
+function holdRow(list, L, ix, kind){
+  /* EVERY row can be removed, the PWLB one included. Plenty of authorities
+     hold no PWLB debt at all — a district that has never borrowed, a body
+     funded entirely from the market — and a row they cannot delete is a line
+     in their report about money they do not owe. Removing it is offered back
+     on the button below, so it is a reversible mistake rather than a
+     permanent one. */
+  return `<tr>
+    <td><input type="text" data-h="${kind}" data-f="name" data-i="${ix}"
+      value="${esc(L.name || "")}" aria-label="Source"></td>
+    <td class="num"><input type="text" inputmode="decimal" data-h="${kind}" data-f="amt"
+      data-i="${ix}" value="${L.amt ? m1(L.amt) : ""}" aria-label="Amount"></td>
+    <td class="num"><input type="text" inputmode="decimal" data-h="${kind}" data-f="rate"
+      data-i="${ix}" value="${L.rate == null ? "" : L.rate}"
+      placeholder="${L.pwlb ? (() => { const s = pwlbSummary();
+        return s ? s.wavg.toFixed(2) : "—"; })() : "—"}" aria-label="Rate"></td>
+    <td><button type="button" class="rm" data-h="${kind}" data-rm="${ix}"
+      aria-label="Remove">×</button></td></tr>`;
 }
 
+function holdRows(kind){
+  const id = kind === "d" ? "loanrows" : "invrows";
+  const host = $(id);
+  if(!host) return;
+  const list = kind === "d" ? (S.loans || []) : (S.portfolio || []);
+  host.innerHTML = list.map((L, ix) => holdRow(list, L, ix, kind)).join("");
+  host.querySelectorAll("input").forEach(el =>
+    el.addEventListener("input", e => {
+      const t = e.target, f = t.dataset.f;
+      const arr = t.dataset.h === "d" ? S.loans : S.portfolio;
+      const L = arr[+t.dataset.i];
+      if(!L) return;
+      if(f === "name"){ L.name = t.value; }
+      else {
+        // Numbers only, as everywhere else a figure is entered — and the caret
+        // is put back where it was, or typing into a formatted field throws the
+        // cursor to the end of a number you are halfway through.
+        const at = t.selectionStart, was = t.value;
+        const clean = typeof numeric === "function" ? numeric(was) : was;
+        if(clean !== was){
+          t.value = clean;
+          const back = was.length - clean.length;
+          try{ t.setSelectionRange(Math.max(0, at - back), Math.max(0, at - back)); }catch(_){}
+        }
+        L[f] = clean.trim() === "" ? (f === "rate" ? null : 0) : num(clean);
+      }
+      applyLoans();
+    }));
+  if(typeof arrowNav === "function") arrowNav(host.closest("table") || host);
+  host.querySelectorAll("[data-rm]").forEach(b =>
+    b.addEventListener("click", e => {
+      const t = e.target;
+      (t.dataset.h === "d" ? S.loans : S.portfolio).splice(+t.dataset.rm, 1);
+      holdRows(t.dataset.h); pwlbRowBack(); applyLoans();
+    }));
+}
+
+/* The PWLB row, once it has been removed. Shown only when this authority has
+   a published book and no row is carrying it, so it is an offer to undo and
+   never a nag at a council that genuinely holds none. */
+function pwlbRowBack(){
+  const b = $("addpwlb");
+  if(!b) return;
+  const c = LB[S.gss];
+  b.hidden = !(c && c.l && !(S.loans || []).some(l => l.pwlb));
+}
+
+function loanRows(){ holdRows("d"); holdRows("i"); pwlbRowBack(); }
 
 /* ---- Excel round-trip ----------------------------------------------------
    Tab-separated to the clipboard is the reliable half: it pastes straight
@@ -8683,6 +9539,7 @@ function saveVersion(quiet){
       loans:S.loans, g:S.g, text:S.text, limits:S.limits, perf:S.perf, choices:S.choices,
       actual:S.actual, group:S.group,
       portfolio:S.portfolio, portfolioText:S.portfolioText, portfolioNote:S.portfolioNote,
+      mat:S.mat, demoStamp:S.demoStamp,
       logo:S.logo, asAt:S.asAt, minliq:S.minliq, cp:S.cp, prior:S.prior,
       otherName:S.otherName, natOverride:S.natOverride,
       at:new Date().toISOString()}));
@@ -8724,6 +9581,8 @@ function restoreVersion(quiet){
     if(d.choices) S.choices=d.choices;
     S.portfolio=d.portfolio||[]; S.portfolioText=d.portfolioText||"";
     S.portfolioNote=d.portfolioNote||"";
+    S.mat=d.mat||{d:{},i:{}};
+    S.demoStamp=d.demoStamp||null;
     S.logo=d.logo||null;
     // The as-at date is the whole point of dating a report: restoring one and
     // silently moving it to today's data would change the market figures under
@@ -8818,7 +9677,8 @@ function stampSaved(word){
     S.loans=S.loans.filter(l=>!l.pwlb);
     // No PWLB row for a body whose book we do not hold: a line saying "PWLB
     // £0.0m, from the loan book" would be a claim about them, not a blank.
-    if(c && c.l) S.loans.unshift({pwlb:true,name:"PWLB",amt:c.o,profile:"actual"});
+    if(c && c.l) S.loans.unshift({pwlb:true,name:"PWLB",type:"PWLB",amt:c.o,rate:null});
+    seedHoldings();
     if(S.gss === "other") S.natOverride = $("otherreg").value;
     else S.natOverride = null;
     otherShown(); loanRows(); applyLoans(); renderSections(); libFill();
@@ -8919,12 +9779,6 @@ function stampSaved(word){
    */
 
 
-  $("showloans").addEventListener("click", ()=>{
-    const b = $("pwlbloans");
-    b.hidden = !b.hidden;
-    if(!b.hidden) $("pwlbloanbody").innerHTML = pwlbLoanTable();
-    $("showloans").textContent = b.hidden ? "Show the PWLB advances" : "Hide the advances";
-  });
   $("pasteloans").addEventListener("click", ()=>{
     const b=$("loanpaste"); b.hidden=!b.hidden; if(!b.hidden) $("loantext").focus(); });
   $("loancancel").addEventListener("click", ()=>{ $("loanpaste").hidden=true; });
@@ -8933,10 +9787,33 @@ function stampSaved(word){
     $("loannote").textContent=r.note;
     if(!r.loans.length) return;
     S.loans = S.loans.filter(l=>l.pwlb).concat(r.loans);
-    loanRows(); applyLoans(); $("loanpaste").hidden=true;
+    holdRows("d"); applyLoans(); $("loanpaste").hidden=true;
   });
   $("addloan").addEventListener("click", ()=>{
-    S.loans.push({name:"LOBO",amt:0,mat:S.fy0+15,profile:"bullet"}); loanRows(); applyLoans(); });
+    S.loans.push({name:"", amt:0, rate:null}); holdRows("d"); applyLoans();
+    const r = $("loanrows").lastElementChild; if(r) r.querySelector("input").focus(); });
+  $("addpwlb").addEventListener("click", ()=>{
+    const c = LB[S.gss];
+    if(!c || !c.l) return;
+    S.loans.unshift({pwlb:true, name:"PWLB", type:"PWLB", amt:c.o, rate:null});
+    holdRows("d"); pwlbRowBack(); applyLoans(); });
+  $("addinv").addEventListener("click", ()=>{
+    S.portfolio.push({name:"", amt:0, rate:null}); holdRows("i"); applyLoans();
+    const r = $("invrows").lastElementChild; if(r) r.querySelector("input").focus(); });
+
+  /* The two halves of what you hold. Debt and investments were one long panel
+     with two tables, two paste boxes and two maturity grids stacked down it,
+     which is a lot of scrolling to compare two numbers that never appear on
+     screen together. */
+  $("holdtabs").addEventListener("click", e => {
+    const b = e.target.closest("button"); if(!b) return;
+    S.hold = b.dataset.h;
+    [...$("holdtabs").querySelectorAll("button")].forEach(x =>
+      x.setAttribute("aria-pressed", String(x.dataset.h === S.hold)));
+    $("holdd").hidden = S.hold !== "d";
+    $("holdi").hidden = S.hold !== "i";
+    render();
+  });
 
   /* ---- investments ------------------------------------------------------ */
   $("pasteinv").addEventListener("click", ()=>{
@@ -8952,6 +9829,7 @@ function stampSaved(word){
     // in later years is a projection, and that is theirs.
     if(r.total!=null && S.g[S.fund].inv) S.g[S.fund].inv[0]=Math.round(r.total*10)/10;
     $("invpaste").hidden=true;
+    holdRows("i");
     syncLedger(true); renderSections(); render();
   });
 
@@ -9048,12 +9926,60 @@ function stampSaved(word){
             share:0.35, nrs:0.18}}
   };
 
+  /* Is there anything here a person put here?
+   *
+   * The demonstration's guard used to ask whether a saved payload EXISTS, and
+   * one exists from the moment the tool boots: autosave runs on the first
+   * render, and seeding the holdings categories gave it something to write.
+   * So picking a demonstration on a brand-new tool warned about losing "work
+   * already saved in this browser" that had never been done — and cancelling
+   * a warning like that, which is the sensible thing to do, looked exactly
+   * like the selector being broken.
+   *
+   * What counts is what a PERSON typed. The PWLB row's amount does not: it
+   * comes from the published book the moment an authority is picked, and it
+   * is ours, not theirs. Nor do the seeded category rows, which are all zero
+   * until somebody fills one in. */
+  /* Everything a person could have changed, as one string.
+   *
+   * Used to tell a demonstration nobody has touched from one somebody has
+   * started working in. Comparing a fingerprint rather than hooking every
+   * edit is the point: there is no list of places to keep up to date, so no
+   * edit can be forgotten — anything that changes the state changes this. */
+  function workFingerprint(){
+    return JSON.stringify([S.gss, S.report, S.fy0, S.hra, S.years, S.loans, S.portfolio,
+      S.g, S.text, S.limits, S.perf, S.choices, S.actual, S.group, S.mat, S.cp, S.minliq]);
+  }
+
+  function hasWork(){
+    /* A DEMONSTRATION IS NOT WORK. Filling one writes commentary, limits, a
+       counterparty policy and a group — so after the first demonstration the
+       guard below saw all of it and warned, every time, that switching to
+       another would lose "work already saved in this browser". What you have
+       is another demonstration. Cancelling a warning like that is the
+       sensible thing to do, and cancelling looks exactly like a dropdown that
+       does nothing — which is how this was reported, twice. */
+    if(S.demoStamp && S.demoStamp === workFingerprint()) return false;
+    const someAmt = a => (a || []).some(x => x && x.amt && !x.pwlb);
+    if(someAmt(S.loans) || someAmt(S.portfolio)) return true;
+    if(Object.keys(S.text || {}).some(k => (S.text[k] || "").trim())) return true;
+    if(Object.keys(S.limits || {}).some(k => S.limits[k])) return true;
+    if(Object.keys(S.perf || {}).length) return true;
+    if(S.cp || (S.group && S.group.on)) return true;
+    const m = S.mat || {};
+    if(["d","i"].some(w => Object.keys(m[w] || {}).some(k => m[w][k]))) return true;
+    return ["gf","hra"].some(f => {
+      const g = (S.g || {})[f] || {};
+      return Object.keys(g).some(k => (g[k] || []).some(v => v));
+    });
+  }
+
   function fillDemo(which){
     /* AUTOSAVE MADE THIS DESTRUCTIVE. Filling a demonstration replaces every
        figure and every paragraph, and with nothing to press afterwards the
        replacement is now written to the browser a second later. Ask once, and
        only where there is actually saved work to lose. */
-    const held = S.gss && localStorage.getItem(KEY());
+    const held = S.gss && localStorage.getItem(KEY()) && hasWork();
     if(held && !confirm("This replaces everything with a demonstration authority, "
       + "including work already saved in this browser. Save to a file first if you "
       + "want to keep it.\n\nFill the demonstration?")){
@@ -9084,6 +10010,13 @@ function stampSaved(word){
     ];
     S.portfolioNote = `4 holdings, £${m1(pot)}m in total, grouped by type.`;
     S.portfolioText = "";
+
+    /* The maturity profiles, worked out from the dates the demonstration's own
+       holdings carry, so the two agree. A demonstration is meant to be a
+       finished report: leaving the profiles blank shows the newest half of the
+       tool as an empty grid, and it fails the check step's own reconciliation
+       between the ladder and the holdings it is drawn from. */
+    S.mat = matFromHoldings();
 
     // The approved limits, so the compliance table is a comparison rather than
     // a row of gaps. The authorised limit sits above the benchmark peak, which
@@ -9217,6 +10150,11 @@ function stampSaved(word){
     fundTabs(); buildLedger(); loanRows(); renderChoices(); renderSections();
     if(typeof cpRender === "function") cpRender();
     syncLedger(true); render(); renderRail();
+    /* Stamped LAST, once everything is in place, so the fingerprint is of the
+       finished demonstration. Any edit afterwards moves it and the guard comes
+       back — which is what it is for. */
+    S.demoStamp = workFingerprint();
+    if(typeof autoSave === "function") autoSave();
     $("saved").textContent = `Demonstration filled — ${D.label}, every section written. `
       + `Every step is filled, including the counterparty policy. `
       + `Change anything; nothing here is fixed.`;
@@ -9574,6 +10512,9 @@ function stampSaved(word){
     $("council").value = S.gss; $("rtype").value = S.report; $("fy0").value = S.fy0;
     restoreVersion(true);
   }
+  // Seeded here rather than in the state declaration: it needs the council to
+  // be known, because the PWLB row's amount comes from that council's book.
+  seedHoldings();
   fundTabs(); buildLedger(); loanRows(); renderSections(); render(); libFill();
   $("issued").checked = libIsIssued();
   // The counterparty form is delegated from its container, so it is wired once
