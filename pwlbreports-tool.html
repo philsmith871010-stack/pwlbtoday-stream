@@ -1222,8 +1222,13 @@ svg.ctip .hits rect{cursor:crosshair}
    is set wider and quieter than the panels that follow it. */
 .s0lede{font-family:var(--sans);font-size:15px;line-height:1.62;color:var(--ink2);
   max-width:74ch;margin:0 0 22px}
-.s0grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+/* TWO BY TWO, STATED. auto-fit put three on the first row and orphaned the
+   fourth — the same shape of bug as the landing page's "worth" cards, where a
+   rule written for five broke the moment there were six. Four equal cards
+   want two rows of two, so that is what it asks for. */
+.s0grid{display:grid;gap:14px;grid-template-columns:repeat(2,minmax(0,1fr));
   margin:0 0 20px}
+@media(max-width:640px){.s0grid{grid-template-columns:1fr}}
 .s0card{background:var(--sunken);border:1px solid var(--line);border-radius:var(--r);
   padding:14px 16px}
 .s0card h3{font-family:var(--sans);font-size:13.5px;font-weight:600;color:var(--ink);
@@ -1535,11 +1540,21 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
 
       <div class="s0grid">
         <div class="s0card">
+          <h3>Your figures never leave this browser</h3>
+          <p>There is no account, no upload and no server that sees them. What you type is held
+            in this browser, and in the files you save to your own machine &mdash; which is
+            where your report stays. Nobody here can read it, because there is nowhere for it
+            to have gone. The page does fetch published PWLB and SONIA rates, and its typeface;
+            neither request carries anything of yours.</p>
+        </div>
+        <div class="s0card">
           <h3>Every figure is yours</h3>
           <p>Nothing here is forecast, estimated or filled in on your behalf. The tool does the
             arithmetic the Codes set out &mdash; the same inputs always give the same output
-            &mdash; and assumes nothing you did not type. A year you leave blank is nil, and the
-            charts show what that implies rather than a guess dressed as one.</p>
+            &mdash; and assumes nothing you did not type. You enter a figure once and it reaches
+            every chart, table and indicator that needs it, so the report cannot disagree with
+            itself. A year you leave blank is nil, and the charts show what that implies rather
+            than a guess dressed as one.</p>
         </div>
         <div class="s0card">
           <h3>What it will ask for</h3>
