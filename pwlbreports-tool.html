@@ -1218,6 +1218,15 @@ svg.ctip .hits rect{cursor:crosshair}
 .xb.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .xb.on:hover{color:var(--on-accent);opacity:.92}
 .hintline:empty{display:none}
+/* The invitation to load a strategy rather than retype it. Quiet, but not so
+   quiet it is missed — it is the difference between typing six figures and
+   typing none. */
+.offer{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--ink2);
+  background:var(--sunken);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:var(--r);padding:10px 13px;margin:0 0 12px}
+.offer b{color:var(--ink)}
+.offer i{font-style:normal;font-family:var(--mono);font-size:11.5px;
+  background:var(--card);border:1px solid var(--line);border-radius:3px;padding:1px 5px}
 .pv{margin-top:26px;border-top:1px solid var(--line);padding-top:18px}
 .pvhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .pvtog{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);
@@ -5765,6 +5774,143 @@ function perfRows(){
   });
 }
 
+/* ===========================================================================
+ * The indicators, against what members approved. Monitoring reports only.
+ *
+ * WHY THIS IS SEPARATE FROM THE COMPLIANCE TABLE ABOVE. That one asks a
+ * binary question about a limit — was the authorised limit breached, yes or
+ * no. This asks a different one: how does the position now expected compare
+ * with the one the strategy set out. A limit is not an expectation, and an
+ * indicator moving is not a breach.
+ *
+ * THE ROWS ARE THE SECTOR'S, NOT OURS. Of 661 treasury monitoring and outturn
+ * reports across 187 councils, 82% restate the prudential indicators and 78%
+ * of those set them against the approved or original figure. What they
+ * restate, in order: capital expenditure (81%), external debt (76%), the CFR
+ * (72%), the authorised limit (62%) and operational boundary (61%),
+ * investments held (60%), the liability benchmark (33%) and the financing
+ * costs ratio (28%). The limits keep their own table because they are tested
+ * for breach; the rest are here.
+ *
+ * ONE YEAR, NOT THE PROFILE. A strategy carries indicators for every year of
+ * the horizon; a monitoring report is about the year in progress. The
+ * comparison is the approved figure for THIS year against the latest
+ * expectation for it — what has been realised plus the forecast to the year
+ * end — and nothing else. Showing the whole profile again would bury the one
+ * column the report exists to discuss.
+ *
+ * THE VARIANCE CARRIES NO ADJECTIVE. The revenue table above says "adverse"
+ * and "favourable" because paying more interest than budgeted is
+ * unambiguously the former. Nothing here is: a CFR below the approved figure
+ * may be prudence or a slipped capital programme, and the report does not
+ * know which. So the movement is stated and its direction is left to the
+ * commentary — which is also why only 6% of the corpus computes a variance
+ * column at all, and none of those we read labelled the direction.
+ * ======================================================================== */
+const MONITOR = [
+  {k:"capex",  l:"Capital expenditure",                   u:"£m", from:r=>r.capex},
+  {k:"cfr",    l:"Capital financing requirement",         u:"£m", from:r=>r.cfr},
+  {k:"debt",   l:"External debt",                         u:"£m", from:r=>r.el},
+  {k:"inv",    l:"Treasury investments",                  u:"£m", from:r=>r.ei},
+  {k:"lb",     l:"Liability benchmark",                   u:"£m", from:r=>r.lb},
+  {k:"afford", l:"Financing costs to net revenue stream", u:"%", pct:true, from:r=>r.afford}
+];
+
+/* The current year of the authority's own ledger IS its latest expectation:
+   the grid is what it now thinks the year will close at. So the column fills
+   itself and can be typed over, exactly as the rate of return is. */
+function monLatest(){
+  const d = buildModel(S, S.hra === "no" ? "gf" : "all");
+  return d[0] || {};
+}
+
+function monRows(){
+  const M = S.mon || {}, P = (S.prior && S.prior.ind) || {}, now = monLatest();
+  return MONITOR.map(x => {
+    const typed = c => { const v = (M[x.k] || {})[c];
+                         return (v == null || v === "") ? null : +v; };
+    const approved = typed("approved") != null ? {v:typed("approved"), seeded:false}
+      : (P[x.k] == null ? {v:null, seeded:false} : {v:P[x.k], seeded:true});
+    const raw = x.from(now);
+    const latest = typed("latest") != null ? {v:typed("latest"), derived:false}
+      : {v:(raw == null || !isFinite(raw)) ? null : raw, derived:true};
+    const varc = (approved.v == null || latest.v == null) ? null : latest.v - approved.v;
+    return Object.assign({}, x, {approved, latest, varc,
+      any: approved.v != null || latest.v != null});
+  });
+}
+
+const MON_COLS = [["approved","Approved"], ["latest","Latest expected"]];
+
+function monPanel(){
+  S.mon = S.mon || {};
+  const rows = monRows();
+  const seeded = rows.some(r => r.approved.seeded);
+  /* THE OFFER TO FILL IT IN. Everything in the approved column is a figure
+     that already exists in a document the authority wrote — so ask for the
+     document before asking for the figures. Only shown where it would help:
+     once a strategy has been loaded, the invitation is noise. */
+  const offer = seeded ? `<p class="hintline">The approved column came from the
+      ${esc(fy((S.prior||{}).fy0 || S.fy0))} strategy you opened. Type over any of it.</p>`
+    : `<p class="offer"><b>Open your approved strategy and this fills itself.</b>
+       If you have the file this report is monitoring — a version saved from this tool —
+       use <i>Open a file</i> on the first step and the approved column is taken from it.
+       Otherwise type the figures members agreed; they are in the strategy you are
+       reporting against.</p>`;
+  const cell = (r, c) => {
+    const raw = (S.mon[r.k] || {})[c];
+    const ph = c === "latest" && r.latest.derived && r.latest.v != null
+      ? (r.pct ? r.latest.v.toFixed(2) : m1(r.latest.v)) : "—";
+    return `<td><input type="text" inputmode="decimal" data-m="${r.k}" data-mc="${c}"
+      value="${raw == null ? "" : raw}" placeholder="${esc(ph)}"
+      aria-label="${esc(r.l)} ${c}"></td>`;
+  };
+  return offer + `<div class="perfwrap"><table class="perf">
+    <thead><tr><th>${esc(fy(S.fy0))}</th>${MON_COLS.map(([,t])=>`<th>${esc(t)}</th>`)
+      .join("")}<th>Variance</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td class="pl"><b>${esc(r.l)}</b><span>${r.u === "%" ? "per cent" : "£m"}</span></td>
+      ${MON_COLS.map(([c])=>cell(r,c)).join("")}
+      <td class="drv">${monVar(r)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="hintline">The latest expectation is what the year is now forecast to close at —
+      what has been realised plus the forecast to the year end. It fills itself from the
+      current year of your ledger; type over it where your latest view differs. A row left
+      blank does not appear in the report.</p>`;
+}
+
+/* Stated, never judged. Bracketed where the latest expectation is below the
+   approved figure, which is the same accounting form the rest of the report
+   uses for a negative. */
+function monVar(r){
+  if(r.varc == null) return "–";
+  if(Math.abs(r.varc) < (r.pct ? 0.005 : 0.05)) return "as approved";
+  const n = r.pct ? Math.abs(r.varc).toFixed(2) + " pts" : "£" + m1(Math.abs(r.varc)) + "m";
+  return r.varc < 0 ? `(${n})` : n;
+}
+
+function monTable(){
+  const rows = monRows().filter(r => r.any);
+  if(!rows.length)
+    return `<p class="gap">To be completed: enter the indicators as members approved them and
+      the latest expectation for the year, and the comparison is made here.</p>`;
+  const f = (x, r) => x.v == null ? "–" : (r.pct ? `${x.v.toFixed(2)}%` : `£${m1(x.v)}m`);
+  const moved = rows.filter(r => r.varc != null && Math.abs(r.varc) >= (r.pct?0.005:0.05));
+  return `<div style="overflow-x:auto"><table class="otable">
+    <thead><tr><th>${esc(fy(S.fy0))}</th><th>Approved</th><th>Latest expected</th>
+      <th>Variance</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr><td class="w">${esc(r.l)}</td>
+      <td>${f(r.approved, r)}</td><td>${f(r.latest, r)}</td>
+      <td>${monVar(r)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="note">The comparison is for ${esc(fy(S.fy0))} alone — the year the report covers.
+      The approved column is the figure in the strategy members agreed; the latest expectation
+      is what has been realised plus the forecast to the year end.
+      ${moved.length
+        ? `<b>${moved.length}</b> of ${rows.length} indicator${rows.length===1?"":"s"}
+           differ${moved.length===1?"s":""} from the approved figure. Whether a movement is
+           welcome is a matter for the commentary, not for the table.`
+        : `Every indicator is at the figure approved.`}</p>`;
+}
+
 function perfPanel(){
   S.perf = S.perf || {};
   const rows = perfRows();
@@ -6033,6 +6179,15 @@ const SECTIONS = [
         d:DRAFT.compliance_body, ph:"If a limit was exceeded, when, by how much, why, and what was done. If none were, "
            +"say so plainly — members are entitled to a clear statement either way."}]},
 
+  {k:"indmon", n:"7e", t:"Indicators against the approved strategy", kind:"both", in:BACK,
+   lead:"What members approved for this year, against what the year is now expected to "
+       +"close at. 82% of monitoring reports restate the indicators; 78% of those set them "
+       +"against the approved figure.",
+   qs:[{k:"indmon_body", l:"Commentary on the movements",
+        ph:"Why the latest expectation differs from what was approved — slippage in the "
+          +"capital programme, borrowing taken earlier or later than planned, receipts "
+          +"delayed. A movement without an explanation is a number members cannot use."}]},
+
   {k:"performance", n:"7d", t:"Performance against budget and against last year",
    kind:"both", in:BACK,
    lead:"What the period cost and earned, against what was budgeted and against last year. "
@@ -6198,6 +6353,13 @@ function renderSections(){
       S.perf[k][c] = (v==="") ? null : num(v);
       clearTimeout(S._p); S._p=setTimeout(()=>{ renderSections(); render(); }, 600);
     }));
+  $("secbody").querySelectorAll("[data-m]").forEach(el=>
+    el.addEventListener("input", e=>{
+      const k=e.target.dataset.m, c=e.target.dataset.mc, v=e.target.value.trim();
+      S.mon = S.mon || {}; S.mon[k] = S.mon[k] || {};
+      S.mon[k][c] = (v==="") ? null : num(v);
+      clearTimeout(S._m); S._m=setTimeout(()=>{ renderSections(); render(); }, 600);
+    }));
   $("secbody").querySelectorAll("[data-L]").forEach(el=>
     el.addEventListener("input", e=>{
       const v=e.target.value.trim();
@@ -6281,6 +6443,8 @@ function autoNote(k){
     return piTable();
   if(k==="group")
     return box("Group undertakings", groupPanel()) + groupTable(d);
+  if(k==="indmon")
+    return box("This year against the strategy", monPanel()) + monTable();
   if(k==="performance")
     return box("What the period actually did", perfPanel()) + perfTable();
   if(k==="training")
@@ -7458,6 +7622,17 @@ function docSections(){
    {k:"compliance", n:"7b", t:"Compliance with treasury and prudential limits",
     b: clausesFor("7b") + complianceTable()
       + (t("compliance_body")?para(t("compliance_body")):"")},
+
+   {k:"indmon", n:"7e", t:"Indicators against the approved strategy",
+    b: `<p>The table below sets the indicators members approved for ${fy(S.fy0)} against what
+        the year is now expected to close at — what has been realised, plus the forecast to
+        the year end. Only the year the report covers is shown: the strategy carries the
+        indicators for every year of the horizon, and restating the profile here would bury
+        the one column this report exists to discuss.</p>`
+      + monTable()
+      + (t("indmon_body") ? para(t("indmon_body"))
+                          : gap("why the latest expectation differs from what was approved",
+                                "indmon"))},
 
    {k:"priorpi", n:"6b", t:"Prudential indicators",
     b: `<p>The indicators below are those the Prudential Code requires, each shown with the
@@ -8893,7 +9068,7 @@ function libSeed(k){
     /* A report that looks forward carries no actuals. Rolling last year's
        outturn figures into this year's report would put a period that has
        happened under a heading that has not. */
-    S.perf = {}; S.limits = {};
+    S.perf = {}; S.limits = {}; S.mon = {};
     note = shift
       ? `Rolled forward ${shift} year${shift===1?"":"s"} from ${fy(d.fy0)}. The grid moved with `
         + `the years; wording, choices, counterparty policy and debt came as they were. `
@@ -8928,8 +9103,27 @@ function libSeed(k){
   const pm = buildModel(Object.assign({}, d, {g: migrateGrid(d.g, d.years || S.years)}),
                         d.hra === "no" ? "gf" : "all");
   const p0 = pm[0] || {};
+  /* THE APPROVED COLUMN IS THE STRATEGY'S ROW FOR THE YEAR BEING MONITORED,
+     WHICH IS NOT ALWAYS ITS FIRST.
+   *
+   * A strategy carries the indicators for every year of its horizon. A
+   * monitoring report is about one year, so the figure to set beside the
+   * latest expectation is the one that strategy published FOR THAT YEAR —
+   * matched on the financial year, not taken from the top of the grid. Taking
+   * pm[0] would compare this year's outturn against the year the strategy
+   * opened on, which is the same row only when the two happen to coincide.
+   *
+   * The five figures above keep pm[0] deliberately: priorLine reads them as
+   * "what the last report said when it was written", which is a different
+   * question and has a different right answer. */
+  const pa = pm.find(r => r.fy === S.fy0) || p0;
   S.prior = {fy0: d.fy0, report: d.report, cfr: p0.cfr, lb: p0.lb, el: p0.el,
-             al: p0.al, ntp: p0.ntp};
+             al: p0.al, ntp: p0.ntp,
+             indFy: pa.fy,
+             ind: {capex: lib1(pa.capex), cfr: lib1(pa.cfr), debt: lib1(pa.el),
+                   inv: lib1(pa.ei), lb: lib1(pa.lb),
+                   afford: pa.afford == null ? null
+                     : Math.round(pa.afford * 100) / 100}};
   return {ok:true, note, kind: roll ? "roll" : "monitor"};
 }
 
@@ -10138,7 +10332,8 @@ function saveVersion(quiet){
   try{
     localStorage.setItem(KEY(), JSON.stringify({
       v:3, gss:S.gss, report:S.report, fy0:S.fy0, hra:S.hra, years:S.years,
-      loans:S.loans, g:S.g, text:S.text, limits:S.limits, perf:S.perf, choices:S.choices,
+      loans:S.loans, g:S.g, text:S.text, limits:S.limits, perf:S.perf, mon:S.mon,
+      choices:S.choices,
       actual:S.actual, group:S.group,
       portfolio:S.portfolio, portfolioText:S.portfolioText, portfolioNote:S.portfolioNote,
       mat:S.mat, demoStamp:S.demoStamp,
@@ -10179,7 +10374,7 @@ function restoreVersion(quiet){
     const d = JSON.parse(raw);
     S.fy0=d.fy0; S.hra=d.hra; S.years=d.years||51; S.loans=d.loans||[];
     S.g=migrateGrid(d.g, d.years||51);
-    S.text=d.text||{}; S.limits=d.limits||{}; S.perf=d.perf||{};
+    S.text=d.text||{}; S.limits=d.limits||{}; S.perf=d.perf||{}; S.mon=d.mon||{};
     if(d.choices) S.choices=d.choices;
     S.portfolio=d.portfolio||[]; S.portfolioText=d.portfolioText||"";
     S.portfolioNote=d.portfolioNote||"";
@@ -10191,7 +10386,7 @@ function restoreVersion(quiet){
     // a document somebody already took to committee.
     S.asAt=d.asAt||null; S.minliq=d.minliq||null;
     S.otherName=d.otherName||""; S.natOverride=d.natOverride||null;
-    S.perf=d.perf||{}; S.prior=d.prior||null;
+    S.perf=d.perf||{}; S.mon=d.mon||{}; S.prior=d.prior||null;
     S.actual=d.actual||{}; S.group=d.group||{};
     if(S.gss === "other" && LB.other) LB.other.n = S.otherName;
     // The counterparty policy is a whole section of the report. It was left
@@ -10524,7 +10719,8 @@ function stampSaved(word){
    * edit can be forgotten — anything that changes the state changes this. */
   function workFingerprint(){
     return JSON.stringify([S.gss, S.report, S.fy0, S.hra, S.years, S.loans, S.portfolio,
-      S.g, S.text, S.limits, S.perf, S.choices, S.actual, S.group, S.mat, S.cp, S.minliq]);
+      S.g, S.text, S.limits, S.perf, S.mon, S.choices, S.actual, S.group, S.mat, S.cp,
+      S.minliq]);
   }
 
   function hasWork(){
