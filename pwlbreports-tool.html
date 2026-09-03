@@ -281,6 +281,14 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
   color:var(--on-accent);font-weight:500}
 .ltools .sp{flex:1}
 .ltools .hintline{font-size:11.5px;color:var(--muted)}
+/* The one row in the grid that is a fact rather than a forecast. */
+.ledger tr.actualrow th.yr{color:var(--ink);font-weight:600}
+.ledger tr.actualrow th.yr small{display:block;font-size:9.5px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--accent);font-weight:600}
+.ledger tr.actualrow td{background:color-mix(in srgb, var(--accent) 5%, var(--card));
+  border-bottom:1.5px solid var(--line2)}
+.ledger tr.actualrow td.drv{font-family:var(--mono);font-size:12px;color:var(--accent);
+  text-align:right;padding-right:9px;font-weight:600}
 .legendkey{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:8px}
 .legendkey span{display:flex;align-items:center;gap:5px}
 .legendkey i{width:11px;height:11px;border-radius:2px;border:1px solid var(--line2)}
@@ -2798,12 +2806,16 @@ function actualRow(S, fund){
    * underpinning table then opens at one net position, closes at another, and
    * nothing says which is wrong.
    *
-   * So it is computed. If an authority enters it anyway, the entry is kept —
-   * it is their balance sheet — but the reconciliation is what it is. */
+   * It is ALWAYS computed. It was briefly "computed unless an entry exists",
+   * which was defensible while the field could be typed into — and became a
+   * trap the moment the ledger started showing it as derived, because a stale
+   * value from a demonstration or an older saved file then overrode the
+   * derivation and there was no longer any way to clear it. A figure the user
+   * cannot edit must not be a figure the user can override. */
   const cfr = n("cfr"), liq = n("liq");
   const el = n("loans"), ei = n("inv");
   const ntp = el - ei;
-  const obs = f.obs != null && +f.obs ? n("obs") : cfr - ntp;
+  const obs = cfr - ntp;
   const hraTwoPool = fund === "hra" && S.hra === "two";
   const tib = hraTwoPool ? 0 : Math.max(liq, -ntp);
   const lb  = hraTwoPool ? ntp : ntp + tib;
@@ -5306,8 +5318,9 @@ function autoNote(k){
   if(k==="compliance")
     return box("Limits and actuals", limitsPanel()) + complianceTable();
   if(k==="priorpi")
-    return box("The most recent actual year-end", actualPanel())
-         + piTable();
+    // The actual year-end is the first row of the ledger now, where the
+    // question it answers is asked. This section shows what it produces.
+    return piTable();
   if(k==="group")
     return box("Group undertakings", groupPanel()) + groupTable(d);
   if(k==="performance")
@@ -8240,10 +8253,46 @@ function wireSteps(){
 /* ---- the ledger: years down, measures across ---------------------------- */
 let SEL = null;                                   // last focused cell, for fill-down
 
+/* THE ACTUAL YEAR IS THE FIRST ROW OF THIS GRID, NOT A PANEL TWO STEPS AWAY.
+ *
+ * It was asked for beside the prudential indicators, on a different step from
+ * the projection it precedes — so the one question it answers, "how do we
+ * know where 2025/26 ended", was posed nowhere near the table that starts in
+ * 2026/27. The consultation puts it in the same table: its own illustration
+ * heads the first column "Prev Year Actual" and the second "Current Year".
+ *
+ * Index -1 is that row. The reads and writes route to S.actual rather than to
+ * the projection, and the row is marked so it cannot be mistaken for a
+ * forecast — it is the only line in the grid that is a fact.
+ */
+const A_IDX = -1;
+function actualCell(k, v){
+  S.actual = S.actual || {};
+  const f = S.actual[S.fund] || (S.actual[S.fund] = {});
+  if(v === undefined) return f[k];
+  f[k] = v;
+}
 function buildLedger(){
   const CS = colsFor(S.fund, S.hra);
   let h = `<thead><tr><th class="yr">Year end</th>` + CS.map(c=>
     `<th>${colLabel(c)}${c.s?`<small>${esc(c.s)}</small>`:""}</th>`).join("") + `</tr></thead><tbody>`;
+  // The most recent actual year-end, which the Code asks the tables and
+  // charts to commence with.
+  h += `<tr class="actualrow"><th class="yr">${fy(S.fy0-1)}<small>actual</small></th>` +
+    CS.map(c => {
+      if(!ACTUAL_COLS.length || ACTUAL_COLS.indexOf(c.k) < 0)
+        return `<td class="nask" title="not part of the closing position"></td>`;
+      // Other balance sheet items are DERIVED at the opening date, as the
+      // Code describes: the CFR and the principal held are known, and this is
+      // what reconciles them. Shown, never typed.
+      if(c.k === "obs")
+        return `<td class="drv" data-obs="1" title="derived: the capital financing requirement
+          less the debt and investments held"></td>`;
+      const v = (S.actual && S.actual[S.fund] || {})[c.k];
+      return `<td class="ours"><input type="text" inputmode="decimal" data-k="${c.k}"
+        data-i="${A_IDX}" value="${v == null ? "" : m1(v)}" placeholder="—"
+        aria-label="${esc(c.l.replace(/<br>/g," "))} ${fy(S.fy0-1)} actual"></td>`;
+    }).join("") + `</tr>`;
   for(let i=0;i<S.years;i++){
     h += `<tr class="${i<MTFP?"mtfp":"beyond"}"><th class="yr">${fy(S.fy0+i)}</th>` +
       CS.map(c=> colAsked(c, i)
@@ -8257,7 +8306,11 @@ function buildLedger(){
   $("ledger").innerHTML = h + "</tbody>";
   $("ledger").querySelectorAll("input").forEach(inp=>{
     inp.addEventListener("input", e=>{
-      S.g[S.fund][e.target.dataset.k][+e.target.dataset.i] = num(e.target.value); refresh(); });
+      const k = e.target.dataset.k, i = +e.target.dataset.i;
+      const v = e.target.value.trim();
+      if(i === A_IDX) actualCell(k, v === "" ? null : num(v));
+      else S.g[S.fund][k][i] = num(e.target.value);
+      refresh(); });
     inp.addEventListener("focus", e=>{ SEL={k:e.target.dataset.k,i:+e.target.dataset.i};
       e.target.select(); });
   });
@@ -8270,8 +8323,12 @@ function buildLedger(){
     excelGrid(box, {
       cols: colsFor(S.fund, S.hra).map(c => c.k),
       rows: () => S.years,
-      get: (k,i) => S.g[S.fund][k][i],
+      get: (k,i) => i === A_IDX ? actualCell(k) : S.g[S.fund][k][i],
       set: (k,i,v) => {
+        if(i === A_IDX){
+          if(k !== "obs" && ACTUAL_COLS.indexOf(k) >= 0) actualCell(k, v);
+          return;
+        }
         const c = COLS.find(x => x.k === k);
         if(c && !colAsked(c, i)) return;      // not asked for, not written
         S.g[S.fund][k][i] = v;
@@ -8293,9 +8350,26 @@ function syncLedger(force){
     if(S.g.hra && S.g.hra[k]) S.g.hra[k] = S.g.hra[k].map(()=>0); });
   const g=S.g[S.fund];
   $("ledger").querySelectorAll("input").forEach(inp=>{
-    const v=g[inp.dataset.k][+inp.dataset.i];
+    const i = +inp.dataset.i;
+    // The actual row is allowed to be EMPTY, and empty is not nought: an
+    // authority that has not filled it in yet should not be shown a closing
+    // position of zero and left to wonder where its money went.
+    if(i === A_IDX){
+      const v = actualCell(inp.dataset.k);
+      if(force||document.activeElement!==inp) inp.value = (v == null) ? "" : m1(v);
+      return;
+    }
+    const v=g[inp.dataset.k][i];
     if(force||document.activeElement!==inp) inp.value=m1(v);
   });
+  // The derived cell, shown where it is worked out.
+  const oc = $("ledger").querySelector("[data-obs]");
+  if(oc){
+    const a = actualRow(S, S.fund);
+    oc.textContent = a ? m1(a.obs) : "—";
+    oc.title = a ? `Derived: capital financing requirement £${m1(a.cfr)}m less the `
+      + `£${m1(a.ntp)}m of debt net of investments held` : "Enter the closing position first";
+  }
   // The CFR walk is a check on their own arithmetic, never a substitute for it.
   const bad=walkCheck(S,S.fund);
   $("chk").className = "chk " + (bad.length?"bad":"ok");
@@ -8953,14 +9027,15 @@ function stampSaved(word){
      * with whichever authority is picked: a year further back on the CFR, a
      * little less debt, and the same shape of revenue account. */
     const back = (k, f) => r1((S.g[f] ? S.g[f][k][0] : 0) * 0.95);
+    // obs is derived at the opening date and is not the demo's to set.
     S.actual = {gf: {
-      cfr: back("cfr","gf"), obs: back("obs","gf"), loans: back("loans","gf"),
+      cfr: back("cfr","gf"), loans: back("loans","gf"),
       inv: r1(pot), liq: S.g.gf.liq[0] || 0, capex: r1((S.g.gf.capex[1]||0) * 0.9),
       mrp: r1((S.g.gf.mrp[1]||0) * 0.95), intpay: r1(dbt * 0.039),
       intinc: r1(pot * 0.036), nrs: r1((S.g.gf.nrs[0]||0) * 0.97),
       comminc: r1((S.g.gf.comminc[0]||0) * 0.95)}};
     if(S.hra !== "no") S.actual.hra = {
-      cfr: back("cfr","hra"), obs: back("obs","hra"), loans: back("loans","hra"),
+      cfr: back("cfr","hra"), loans: back("loans","hra"),
       capex: r1((S.g.hra.capex[1]||0) * 0.9), mrp: r1((S.g.hra.mrp[1]||0) * 0.95),
       intpay: r1((S.g.hra.intpay[1]||0) * 0.95), nrs: r1((S.g.hra.nrs[0]||0) * 0.97)};
 
