@@ -7883,10 +7883,27 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
      Drawn alongside it also cost the chart its shape: a solo series splits
      every slot in two, so LB3 was the one chart in the set drawing half-width
      columns with a gap down the middle of each year. */
+  /* THE LABEL SAYS WHICH WAY ROUND IT IS, on the chart it is on.
+   *
+   * The sign is the position of the fund whose chart this is: positive is
+   * money that fund has taken from the other. So one label cannot serve all
+   * three places — read on the General Fund's chart, "HRA borrowing from the
+   * General Fund" describes a positive column that in fact means the General
+   * Fund has borrowed. Each is written in the accounting form the rest of the
+   * report uses, first case positive, bracketed case negative, so the sign is
+   * never left to be inferred.
+   *
+   * LB6 is the whole authority's chart OF the relationship rather than a
+   * fund's own position, so it keeps the unflipped quantity and is written
+   * from the General Fund's side: a positive column is the General Fund
+   * lending. */
+  const crossLabel = O.fund === "gf"
+    ? "General Fund borrowing from / (lending to) the HRA"
+    : O.fund === "hra"
+      ? "HRA borrowing from / (lending to) the General Fund"
+      : "General Fund lending to / (borrowing from) the HRA";
   const anyCross = hraSet && D.some(r => Math.abs(r.cross || 0) > 0.05);
-  const XF = anyCross ? [{k:"cross",
-    t:"HRA borrowing from / (lending to) the General Fund",
-    c:"var(--l-strat)"}] : [];
+  const XF = anyCross ? [{k:"cross", t:crossLabel, c:"var(--l-strat)"}] : [];
   const noCross = hraSet && !anyCross
     ? `<p class="note">No inter-fund position arises: the General Fund holds no borrowing
        above its own benchmark in any year, so it has nothing to advance to the HRA. The
@@ -7984,9 +8001,10 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
         quantifies what one fund has lent the other, which under a single pool
         does not exist. */
      P({data:D, xlab:fy, label:"LB6", h:275,
-       bars:[{k:"cross", t:"General Fund lending to / borrowing from the HRA",
-              c:"var(--l-strat)"}], lines:[]})
-     + otable(D,[{l:"HRA borrowing from / (lending to) the General Fund",k:"cross",cls:"key"}])
+       // The same wording as its own table row, brackets included: the chart
+       // and the table under it were naming one series two ways.
+       bars:[{k:"cross", t:crossLabel, c:"var(--l-strat)"}], lines:[]})
+     + otable(D,[{l:crossLabel,k:"cross",cls:"key"}])
      + `<p class="note">A positive figure is the HRA borrowing from the General Fund; a
         negative one is the HRA lending to it. It is an internal position, not external
         debt: whatever one fund advances the other has already been borrowed once, and
