@@ -6611,7 +6611,9 @@ function indicatorParts(gf, hra, all, hasHRA, twoPool){
     // LB5 is never split, and LB6 exists only here: it is the chart of what
     // one fund has lent the other, which a single pool does not have.
     {model:all, label:"",             cross:hra,  fund:"all", heading:"Whole authority",
-     tags:["LB5","LB6"]}];
+     // LB6 needs the General Fund's OWN position to know what it can lend;
+     // the combined balance sheet cannot answer that question.
+     gf, tags:["LB5","LB6"]}];
   // One pool. LB1 for each fund; everything else on the combined balance sheet.
   return [
     {model:gf,  label:"General Fund", cross:null, fund:"gf",  heading:"", tags:["LB1"]},
@@ -6634,7 +6636,7 @@ function indicatorSplit(gf, hra, all, hasHRA, twoPool, forExport){
     const keep = p.tags.filter(wantInd);
     if(!keep.length || (hasHRA && !wantFund(p.fund))) return "";
     return (p.heading ? H(p.heading) : "")
-         + indicatorBlock(p.model, p.label, p.cross, {only:keep, fund:p.fund});
+         + indicatorBlock(p.model, p.label, p.cross, {only:keep, fund:p.fund, gf:p.gf});
   }).join("");
 }
 
@@ -6693,7 +6695,7 @@ function previewHTML(){
 
   const started = gf.some(r => r.cfr) || (hra || []).some(r => r.cfr);
   const body = started
-    ? indicatorBlock(pick.model, pick.label, pick.cross, {only:[V.ind], fund:pick.fund})
+    ? indicatorBlock(pick.model, pick.label, pick.cross, {only:[V.ind], fund:pick.fund, gf:pick.gf})
     : `<p class="pvempty">Nothing to draw yet — enter a capital financing requirement
        above and the chart appears as you type.</p>`;
 
@@ -6848,11 +6850,21 @@ function inlineColours(html){
  * own benchmark is holding money it does not need, and that money exists, so
  * it can be lent to the General Fund in full.
  */
-function crossFund(gf, hra){
-  return gf.map((g,i)=>{
+/* THE LENDER IS ALWAYS THE GENERAL FUND, WHICHEVER CHART IS BEING DRAWN.
+ *
+ * The capacity to lend was taken from the FIRST argument — the model being
+ * charted — which is the General Fund on its own LB3 and the WHOLE AUTHORITY
+ * on LB6. So LB6 measured the General Fund's spare cash using the combined
+ * balance sheet, found none, concluded there was no inter-fund position, and
+ * suppressed itself: the button was offered and the panel came up empty. The
+ * lender is named explicitly now rather than inferred from the caller. */
+function crossFund(rows, hra, gfRows){
+  const lender = gfRows || rows;
+  return rows.map((g,i)=>{
     const h = hra[i] || {lb:0, el:0};
+    const L = lender[i] || {lb:0, el:0};
     const hraShort  = (h.lb || 0) - (h.el || 0);      // HRA needs funding
-    const gfSpare   = Math.max(0, (g.el || 0) - (g.lb || 0));  // GF over its own benchmark
+    const gfSpare   = Math.max(0, (L.el || 0) - (L.lb || 0)); // GF over its own benchmark
     const cross = hraShort >= 0
       ? Math.min(hraShort, gfSpare)   // the GF can only advance what it holds
       : hraShort;                     // the HRA is over-borrowed: it can lend it all
@@ -6871,7 +6883,7 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
   const only = O.only || null;
   const want = tag => !only || only.indexOf(tag) >= 0;
   const tag = fundLabel ? ` — ${esc(fundLabel)}` : "";
-  const D = hraSet ? crossFund(d, hraSet) : d;
+  const D = hraSet ? crossFund(d, hraSet, O.gf) : d;
 
   /* SERIES (f) BELONGS TO LB3, AND NOWHERE ELSE.
    *
