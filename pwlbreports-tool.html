@@ -324,7 +324,8 @@ html.reel .docnav{display:none}
 /* Tool affordances are not part of the report. The "sections still to be
    written" banner and the WHY tags are the tool talking to its author; a
    visitor is being shown the document, not the workshop. */
-html.reel .warn,html.reel .why,html.reel .reqtag{display:none !important}
+html.reel .warn,html.reel .why,html.reel .reqtag,
+html.reel .pick,html.reel .picker,html.reel .pickhint{display:none !important}
 /* .lbtag stays: "LB2" names the Code indicator the chart is, which is the
    report saying what it is showing, not the tool saying anything. */
 
@@ -4673,6 +4674,298 @@ function matTotals(which){
 }
 
 /* ===========================================================================
+ * The worked example, finished.
+ *
+ * The landing page frames this tool and scrolls the report past, to answer one
+ * question: does your strategy read like this? A report carrying fifty-nine
+ * highlighted prompts and eight "to be written" boxes does not answer it. Those
+ * marks are right in the product — they are the tool asking the author for the
+ * things only the author can supply — and wrong in a shop window, where the
+ * point is what a finished paper looks like.
+ *
+ * So reel mode swaps in prose for every passage the draft would otherwise ask
+ * for. It is used NOWHERE ELSE: a real user filling the demonstration still
+ * gets the prompts, because for them the prompts are the useful part.
+ *
+ * THE AUTHORITY IS FICTIONAL, AND THAT IS DELIBERATE. The loan book underneath
+ * is a real one, published by the PWLB, and the arithmetic on it is real. The
+ * adviser contract, the training record, the reserves and the committee below
+ * are invented. Attaching invented commitments to a named council — on a
+ * public marketing page, in a document that by design looks finished — would
+ * be a fabricated report about a real organisation. Example Borough Council
+ * owes nobody anything.
+ * ======================================================================== */
+const REEL_GSS  = "E08000039";              // a real published book, English regime
+const REEL_NAME = "Example Borough Council";
+
+const REEL_TEXT = {
+
+intro_body:
+`This strategy is submitted to members for approval before the start of the 2026/27 financial \
+year. It is prepared under the Local Government Act 2003 and the Local Authorities (Capital \
+Finance and Accounting) Regulations 2003, and under the CIPFA Prudential Code for Capital \
+Finance in Local Authorities and Treasury Management in the Public Services Code of Practice, \
+to both of which the authority has formally adopted the clauses.
+
+Members are asked to approve the treasury management strategy and the borrowing strategy set \
+out below, the annual investment strategy and the counterparty criteria within it, the policy \
+on minimum revenue provision, and the prudential and treasury indicators and limits given in \
+section 7, including the authorised limit for external debt.
+
+The strategy was considered by the Audit and Governance Committee on 14 January 2026, which \
+recommended it to Council for approval. The Committee reviewed the counterparty policy and the \
+liability benchmark in detail and asked for the maturity profile of borrowing to be reported \
+alongside the strategy each year; that profile is at section 4.`,
+
+econ:
+`Bank Rate has been held at 3.75% since August 2025. Inflation has fallen back towards the 2% \
+target, and the Monetary Policy Committee's published guidance points to a gradual easing over \
+the coming year rather than any early change. Growth remains subdued, and the labour market has \
+loosened through the second half of 2025. Gilt yields have risen across the curve over the \
+period, which feeds directly into PWLB rates: the certainty rate is set at 60 basis points over \
+the equivalent gilt, and the standard rate at 80.
+
+The authority takes its economic commentary from its treasury adviser and has satisfied itself \
+that the view above is consistent with its own reading of the market. It does not treat any \
+single view of rates as a basis for committing to a borrowing decision.`,
+
+rateview:
+`For planning purposes the authority has adopted the interest rate assumptions set out in \
+section 2, taken from the market-implied path shown. That path is stated as such: it is what is \
+currently priced rather than a forecast, and the authority does not treat it as one.
+
+The strategy is not dependent on rates following that path. The borrowing requirement identified \
+by the liability benchmark is driven by the balance sheet rather than by the rate view, and the \
+timing of any borrowing will be taken in the light of rates prevailing at the time.`,
+
+borrow_body:
+`The authority will borrow only to meet a requirement identified by the liability benchmark, and \
+will not borrow in order to invest at a profit. Sources considered are the Public Works Loan \
+Board at the certainty rate, other local authorities, the UK Infrastructure Bank where the \
+scheme qualifies, and the market where terms are better than PWLB on a like-for-like basis.
+
+The authority's preference is for the cheapest borrowing consistent with managing refinancing \
+risk. That means it will not concentrate maturities in a small number of years, and will weigh \
+the saving from short-dated borrowing against the risk of having to refinance a large amount at \
+an unknown rate. Internal borrowing is used where it is available, recognising that it defers \
+rather than avoids the requirement and that reserves used in this way must be replaced when \
+they are needed.
+
+New external borrowing of up to £45m is planned in 2026/27, against a requirement identified by \
+the benchmark from 2027/28 onwards; the authority expects to take it from the Public Works Loan \
+Board unless the market offers better terms on a like-for-like basis. Any loan is authorised by \
+the Section 151 Officer, or in their absence by the Deputy Section 151 Officer, and every loan \
+taken is reported to the Audit and Governance Committee at its next meeting.`,
+
+resched:
+`The authority reviews its debt portfolio for rescheduling opportunities but does not expect to \
+undertake any in the year. Premature repayment of PWLB debt is assessed against the discount \
+rate applying at the time; where that rate is below the coupon on the loan a premium is payable, \
+and the authority will only repay early where the whole-life saving is demonstrable and \
+affordable.`,
+
+invest_body:
+`The authority's investment priorities are, in order, the security of the sum invested, then the \
+liquidity needed to meet its cash flow, and only then the yield obtained. It will not sacrifice \
+security or liquidity in pursuit of return.
+
+Balances arise from reserves, provisions, working capital and the timing difference between \
+receipts and payments. The authority distinguishes between the balance it must hold to remain \
+liquid — its minimum liquidity balance of £42.0m, set by reference to the largest short-term \
+outflow it could face — and any balance held above that, which is available for investment over \
+a longer horizon at a better return.
+
+Instruments used are the Debt Management Account Deposit Facility, money market funds, call and \
+notice accounts, fixed-term deposits with banks and building societies meeting the criteria in \
+section 6, certificates of deposit, and deposits with other local authorities. Investments are \
+made in sterling only. The authority does use externally managed pooled funds, and holds them \
+for their income rather than for capital growth.
+
+Funds may be committed for up to twelve months with any counterparty other than the UK \
+Government and other local authorities, for which the limit is thirty-six months. The authority \
+intends to hold not less than half of its portfolio in instruments repayable within one month, \
+and expects the balance to sit in terms of three to twelve months.`,
+
+credit:
+`Counterparties are selected from a list approved by the Section 151 Officer against published \
+credit criteria, and every counterparty is subject to both a monetary limit and a maximum \
+duration.
+
+The minimum long-term rating for a bank or building society counterparty is A-, taken from Fitch \
+and Moody's, using the lowest of the ratings held. Ratings are supplemented by credit watches, \
+outlooks and market indicators such as credit default swap spreads, so that a deteriorating \
+counterparty is identified before a rating is formally changed. A counterparty falling below the \
+minimum criteria is withdrawn from use immediately and no new investment is placed with it.
+
+Limits by counterparty type are set out in the table below. A group of related counterparties \
+counts as one for the purposes of the monetary limit.
+
+An exception to these criteria may be approved only by the Section 151 Officer, and only where \
+the security of the sum invested is not reduced. Any exception used is reported to the Audit and \
+Governance Committee at its next meeting, with the reason for it and the period for which it \
+applied.`,
+
+corefunds_body:
+`The authority's core cash comes from reserves, provisions, balances held on behalf of others, \
+and the working capital arising from the timing of receipts and payments. Core funds are \
+distinguished from cash that is merely passing through: only the former can prudently be \
+invested for a term.
+
+Reserves and balances are projected at £58.4m at the start of the year, falling to £49.1m by \
+2029/30 as approved reserve movements take effect. The cash flow through the year has a \
+predictable seasonal shape, with balances at their lowest in February and their highest in May; \
+the minimum liquidity balance of £42.0m is set with reference to that low point rather than to \
+the average.
+
+Expected investment balances over the forecast are shown in section 3. Where the projection \
+shows a balance above the liquidity requirement it is available for longer-dated investment; \
+where it falls to the liquidity requirement, the authority holds it in instant access.`,
+
+mrp_body:
+`The authority will make prudent provision for the repayment of debt in accordance with the \
+statutory guidance on minimum revenue provision.
+
+For capital expenditure financed by borrowing, provision is made on an asset life, equal \
+instalment basis, over a period no longer than the useful life of the asset the expenditure \
+created. Provision begins in the financial year following the one in which the asset became \
+operational.
+
+For finance leases and arrangements accounted for as such, the provision is equal to the \
+principal element of the rent or charge payable in the year.
+
+The authority may make voluntary revenue provision in addition. Where it does, the amount is \
+reported to members and, once made, is not reversed except with their approval.
+
+Expenditure on loans to third parties made for service purposes is provided for as the loan \
+principal is repaid, rather than over the life of an asset, on the basis that the repayments \
+themselves extinguish the liability. The authority holds no capital receipts strategy that \
+bears on the calculation.`,
+
+nontreasury_body:
+`The authority holds investments that are not treasury investments: industrial and retail \
+property held for rental return, and loans to a wholly owned housing development company made \
+in pursuit of a service objective. These are held for service and regeneration purposes and are \
+not made in pursuit of a treasury return.
+
+The total held is £96.3m at 31 March 2026, against which the authority has set aside £8.1m. The \
+income they generate is £4.6m a year, representing 0.8% of the net revenue budget; the authority \
+is satisfied that this dependence is proportionate, and no reduction plan is therefore required.
+
+Each is reviewed at least annually for its contribution to the objective it was made for and for \
+any indication of impairment. The authority does not borrow in order to make investments \
+primarily for financial return, and no part of this portfolio was acquired with borrowing taken \
+for that purpose.`,
+
+gov_body:
+`Responsibility for treasury management rests with the Section 151 Officer, who exercises it \
+under the scheme of delegation approved by members and within the treasury management practices \
+adopted by the authority.
+
+Members receive this strategy before the start of the year, a mid-year review and an outturn \
+report after the year end. The Audit and Governance Committee scrutinises treasury management \
+activity and reports to full Council. The authority's treasury management practices and the \
+schedules beneath them are reviewed annually and are available to members on request.
+
+Day-to-day dealing is undertaken by the Treasury and Investments team, with each transaction \
+authorised and recorded separately from the officer who arranged it. Dealers may place \
+transactions within the approved counterparty list and limits without further authority; any \
+transaction above £10m, or with a counterparty added to the list since the strategy was \
+approved, requires a second authorisation from the Chief Accountant or the Section 151 Officer.`,
+
+training_body:
+`The authority recognises that the effective management of treasury risk depends on officers and \
+members having the knowledge and skills to exercise it, and on those responsible for scrutiny \
+being able to challenge what is put to them.
+
+The Section 151 Officer maintains a record of the training undertaken by treasury officers and by \
+members of the Audit and Governance Committee, and assesses annually whether it remains adequate \
+to the authority's treasury activity. Officers involved in treasury management hold CIPFA and \
+AAT qualifications and undertook 42 hours of continuing professional development in the year.
+
+Training delivered in the period comprised a members' session on the liability benchmark and the \
+2026 Code changes in October 2025, delivered by the authority's treasury adviser; a workshop on \
+counterparty credit assessment for officers in June 2025; and attendance by two officers at the \
+CIPFA treasury management conference. Members receiving treasury reports were offered a briefing \
+in advance of this strategy being presented.
+
+The assessment made against the Code's requirement was that the treasury team's knowledge is \
+adequate to current activity, but that the retirement of one senior officer in 2026/27 \
+concentrates the authority's experience of long-dated borrowing in a single post. A successor is \
+being trained during the year and the assessment will be repeated once that is complete.`,
+
+advisers:
+`The authority retains Arlingclose as its external treasury management adviser under a contract \
+running to 31 March 2028. The scope of the contract covers credit advice, interest rate views, \
+technical guidance on the Codes, and training for officers and members.
+
+The authority recognises that responsibility for its treasury management decisions remains with \
+it at all times and that undue reliance must not be placed on external advice. Decisions are \
+taken having regard to all available information, of which the adviser's view is one source \
+among several. The value obtained from the contract is assessed annually by the Section 151 \
+Officer against the scope above and reported to the Audit and Governance Committee, and the \
+appointment was made following a competitive tender in 2024.`
+
+};
+
+/* The passages the document asks for directly, rather than through a text
+   field. Keyed, so the draft can look one up instead of matching on wording. */
+const REEL_GAPS = {
+
+options:
+`Three approaches were considered. Continuing to borrow internally against reserves would avoid \
+external interest for a further year, but the liability benchmark shows the reserves supporting \
+that position falling below the liquidity allowance in 2028/29, so the deferral would have to be \
+reversed at whatever rate then applied. Borrowing the whole requirement in 2026/27 would remove \
+that exposure but would carry the cost of holding cash the authority does not yet need. The \
+strategy recommended takes the requirement in tranches as it arises, which is the approach that \
+keeps the maturity profile even and leaves the timing decision to be taken on the rate available.`,
+
+group: `The authority's group indicators are set out above alongside the single-entity figures. \
+Income from the housing development company covers the interest it pays the authority with \
+headroom of £1.4m, and the company's business plan shows that headroom widening as units are \
+completed. The energy services company does not yet cover its debt cost from operations and is \
+funded from the authority's general reserves; its position is reviewed at each quarter and a \
+decision on its future is expected in 2027/28. The authority is satisfied that the group's \
+indicators do not disclose a risk that the single-entity indicators conceal.`,
+
+wfin: `The 2026/27 budget provides £22.9m for interest payable and £31.2m for minimum revenue \
+provision, and assumes £1.9m of investment income. A one percentage point movement in short-term \
+rates changes investment income by approximately £0.4m and, on the borrowing planned for the \
+year, interest payable by approximately £0.5m. Neither is material against the net revenue \
+stream, and both are within the risk provision held in the budget.`,
+
+wlegal: `The authority has adopted the clauses of both Codes and complies with the reporting \
+requirements set out in them. No specific legal risk arises from the strategy beyond those \
+addressed in the risk implications below.`,
+
+wrisk: `The principal treasury risks in the year are refinancing risk on the £45m of borrowing \
+planned, and credit risk on the investment portfolio. Refinancing risk is controlled by the \
+maturity profile at section 4 and by taking the requirement in tranches rather than in one \
+transaction. Credit risk is controlled by the counterparty policy at section 6, under which no \
+single non-government counterparty may hold more than £10m and no unsecured bank deposit may run \
+beyond thirteen months.`,
+
+wequality: `An equality impact assessment has been carried out. The strategy sets the framework \
+within which the authority borrows and invests and does not itself determine which services are \
+delivered, so no direct differential impact on people with protected characteristics has been \
+identified. The affordability indicator at section 7 is the measure by which the strategy's \
+indirect effect on the resources available for services is monitored.`,
+
+wclimate: `The authority has no separate environmental, social and governance policy for treasury \
+investments, and does not apply an exclusion list to counterparties: the counterparty policy is \
+set on security and liquidity grounds alone. Where two counterparties are equivalent on those \
+grounds the authority will prefer the one with the stronger published transition commitments. \
+Borrowing taken to fund the capital programme carries the environmental appraisal made for the \
+schemes themselves, which is reported with the capital strategy.`,
+
+wconsult: `The strategy was prepared with advice from Arlingclose and reviewed by the Corporate \
+Management Team on 6 January 2026 and by the Audit and Governance Committee on 14 January 2026. \
+Background papers are the Capital Strategy 2026/27, the Medium Term Financial Strategy 2026/27 \
+to 2029/30, and the treasury management practices and schedules adopted by the authority.`
+
+};
+
+/* ===========================================================================
  * A written readout beneath each indicator.
  *
  * Deliberately mechanical. It states what the series do, in the order the
@@ -6871,7 +7164,13 @@ function docSections(){
     (_, inner) => `<span class="fillin" title="Your authority's own wording">${inner}</span>`);
   const para = s => s.split(/\n\s*\n/).filter(x=>x.trim())
     .map(x=>`<p>${fillin(esc(x.trim()).replace(/\n/g,"<br>"))}</p>`).join("");
-  const gap = (what) => `<p class="gap">To be written: ${esc(what)}</p>`;
+  /* A gap, unless the reel has prose for it. Keyed rather than matched on its
+     wording, so rephrasing the prompt cannot silently detach the example from
+     the gap it fills. */
+  const gap = (what, key) => (typeof REEL_GAPS !== "undefined"
+      && document.documentElement.classList.contains("reel") && key && REEL_GAPS[key])
+    ? para(REEL_GAPS[key])
+    : `<p class="gap">To be written: ${esc(what)}</p>`;
   const peakNeed = d.reduce((a,b)=>b.need>a.need?b:a,d[0]);
   const peakInv  = d.reduce((a,b)=>b.inv>a.inv?b:a,d[0]);
 
@@ -6899,8 +7198,9 @@ function docSections(){
         ${IN2("mrp") ? `<li>approve the ${esc(natText("[[mrpTitle]]").toLowerCase())};</li>` : ""}
         <li>note the counterparty policy and investment limits it contains.</li>
         </ol>` + (S.choices.wrapoptions === "yes"
-        ? `<h4>Options considered</h4><p class="gap">To be written: the alternatives
-           considered and why this strategy is recommended.</p>` : "")},
+        ? `<h4>Options considered</h4>`
+          + gap("the alternatives considered and why this strategy is recommended", "options")
+        : "")},
 
    {k:"summary", n:"", t:"Executive summary", only:"wrapsummary",
     b: execSummary(d, hra)},
@@ -7052,7 +7352,7 @@ function docSections(){
       + groupTable(d)
       + (t("group_body") ? para(t("group_body"))
                          : gap("whether income from the subsidiaries is sustainable and "
-                             + "based on their own operations"))},
+                             + "based on their own operations", "group"))},
 
    {k:"performance", n:"7d", t:"Performance against budget and against last year",
     b: `<p>The table below sets what the period actually cost and earned against the budget
@@ -7117,30 +7417,30 @@ function docSections(){
    {k:"wfin", n:"", t:"Financial implications", only:"wrapfin",
     b: `<p>The costs of borrowing and the income from investments are provided for in the
         budget. The indicators in this strategy set the limits within which those costs
-        are contained.</p>` + gap("any further financial implications your template requires")},
+        are contained.</p>` + gap("any further financial implications your template requires", "wfin")},
 
    {k:"wlegal", n:"", t:"Legal implications", only:"wraplegal",
     b: `<p>${esc(natText("[[act]]"))} requires the authority to determine and keep under
         review how much it can afford to borrow, and to have regard to the CIPFA
         Prudential Code and Treasury Management Code and to
-        ${esc(natText("[[regs]]"))}.</p>` + gap("any further legal implications your template requires")},
+        ${esc(natText("[[regs]]"))}.</p>` + gap("any further legal implications your template requires", "wlegal")},
 
    {k:"wrisk", n:"", t:"Risk implications", only:"wraprisk",
     b: `<p>Treasury management carries credit, liquidity, interest rate, refinancing and
         legal and regulatory risk. The counterparty policy, the indicators and the
         liability benchmark in this strategy are the controls applied to them.</p>`
-        + gap("any further risk implications your template requires")},
+        + gap("any further risk implications your template requires", "wrisk")},
 
    {k:"wequality", n:"", t:"Equality implications", only:"wrapequality",
-    b: gap("the equality impact of this strategy, in your authority's own terms")},
+    b: gap("the equality impact of this strategy, in your authority's own terms", "wequality")},
 
    {k:"wclimate", n:"", t:"Climate and environmental implications", only:"wrapclimate",
-    b: gap("the climate or environmental implications, and any ESG position taken on investments")},
+    b: gap("the climate or environmental implications, and any ESG position taken on investments", "wclimate")},
 
    {k:"wconsult", n:"", t:"Consultation and background papers", only:"wrapconsult",
     b: `<p>This strategy has been prepared with advice from
         ${S.choices.adviser ? esc(S.choices.adviser) : "the authority's treasury adviser"}.</p>`
-        + gap("who was consulted, and the background papers relied on")},
+        + gap("who was consulted, and the background papers relied on", "wconsult")},
   ];
   // Keep only what this report type carries, then renumber so the draft reads
   // 1, 2, 3 rather than skipping to 3b — a numbering gap looks like a mistake
@@ -10646,8 +10946,26 @@ function stampSaved(word){
     // itself, and every render after it queues another.
     NO_SAVE = true;
     document.documentElement.classList.add("reel");
+    /* A real published loan book under a fictional name. The arithmetic is
+       real; the adviser contract, the training record, the reserves and the
+       committee are invented, and attaching those to a named council — on a
+       public page, in a document designed to look finished — would be a
+       fabricated report about a real organisation. */
+    if(LB[REEL_GSS]){
+      S.gss = REEL_GSS;
+      const sel = $("council"); if(sel) sel.value = REEL_GSS;
+      // Renamed BEFORE the demonstration is filled, not after: fillDemo draws
+      // the crest from the authority's name, so a later rename left a report
+      // headed "Example Borough Council" wearing Sheffield's initial.
+      LB[REEL_GSS].n = REEL_NAME;
+    }
     fillDemo(reel);
+    // Prose in place of every prompt the draft would otherwise raise. Reel
+    // only: a real user filling the demonstration keeps the prompts, because
+    // for them the prompts are the useful part.
+    Object.keys(REEL_TEXT).forEach(k => { S.text[k] = REEL_TEXT[k]; });
     showStep(DRAFT_STEP);
+    render();
     // The section rail is navigation, and a reel is not navigated.
     const nv = $("docnav"); if(nv) nv.remove();
     window.scrollTo(0, 0);

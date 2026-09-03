@@ -246,12 +246,8 @@ html.anim .rv.in{opacity:1; transform:none;
 .reelbar{display:flex;align-items:center;gap:7px;padding:11px 15px;
   background:var(--panel2);border-bottom:1px solid var(--line2)}
 .reelbar .dot{width:9px;height:9px;border-radius:50%;background:var(--line2);flex:none}
-.reelbar .rt{margin-left:9px;font-family:var(--mono);font-size:11px;color:var(--muted);
+.reelbar .rt{margin-left:9px;flex:1 1 auto;font-family:var(--mono);font-size:11px;color:var(--muted);
   letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.reelbar .rp{margin-left:auto;flex:none;font-family:var(--mono);font-size:11px;
-  letter-spacing:.05em;color:var(--ink2);background:transparent;border:1px solid var(--line2);
-  border-radius:99px;padding:3px 11px;cursor:pointer}
-.reelbar .rp:hover{border-color:var(--l-lb);color:var(--ink)}
 .reelview{position:relative;height:min(76vh,640px);overflow:hidden;background:#fff}
 .reelinner{position:absolute;top:0;left:0;width:1180px;transform-origin:top left}
 .reelview iframe{display:block;width:1180px;border:0;background:#fff;
@@ -541,7 +537,6 @@ html.anim .rv.in{opacity:1; transform:none;
       <div class="reelbar">
         <span class="dot"></span><span class="dot"></span><span class="dot"></span>
         <span class="rt">Annual treasury strategy · worked example · 2026/27</span>
-        <button type="button" class="rp" id="reelpause" aria-pressed="false">Pause</button>
       </div>
       <div class="reelview" id="reelview">
         <div class="reelinner" id="reelinner">
@@ -926,11 +921,14 @@ function countUp(el){
  * a slightly wrong scroll is a much smaller failure than a blank frame.
  */
 (function(){
-  const view = $("#reelview"), inner = $("#reelinner"), frame = $("#reelframe"),
-        pause = $("#reelpause");
+  const view = $("#reelview"), inner = $("#reelinner"), frame = $("#reelframe");
   if(!view || !frame) return;
 
-  const PX_PER_SEC = 190;          // a flick-through, not a crawl
+  /* Quick on purpose. Nobody is meant to read the report here — the point is
+     to see, in a few seconds, that it is a finished paper with charts and
+     tables laid out properly. Slow enough to make that out, fast enough that
+     the whole document goes past while somebody is still on the section. */
+  const PX_PER_SEC = 620;
   const LOGICAL = 1180;
 
   function fit(){
@@ -950,30 +948,24 @@ function countUp(el){
     // of the window. Never negative: a short report simply does not move.
     const travel = Math.max(0, h - (view.clientHeight / scale));
     view.style.setProperty("--travel", "-" + Math.round(travel) + "px");
-    view.style.setProperty("--dur", Math.max(20, Math.round(travel / PX_PER_SEC)) + "s");
+    view.style.setProperty("--dur", Math.max(8, Math.round(travel / PX_PER_SEC)) + "s");
   }
 
   frame.addEventListener("load", () => { fit(); setTimeout(measure, 600); });
   window.addEventListener("resize", () => { fit(); measure(); }, {passive:true});
   fit();
 
-  /* WCAG 2.2.2: anything that moves for more than five seconds needs a way to
-     stop it. Hovering pauses as well, so a reader who wants to look at one
-     table can simply put the pointer on it. */
-  let held = false;
-  const sync = () => view.classList.toggle("paused", held || hover || !onScreen);
-  let hover = false, onScreen = true;
-  view.addEventListener("pointerenter", () => { hover = true; sync(); });
-  view.addEventListener("pointerleave", () => { hover = false; sync(); });
-  pause.addEventListener("click", () => {
-    held = !held;
-    pause.textContent = held ? "Play" : "Pause";
-    pause.setAttribute("aria-pressed", String(held));
-    sync();
-  });
-  // Off-screen it is a 1.2MB page animating for nobody.
+  /* It runs, and it keeps running. No pause control and no pause on hover:
+     this is a five-second impression of a finished document, not something to
+     be read here — the report itself is one click away and scrolls properly.
+     Hover-pause in particular made the frame feel stuck to the pointer.
+
+     Motion still stops in the two places it should: off screen, where it
+     would be animating a 1.2MB page for nobody, and under
+     prefers-reduced-motion, where the CSS removes the animation outright and
+     the document can be scrolled by hand. */
   if("IntersectionObserver" in window){
-    new IntersectionObserver(es => { onScreen = es[0].isIntersecting; sync(); },
+    new IntersectionObserver(es => view.classList.toggle("paused", !es[0].isIntersecting),
       {rootMargin:"200px"}).observe(view);
   }
 })();
