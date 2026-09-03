@@ -8100,7 +8100,29 @@ function crossFund(rows, hra, gfRows, side){
     const h = hra[i] || {lb:0, el:0};
     const L = lender[i] || {lb:0, el:0};
     const hraShort  = (h.lb || 0) - (h.el || 0);      // HRA needs funding
-    const gfSpare   = Math.max(0, (L.el || 0) - (L.lb || 0)); // GF over its own benchmark
+    /* WHAT THE LENDING FUND ACTUALLY HOLDS — AND CASH IS CASH, WHEREVER IT
+       CAME FROM.
+     *
+     * This was max(0, el - lb): borrowing above its own benchmark. That is
+     * one of the two ways a fund comes to be holding money it does not need,
+     * and it silently missed the other. A General Fund whose reserves exceed
+     * its CFR holds cash without having borrowed a penny — the ordinary
+     * internal-borrowing case, and the commonest arrangement there is.
+     *
+     * So a GF sitting on £200m of balances, with an HRA £130m short of its
+     * benchmark, advanced nothing and the draft told members "the General
+     * Fund holds no borrowing above its own benchmark, so it has nothing to
+     * advance to the HRA" — while the authority as a whole was £20m in
+     * SURPLUS and needed no external borrowing at all. 504 of 13,200 swept
+     * authority-years hit it.
+     *
+     * Investments held less the liquidity allowance is the same quantity
+     * wherever the old test was right, and right where it was not: it is
+     * (el - lb) + strategic, and the strategic term is non-zero only for a
+     * fund whose surplus exceeds its own liquidity allowance. The allowance
+     * itself never moves: under two pools the General Fund manages liquidity
+     * for the whole authority. */
+    const gfSpare   = Math.max(0, (L.inv || 0) - (L.liq || 0));
     const cross = hraShort >= 0
       ? Math.min(hraShort, gfSpare)   // the GF can only advance what it holds
       : hraShort;                     // the HRA is over-borrowed: it can lend it all
@@ -8193,10 +8215,10 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
   const anyCross = hraSet && D.some(r => Math.abs(r.cross || 0) > 0.05);
   const XF = anyCross ? [{k:"cross", t:crossLabel, c:"var(--l-strat)"}] : [];
   const noCross = hraSet && !anyCross
-    ? `<p class="note">No inter-fund position arises: the General Fund holds no borrowing
-       above its own benchmark in any year, so it has nothing to advance to the HRA. The
-       HRA's shortfall against its benchmark is its own borrowing requirement and is shown
-       in its LB4.</p>` : "";
+    ? `<p class="note">No inter-fund position arises: in no year does the General Fund hold
+       investments beyond its own liquidity allowance, so it has nothing to advance to the
+       HRA. The HRA's shortfall against its benchmark is its own borrowing requirement and
+       is shown in its LB4.</p>` : "";
   /* The chart commences with the most recent actual year-end; the tables and
      every readout still start at the current year, which is what they mean. */
   const AF = O.fund || (fundLabel === "HRA" ? "hra" : (fundLabel ? "gf" : "all"));
