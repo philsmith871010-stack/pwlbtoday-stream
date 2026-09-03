@@ -807,7 +807,12 @@ table.pwlbtab td.num,table.pwlbtab th.num{text-align:right}
 .otable{border-collapse:collapse;font-family:var(--mono);font-size:12.5px;
   font-variant-numeric:tabular-nums;margin:18px 0 6px;table-layout:fixed;width:100%}
 .doc .otable{margin:20px 0 8px;width:auto;min-width:min(100%,560px)}
-.doc .otable th:first-child,.doc .otable td:first-child{width:246px}
+/* A LABEL LONGER THAN ITS COLUMN MUST WRAP, NOT RUN INTO THE FIGURE.
+   nowrap is right for a number and wrong for a name: "Existing investment
+   commitments" is wider than 246px and was overprinting the first year's
+   figure. The figures keep nowrap; the label wraps. */
+.doc .otable th:first-child,.doc .otable td:first-child{width:246px;
+  white-space:normal;padding-right:14px;line-height:1.28}
 .doc .otable th:not(:first-child),.doc .otable td:not(:first-child){width:74px}
 .doc .otable td.w,.doc .otable th.w{width:246px;white-space:normal}
 .under .ugap td{height:9px;border:0;padding:0}
@@ -1919,10 +1924,19 @@ function chart(d, spec){
     top: P.t, bot: P.t + ih,
     rows: d.map((p, i) => ({
       fy: xlab(p.fy),
-      v: spec.lines.map(l => ({
+      /* EVERY SERIES ON THE CHART, NOT JUST THE LINES.
+         This mapped over spec.lines alone, which was the whole chart until
+         columns arrived. Since then the hover on LB3 has been missing the two
+         biggest series on it — existing loans and existing investments — and
+         the hover on LB4, which is columns and nothing else, has been empty.
+         A reader hovering a bar to read its value got the benchmark instead. */
+      v: (spec.bars || []).concat(spec.lines || []).map(l => ({
         t: l.t || l.k, c: l.c,
-        s: p[l.k] == null ? null : fmt(p[l.k]),
-        y: p[l.k] == null ? null : +Y(p[l.k]).toFixed(1)
+        // A series drawn below the axis is READ below the axis: the tooltip
+        // has to agree with the picture it is explaining.
+        s: p[l.k] == null ? null : fmt(l.neg ? -Math.abs(p[l.k]) : p[l.k]),
+        y: p[l.k] == null ? null
+           : +Y(l.neg ? -Math.abs(p[l.k]) : p[l.k]).toFixed(1)
       })).filter(x => x.s !== null)
     }))
   };
@@ -1960,9 +1974,25 @@ function chart(d, spec){
     const slot = Math.max(1.2, (iw / Math.max(1, d.length)) * 0.94);
     const y0 = Y(0);
     let out = "";
+    /* A SOLO BAR DOES NOT JOIN THE STACK. Stacking is for series that
+       COMPOSE a total; a memo quantity that happens to be a position is not
+       part of that total, and stacking it says the total is bigger than it
+       is. It draws from zero in its own narrower slot, alongside. */
+    const solo = spec.bars.filter(b => b.solo), pile = spec.bars.filter(b => !b.solo);
     d.forEach((p, i) => {
       let up = 0, dn = 0;
-      spec.bars.forEach(b => {
+      solo.forEach(b => {
+        let v = p[b.k];
+        if(v == null || !isFinite(v) || v === 0) return;
+        if(b.neg) v = -Math.abs(v);
+        const yA = Y(0), yB = Y(v), top = Math.min(yA, yB), h = Math.abs(yA - yB);
+        if(h < 0.3) return;
+        const w = slot * 0.42;
+        out += `<rect x="${(X(i) - slot/2 + slot*0.58).toFixed(1)}" y="${top.toFixed(1)}"
+          width="${w.toFixed(2)}" height="${h.toFixed(1)}" fill="${b.c}"${
+          b.o == null ? "" : ` opacity="${b.o}"`}/>`;
+      });
+      pile.forEach(b => {
         let v = p[b.k];
         if(v == null || !isFinite(v) || v === 0) return;
         if(b.neg) v = -Math.abs(v);
@@ -1972,8 +2002,8 @@ function chart(d, spec){
         if(v >= 0) up += v; else dn += v;
         if(h < 0.3) return;
         out += `<rect x="${(X(i) - slot/2).toFixed(1)}" y="${top.toFixed(1)}"
-          width="${slot.toFixed(2)}" height="${h.toFixed(1)}" fill="${b.c}"${
-          b.o == null ? "" : ` opacity="${b.o}"`}/>`;
+          width="${(solo.length ? slot*0.54 : slot).toFixed(2)}" height="${h.toFixed(1)}"
+          fill="${b.c}"${b.o == null ? "" : ` opacity="${b.o}"`}/>`;
       });
     });
     return out;
@@ -6815,8 +6845,24 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
    * should also be shown on each LB3 chart". LB4 is defined as "a single data
    * series" in terms, so a second line on it is not a garnish, it is a
    * contradiction. */
-  const XF = hraSet ? [{k:"cross",
-    t:"GF lending to / borrowing from the HRA (first year); HRA requirement thereafter",
+  /* IT DOES NOT STACK ON THE DEBT, because it is not more debt.
+   *
+   * Stacked on existing loans, the column rose above the liability benchmark
+   * and said the authority was borrowing past its own optimum — which the HRA
+   * cannot make the General Fund do. Whatever the General Fund lends the HRA
+   * it has already borrowed, so it is inside the General Fund's own benchmark
+   * and counting it again on top is a double count that reads as a breach.
+   *
+   * It is a memo quantity: what one fund owes the other, drawn alongside. */
+  /* AND THE NAME SAYS WHICH WAY ROUND IT IS.
+   *
+   * "GF lending to / borrowing from the HRA" against a positive number tells
+   * a reader nothing: both directions are in the label and the sign is left
+   * to arbitrate a question the label has already muddled. The quantity is
+   * the HRA's position against the General Fund, so it is named from the
+   * HRA's side and the sign means one thing. */
+  const XF = hraSet ? [{k:"cross", solo:true,
+    t:"HRA borrowing from the General Fund (memo — not additional external debt)",
     c:"var(--l-strat)"}] : [];
   /* The chart commences with the most recent actual year-end; the tables and
      every readout still start at the current year, which is what they mean. */
@@ -6895,7 +6941,11 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
      P({data:D, xlab:fy, label:"LB6", h:220,
        bars:[{k:"cross", t:"General Fund lending to / borrowing from the HRA",
               c:"var(--l-strat)"}], lines:[]})
-     + otable(D,[{l:"GF lending to / (borrowing from) the HRA",k:"cross",cls:"key"}]))}`;
+     + otable(D,[{l:"HRA borrowing from / (lending to) the General Fund",k:"cross",cls:"key"}])
+     + `<p class="note">A positive figure is the HRA borrowing from the General Fund; a
+        negative one is the HRA lending to it. It is an internal position, not external
+        debt: whatever one fund advances the other has already been borrowed once, and
+        counting it again would put the authority above a benchmark it has not breached.</p>`)}`;
 }
 
 function caveat(){
