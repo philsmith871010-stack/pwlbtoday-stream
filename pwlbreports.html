@@ -194,6 +194,13 @@ h1 .em{
 .close h2{max-width:20ch; margin:0 auto}
 .close .lede{margin:22px auto 0; text-align:center}
 .close .cta{justify-content:center}
+/* What it does not claim, said once and briefly. It sits under the button
+   rather than in a section of its own: a reader deciding whether to open the
+   thing should meet the caveat at the moment they decide, not four screens
+   earlier where it reads as a disclaimer to be scrolled past. */
+.claims{max-width:62ch; margin:34px auto 0; font-size:13.5px; line-height:1.65;
+  color:var(--muted); border-top:1px solid var(--line); padding-top:22px}
+.claims b{color:var(--ink2); font-weight:600}
 footer{border-top:1px solid var(--line); padding:38px 0 56px; color:var(--muted); font-size:13.5px}
 footer .wrap{display:flex; gap:24px; flex-wrap:wrap; align-items:baseline}
 footer .sp{flex:1}
@@ -478,6 +485,22 @@ html.anim .rv.in{opacity:1; transform:none;
 </section>
 
 <!-- ======================= HONESTY ======================= -->
+
+<!-- ======================= CLOSE ======================= -->
+<section class="close">
+  <div class="wrap">
+    <h2 class="rv">Open it and read the worked example.</h2>
+    <p class="lede rv">Filled to the last section, so you can read the whole report before
+      typing a figure of your own.</p>
+    <div class="cta rv">
+      <a class="btn" href="pwlbreports-tool.html">Open PWLBreports <span class="arw">&rarr;</span></a>
+    </div>
+    <p class="claims rv"><b>What it does not claim.</b> It is a drafting aid, not a compliance
+      statement. Nothing is extrapolated — every year in it is a figure you entered. Check every
+      figure before it reaches a committee.</p>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <span><b>PWLB</b>reports &middot; from PWLBtoday</span>
