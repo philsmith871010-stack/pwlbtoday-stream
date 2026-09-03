@@ -1475,7 +1475,7 @@ const CODE_EDITIONS = {
     indicators:["LB1","LB2","LB3","LB4","LB5"],
     framework:"liability benchmark framework",
     removed:["operational boundary","maturity structure of borrowing"],
-    derives:{authorisedLimit:"the peak of the projected liability benchmark"}
+    derives:{authorisedLimit:"the higher of the peak of the projected liability benchmark and the external debt already held"}
   },
   "2021": {
     key:"2021",
@@ -2534,7 +2534,10 @@ function arrowNav(root){
  *                            holds — the benchmark is nil only where the
  *                            surplus EXCEEDS the liquidity allowance.
  *   liability benchmark    = net treasury position + TIB.
- *   authorised limit       = the peak of the projected liability benchmark
+ *   authorised limit       = the HIGHER of the peak of the projected liability
+ *                            benchmark and the external debt already held. The second
+ *                            half is not decoration: without it an over-borrowed
+ *                            authority is handed a statutory limit below its own debt.
  *                            for the coming year and all future years.
  *   LB4                    = liability benchmark less existing loans. Above
  *                            zero is borrowing to arrange; below is
@@ -2614,7 +2617,25 @@ function buildModel(S, fund){
                mrp:g.mrp[i]||0, capex:g.capex[i]||0, rec:g.rec[i]||0,
                br:0, need:0, over:0, inv:0, strategic:0, excess:0, al:0});
   }
-  const al = rows.reduce((m,r)=>Math.max(m, r.lb), 0);
+  /* THE AUTHORISED LIMIT CANNOT SIT BELOW THE DEBT ALREADY HELD.
+   *
+   * This was the peak of the liability benchmark and nothing else, which is
+   * right for an authority borrowing up to its benchmark and badly wrong for
+   * one already above it. The consultation is explicit: "Where existing
+   * over-benchmark positions exist, the limit should be the higher of the
+   * peak of the liability benchmark or existing levels of external
+   * borrowing."
+   *
+   * An over-borrowed council was being handed a limit BELOW its own debt --
+   * £310m against £480m held, breached in 19 of 51 years the moment members
+   * approved it. The authorised limit is the statutory maximum under section
+   * 3 of the Local Government Act 2003, so that is not a presentational
+   * problem: it is a report inviting an authority to set a limit it is
+   * already outside.
+   *
+   * Existing loan commitments only run off, so their peak is the current
+   * level and the two readings of "existing levels" coincide. */
+  const al = rows.reduce((m,r)=>Math.max(m, r.lb, r.el), 0);
   rows.forEach(r => {
     r.al   = al;
     r.br   = r.lb - r.el;
@@ -6191,7 +6212,10 @@ function docSections(){
    {k:"indicators", n:"7", t:"Treasury management prudential indicators", indicators:true,
     b: `<p>The indicators below follow the liability benchmark framework proposed in CIPFA's
         2026 consultation on the Prudential and Treasury Management Codes. The authorised
-        limit is <b>£${m1(d[0].al)}m</b>, the peak of the projected liability benchmark. Under
+        limit is <b>£${m1(d[0].al)}m</b>, ${d[0].al > d[0].lb + 0.05 && d[0].al <= d[0].el + 0.05
+          ? "the external debt already held, which exceeds the peak of the projected liability "
+            + "benchmark and so sets the limit"
+          : "the peak of the projected liability benchmark"}. Under
         those proposals the operational boundary and the maturity structure of borrowing are no
         longer formal indicators.</p>`},
 
@@ -7564,12 +7588,20 @@ const CHECKS = [
      const d = buildModel(S, S.hra==="no" ? "gf" : "all");
      if(!d.some(r=>r.al)) return {v:"gap", note:"Not yet derived — it comes from the projection.", go:3};
      const over = d.filter(r => r.el > r.al + 1e-9);
-     return over.length
-       ? {v:"gap", go:3, note:`Existing loan commitments exceed the derived limit in `
+     if(over.length) return {v:"gap", go:3,
+       note:`Existing loan commitments exceed the derived limit in `
           + `${over.length} year${over.length===1?"":"s"}, first at ${fy(over[0].fy)}. `
-          + `That is a finding, not a formatting problem.`}
-       : {v:"met", note:`Derived as ${ACTIVE.derives.authorisedLimit}, and existing debt sits `
-          + `inside it in every year projected.`};
+          + `That is a finding, not a formatting problem.`};
+     // Say which of the two set it: an authority over its benchmark should
+     // know its limit is being held up by debt rather than by the projection.
+     const peakLb = d.reduce((m,r)=>Math.max(m,r.lb),0);
+     const byDebt = d[0].al > peakLb + 0.05;
+     return {v:"met", note: byDebt
+       ? `£${m1(d[0].al)}m — the external debt already held, which exceeds the peak of the `
+         + `projected benchmark (£${m1(peakLb)}m). The Code sets the limit at the higher of `
+         + `the two, so the debt is what holds it up.`
+       : `Derived as ${ACTIVE.derives.authorisedLimit}, and existing debt sits inside it in `
+         + `every year projected.`};
    }},
 
   /* ---- what a forward-looking report must SET ---------------------------- */
