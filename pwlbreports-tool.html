@@ -760,6 +760,13 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
    screenful of scrolling for a table you fill in once. Figures right-aligned
    and tabular so a column can be read down, which is the whole reason for
    laying it out as a grid rather than as a list of questions. */
+/* A disagreement between two tables the reader can both see. Amber, not red:
+   it is a thing to look at, not a thing that has gone wrong — and nothing
+   about it prevents saving, exporting or moving on. */
+.mismatch{margin:12px 0 2px;padding:10px 13px;background:rgba(194,87,8,.09);
+  border-left:3px solid var(--yours);border-radius:var(--r-sm);
+  font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--ink2);max-width:78ch}
+.mismatch b{color:var(--ink)}
 .mgrid{table-layout:fixed;margin:2px 0 0}
 .mgrid th,.mgrid td{padding:2px 8px;height:auto}
 .mgrid th{font-size:10.5px;letter-spacing:.04em;line-height:1.25;vertical-align:bottom}
@@ -812,6 +819,8 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 .brbox .brd.dn{color:var(--good)}
 .pastebox{margin-top:12px;padding:12px 14px;background:var(--sunken);
   border-radius:var(--r-sm);border-left:3px solid var(--accent)}
+.pastebox .hint code{font-family:var(--mono);font-size:11.5px;color:var(--ink2);
+  background:var(--card);border:1px solid var(--line);border-radius:3px;padding:1px 6px}
 .pastebox textarea{width:100%;min-height:96px;padding:9px 11px;border:1px solid var(--line2);
   border-radius:var(--r-sm);background:var(--card);font-family:var(--mono);font-size:12px;
   line-height:1.5;resize:vertical}
@@ -1494,19 +1503,17 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
           <th style="width:18%" class="num">Rate %</th><th></th>
         </tr></thead><tbody id="loanrows"></tbody></table>
         <div class="ltools"><button type="button" id="addloan">Add a source</button>
-          <button type="button" id="addpwlb" hidden>Put the PWLB row back</button>
           <button type="button" id="pasteloans">Paste your loans</button>
           <button type="button" class="ghost" id="tmplloans">Template .csv</button>
         </div>
         <div id="debtcost"></div>
         <div class="pastebox" id="loanpaste" hidden>
-          <label for="loantext">Paste your loans<span class="hint">Any order, any detail —
-            every loan, or one row per type. Lender, type, fund, amount, rate, maturity.
-            Tabs or commas. A header row is read if you give one.</span></label>
-          <textarea id="loantext" rows="5" placeholder="Lender&#9;Type&#9;Amount&#9;Rate&#9;Maturity
-Barclays&#9;LOBO&#9;12,000,000&#9;4.35&#9;2041
-Dexia&#9;Market&#9;£8.5m&#9;3.90&#9;15/06/2038
-Another authority&#9;Local authority&#9;5.0&#9;4.10&#9;2029"></textarea>
+          <label for="loantext">Paste your loans<span class="hint">Copy the block out of
+            Excel and paste it here. Any order, any detail — every loan, or one row per type.
+            Lender, type, fund, amount, rate, maturity. A header row is read if you give one.
+            <br>Like this: <code>Barclays &nbsp;LOBO&nbsp; 12,000,000 &nbsp;4.35&nbsp;
+            2041</code></span></label>
+          <textarea id="loantext" rows="5" placeholder="Paste here"></textarea>
           <div class="ltools"><button type="button" class="primary" id="loanread">Read it</button>
             <button type="button" id="loancancel">Cancel</button>
             <span class="hintline" id="loannote"></span></div>
@@ -1514,6 +1521,7 @@ Another authority&#9;Local authority&#9;5.0&#9;4.10&#9;2029"></textarea>
 
         <h3 class="sub">When the debt falls due</h3>
         <div id="matdebt"></div>
+        <div id="matdwarn"></div>
       </div>
 
       <div id="holdi" hidden>
@@ -1524,15 +1532,15 @@ Another authority&#9;Local authority&#9;5.0&#9;4.10&#9;2029"></textarea>
         <div class="ltools"><button type="button" id="addinv">Add a source</button>
           <button type="button" id="pasteinv">Paste your portfolio</button>
           <button type="button" class="ghost" id="tmplinv">Template .csv</button>
-          <span class="hintline" id="invsummary">Nothing entered yet.</span></div>
+        </div>
+        <div id="invcost"></div>
         <div class="pastebox" id="invpaste" hidden>
-          <label for="invtext">Paste your investment portfolio<span class="hint">As much or as
-            little as you like — every holding, or one row per instrument type. What you paste
-            replaces the rows above.</span></label>
-          <textarea id="invtext" rows="5" placeholder="Counterparty&#9;Type&#9;Amount&#9;Rate&#9;Maturity
-Debt Management Office&#9;DMADF&#9;15,000,000&#9;3.95&#9;2027
-Money market fund&#9;MMF&#9;20,000,000&#9;3.88
-Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
+          <label for="invtext">Paste your investment portfolio<span class="hint">Copy the
+            block out of Excel and paste it here. As much or as little as you like — every
+            holding, or one row per instrument type. What you paste replaces the rows above.
+            <br>Like this: <code>Lloyds &nbsp;Call account&nbsp; 5,000,000 &nbsp;3.60</code>
+            </span></label>
+          <textarea id="invtext" rows="5" placeholder="Paste here"></textarea>
           <div class="ltools"><button type="button" class="primary" id="invread">Read it</button>
             <button type="button" id="invcancel">Cancel</button>
             <span class="hintline" id="invnote"></span></div>
@@ -1540,6 +1548,7 @@ Lloyds Bank&#9;Call account&#9;5,000,000&#9;3.60"></textarea>
 
         <h3 class="sub">When the investments come back</h3>
         <div id="matinv"></div>
+        <div id="matiwarn"></div>
       </div>
 
     </div>
@@ -2450,8 +2459,10 @@ function render(){
       host.innerHTML = matGrid(w);
       wireMatGrid();
     }
-    const iv = $("invsummary");
-    if(iv && typeof portfolioNote === "function") iv.textContent = portfolioNote();
+    const mw = $(w === "d" ? "matdwarn" : "matiwarn");
+    if(mw) mw.innerHTML = matWarn(w);
+    const ic = $("invcost");
+    if(ic && typeof investCostNote === "function") ic.innerHTML = investCostNote();
   }
   // The figures step's live chart. Drawn only while that step is on screen —
   // three buildModel calls and an SVG on every keystroke is cheap, but not
@@ -4158,17 +4169,26 @@ function investYield(){
           wavg: cov ? rated.reduce((a,b)=>a+b.rate*b.amt, 0) / cov : null};
 }
 
-function portfolioNote(){
+/* The investments summary, in the same words and the same place as the debt
+   one. The two panes ask the same question of a treasurer and had been given
+   different answers: debt got a sentence of its own under the table, and
+   investments got a fragment tucked in beside the buttons. */
+function investCostNote(){
   const v = investYield();
-  // Not "nothing pasted": the rows are typed into as often as they are pasted.
-  if(!v.n) return "Nothing entered yet.";
+  if(!v.tot) return "";
+  if(v.wavg == null)
+    return `<p class="note">Total investments <b>£${m1(v.tot)}m</b>. No rates entered, so no
+      blended return can be shown — add a rate against each source and it appears here.</p>`;
   const d = debtCost();
-  const spread = (v.wavg != null && d.wavg != null)
-    ? ` Debt costs ${d.wavg.toFixed(2)}%, so the carry is `
-      + `${(d.wavg - v.wavg).toFixed(2)} points.` : "";
-  return `${v.n} holding${v.n===1?"":"s"}, £${m1(v.tot)}m`
-    + (v.wavg != null ? ` at a blended ${v.wavg.toFixed(2)}%` : "")
-    + "." + spread;
+  const part = v.cov < v.tot - 0.05
+    ? ` across the <b>£${m1(v.cov)}m</b> carrying a rate; the remaining
+        <b>£${m1(v.tot-v.cov)}m</b> has none entered`
+    : "";
+  const carry = (d.wavg != null)
+    ? ` Debt costs <b>${d.wavg.toFixed(2)}%</b>, so the carry is
+        <b>${(d.wavg - v.wavg).toFixed(2)}</b> points.` : "";
+  return `<p class="note">Total investments <b>£${m1(v.tot)}m</b> at a blended
+    <b>${v.wavg.toFixed(2)}%</b>${part}.${carry}</p>`;
 }
 
 function debtCostNote(){
@@ -4656,6 +4676,52 @@ function ladderCharts(){
     ? `<h3 class="sub">${head}</h3>${ladderChart(L, kind)}${ladderNote(L, kind)}` : "";
   return one(d, "debt", "When the debt falls due")
        + one(v, "inv", "When the investments come back");
+}
+
+/* ---------------------------------------------------------------------------
+ * When the two tables disagree.
+ *
+ * What is held and when it falls due are the same money counted two ways, and
+ * nothing makes them agree — the maturity profile is typed, and the holdings
+ * are typed or pasted. A treasurer who updates one and not the other should
+ * be told, at the point where they can see both.
+ *
+ * IT ONLY SPEAKS WHEN THERE IS SOMETHING WRONG. A status line that reports
+ * agreement on every render is instrumentation, and it was removed once
+ * already for reading as noise. Silence means the two agree, or that the
+ * profile has not been entered at all — which is not a disagreement, because
+ * the report then falls back to the maturity dates the holdings carry.
+ *
+ * AND IT DOES NOT BLOCK. It is a warning, not a gate: an authority mid-way
+ * through a rewrite has every right to a half-finished file, and the check
+ * step lists this again for anyone who wants the full account before issuing.
+ * ------------------------------------------------------------------------ */
+function matGap(which){
+  const m = matEntered(which);
+  if(!m) return 0;                       // nothing typed: nothing to disagree with
+  const held = which === "d"
+    ? debtLoans().reduce((a, x) => a + x.amt, 0)
+    : (S.portfolio || []).reduce((a, x) => a + (+x.amt || 0), 0);
+  if(!held) return 0;                    // nothing held: nothing to disagree with
+  const typed = (which === "d" ? debtLadder() : invLadder()).total;
+  const gap = typed - held;
+  // A tenth of a per cent, or 50k, whichever is larger — rounding to one
+  // decimal across a dozen rows is not a disagreement worth a warning.
+  return Math.abs(gap) > Math.max(0.05, held * 0.001) ? gap : 0;
+}
+
+function matWarn(which){
+  const gap = matGap(which);
+  if(!gap) return "";
+  const held = which === "d"
+    ? debtLoans().reduce((a, x) => a + x.amt, 0)
+    : (S.portfolio || []).reduce((a, x) => a + (+x.amt || 0), 0);
+  const typed = held + gap;
+  const what = which === "d" ? "debt" : "investments";
+  return `<p class="mismatch"><b>These do not add up to what you hold.</b>
+    £${m1(typed)}m across the periods above, against £${m1(held)}m of ${esc(what)} in the
+    table at the top of this tab — a difference of £${m1(Math.abs(gap))}m.
+    Both go in the report as they stand; nothing here stops you.</p>`;
 }
 
 /* ---------------------------------------------------------------------------
@@ -9888,21 +9954,11 @@ function holdRows(kind){
     b.addEventListener("click", e => {
       const t = e.target;
       (t.dataset.h === "d" ? S.loans : S.portfolio).splice(+t.dataset.rm, 1);
-      holdRows(t.dataset.h); pwlbRowBack(); applyLoans();
+      holdRows(t.dataset.h); applyLoans();
     }));
 }
 
-/* The PWLB row, once it has been removed. Shown only when this authority has
-   a published book and no row is carrying it, so it is an offer to undo and
-   never a nag at a council that genuinely holds none. */
-function pwlbRowBack(){
-  const b = $("addpwlb");
-  if(!b) return;
-  const c = LB[S.gss];
-  b.hidden = !(c && c.l && !(S.loans || []).some(l => l.pwlb));
-}
-
-function loanRows(){ holdRows("d"); holdRows("i"); pwlbRowBack(); }
+function loanRows(){ holdRows("d"); holdRows("i"); }
 
 /* ---- Excel round-trip ----------------------------------------------------
    Tab-separated to the clipboard is the reliable half: it pastes straight
@@ -10283,20 +10339,18 @@ function stampSaved(word){
        book row PLUS the £15m of PWLB in the file, and a total three times
        what the file said. What somebody pastes is their statement of what
        they hold; it is not a supplement to ours.
-       If the paste carries no PWLB row, the offer to put the published one
-       back appears by itself — pwlbRowBack shows exactly when a council has a
-       book and no row is holding it. */
+       The published book is not re-added afterwards either: pick the authority
+       again to get it back. */
     S.loans = r.loans;
+    // Emptied once read. What was in it is in the table now, and finding
+    // yesterday's block still sitting there on the next visit invites reading
+    // it twice.
+    $("loantext").value = "";
     loanRows(); applyLoans(); $("loanpaste").hidden=true;
   });
   $("addloan").addEventListener("click", ()=>{
     S.loans.push({name:"", amt:0, rate:null}); holdRows("d"); applyLoans();
     const r = $("loanrows").lastElementChild; if(r) r.querySelector("input").focus(); });
-  $("addpwlb").addEventListener("click", ()=>{
-    const c = LB[S.gss];
-    if(!c || !c.l) return;
-    S.loans.unshift({pwlb:true, name:"PWLB", type:"PWLB", amt:c.o, rate:null});
-    holdRows("d"); pwlbRowBack(); applyLoans(); });
   $("addinv").addEventListener("click", ()=>{
     S.portfolio.push({name:"", amt:0, rate:null}); holdRows("i"); applyLoans();
     const r = $("invrows").lastElementChild; if(r) r.querySelector("input").focus(); });
@@ -10328,6 +10382,7 @@ function stampSaved(word){
     // existing-investments column and nothing beyond it. What the balance does
     // in later years is a projection, and that is theirs.
     if(r.total!=null && S.g[S.fund].inv) S.g[S.fund].inv[0]=Math.round(r.total*10)/10;
+    $("invtext").value = "";
     $("invpaste").hidden=true;
     holdRows("i");
     syncLedger(true); renderSections(); render();
