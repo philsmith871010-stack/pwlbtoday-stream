@@ -739,6 +739,15 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 .railfoot{display:flex;align-items:baseline;gap:14px;margin:9px 2px 0;
   font-family:var(--sans);font-size:11.5px;color:var(--muted)}
 .railfoot .sp{flex:1}
+/* "8 of 8 complete" is one phrase and must not be broken across lines to make
+   room for the hint beside it. On a narrow screen the hint drops below
+   instead, which is the half that can afford to wrap. */
+#railcount{white-space:nowrap}
+@media(max-width:560px){
+  .railfoot{flex-wrap:wrap}
+  .railfoot .sp{display:none}
+  .railhint{flex-basis:100%}
+}
 .railhint{color:var(--faint)}
 
 /* ---- moving between steps ------------------------------------------------ */
@@ -1701,7 +1710,7 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
 
   <section class="panel" data-step="3">
     <div class="phead"><span class="n">3</span><h2>Your projections</h2>
-      <span class="why">Years down, measures across. The loans and investments rows are your own
+      <span class="why">Years down, measures across. The loans and investments columns are your own
         projection of year-end balances across the whole portfolio.</span></div>
     <div class="pbody">
       <div class="ltop">
@@ -3509,7 +3518,18 @@ function mkDate(){
   const d = MKT.as_at ? new Date(MKT.as_at) : null;
   return d ? d.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) : "";
 }
-const pc = v => v == null ? "–" : v.toFixed(2) + "%";
+/* A PWLB RATE OF ZERO IS AN ABSENT RATE, NOT A FREE LOAN.
+ *
+ * The published file carries 0.0 where the PWLB quotes nothing — there is no
+ * one-year annuity or EIP rate, because an annuity over a single year is not
+ * a thing it lends on. Rendered straight through, the strategy's rate table
+ * offered members "New loans — annuity, 1Y: 0.00%", which is a real-looking
+ * number for a product that does not exist. Every rate here is set off a gilt
+ * yield, so zero cannot arise honestly and is treated as no quote.
+ *
+ * Only the four cells at the short end of two rows, and only in the demo's
+ * own table — but it is a rate, in a committee paper, that is wrong. */
+const pc = v => (v == null || v === 0) ? "–" : v.toFixed(2) + "%";
 
 /* Today's curve: new loan rates on all three repayment profiles, and the
    premature repayment rates beside them. The gap between the two is the round
@@ -3529,7 +3549,7 @@ function curveTable(){
       ${row("New loans — maturity, standard","NEW|MATURITY")}
       <tr class="key"><td>New loans — maturity, certainty</td>${
         MK_TERMS.map(t=>{const v=(C["NEW|MATURITY"]||{})[t];
-          return `<td>${v==null?"–":(v-(MKT.cert_margin||0.2)).toFixed(2)+"%"}</td>`;}).join("")}</tr>
+          return `<td>${!v ? "–" : (v-(MKT.cert_margin||0.2)).toFixed(2)+"%"}</td>`;}).join("")}</tr>
       ${row("New loans — annuity","NEW|ANNUITY")}
       ${row("New loans — EIP","NEW|EIP")}
       ${row("Premature repayment — maturity","REPAYMENT|MATURITY")}
@@ -4717,11 +4737,14 @@ const REEL_NAME = "Example Borough Council";
 const REEL_TEXT = {
 
 intro_body:
-`This strategy is submitted to members for approval before the start of the 2026/27 financial \
-year. It is prepared under the Local Government Act 2003 and the Local Authorities (Capital \
-Finance and Accounting) Regulations 2003, and under the CIPFA Prudential Code for Capital \
-Finance in Local Authorities and Treasury Management in the Public Services Code of Practice, \
-to both of which the authority has formally adopted the clauses.
+/* NOT the statutory recital again. The Code-required clause immediately above
+   this in section 1 already gives the timing, both Codes and the statute, so
+   the demonstration used to state all of it a second time in slightly
+   different words — the single most obvious redundancy in the whole draft,
+   and the first thing a reader meets. What is left is the part the clause
+   does not carry: that the authority has adopted the clauses. */
+`The authority has formally adopted the clauses of both CIPFA Codes and maintains the \
+treasury management practices that sit beneath them.
 
 Members are asked to approve the treasury management strategy and the borrowing strategy set \
 out below, the annual investment strategy and the counterparty criteria within it, the policy \
@@ -4755,8 +4778,7 @@ by the liability benchmark is driven by the balance sheet rather than by the rat
 timing of any borrowing will be taken in the light of rates prevailing at the time.`,
 
 borrow_body:
-`The authority will borrow only to meet a requirement identified by the liability benchmark, and \
-will not borrow in order to invest at a profit. Sources considered are the Public Works Loan \
+`Sources considered are the Public Works Loan \
 Board at the certainty rate, other local authorities, the UK Infrastructure Bank where the \
 scheme qualifies, and the market where terms are better than PWLB on a like-for-like basis.
 
@@ -4781,11 +4803,7 @@ and the authority will only repay early where the whole-life saving is demonstra
 affordable.`,
 
 invest_body:
-`The authority's investment priorities are, in order, the security of the sum invested, then the \
-liquidity needed to meet its cash flow, and only then the yield obtained. It will not sacrifice \
-security or liquidity in pursuit of return.
-
-Balances arise from reserves, provisions, working capital and the timing difference between \
+`Balances arise from reserves, provisions, working capital and the timing difference between \
 receipts and payments. The authority distinguishes between the balance it must hold to remain \
 liquid — its minimum liquidity balance of £42.0m, set by reference to the largest short-term \
 outflow it could face — and any balance held above that, which is available for investment over \
@@ -4803,9 +4821,8 @@ intends to hold not less than half of its portfolio in instruments repayable wit
 and expects the balance to sit in terms of three to twelve months.`,
 
 credit:
-`Counterparties are selected from a list approved by the Section 151 Officer against published \
-credit criteria, and every counterparty is subject to both a monetary limit and a maximum \
-duration.
+`The approved counterparty list is maintained by the Section 151 Officer, who authorises any \
+addition to it.
 
 The minimum long-term rating for a bank or building society counterparty is A-, taken from Fitch \
 and Moody's, using the lowest of the ratings held. Ratings are supplemented by credit watches, \
@@ -5041,7 +5058,19 @@ function readout(tag, d, fundLabel){
     bits.push(`The liability benchmark is the net treasury position plus the treasury `
       + `investment benchmark. It stands at ${R.m(a.lb)} at ${R.fyOf(a)}, peaking at `
       + `${R.m(R.peakOf(d,"lb").lb)} in ${R.fyOf(R.peakOf(d,"lb"))}.`);
-    if(a.ntp >= 0)
+    /* A TWO-POOL HRA HAS NO ALLOWANCE, WHICH IS NOT AN ALLOWANCE OF NIL.
+     *
+     * It read "the treasury investment benchmark equals the liquidity
+     * allowance of £0.0m" — a figure where there is no measure. The HRA does
+     * not hold one because the General Fund manages liquidity for the whole
+     * authority, which is why the model sets its benchmark to the net
+     * treasury position outright. "Does not have one" and "has one, and it is
+     * zero" are different facts, and only the second is a number. */
+    if(fundLabel === "HRA" && S.hra === "two")
+      bits.push(`The HRA holds no liquidity allowance of its own — under a two-pool approach `
+        + `the General Fund manages liquidity for the authority — so the HRA's liability `
+        + `benchmark is its net treasury position.`);
+    else if(a.ntp >= 0)
       bits.push(`The authority is net indebted, so the treasury investment benchmark equals `
         + `the liquidity allowance of ${R.m(a.liq)}.`);
     else
@@ -5408,8 +5437,7 @@ const CLAUSES = [
  {sec:"4", always:true, req:"PC — borrowing must be affordable, prudent and sustainable",
   t:`The authority's primary objective in borrowing is to secure funding at a cost it can
      afford over the life of the assets financed, while retaining flexibility to respond to
-     changes in its capital plans. The liability benchmark set out below determines the
-     amount and the maturities to be sought.`},
+     changes in its capital plans.`},
  {sec:"4", always:true, req:"PC — must not borrow primarily for financial return",
   t:`The authority does not borrow in order to invest primarily for financial return, and
      will not do so. Its borrowing is undertaken to finance capital expenditure incurred in
@@ -6141,13 +6169,13 @@ function limitsPanel(){
  * publications, so nothing here is lifted from either.
  * ------------------------------------------------------------------------ */
 const DRAFT = {
-  intro_body: 'This strategy is submitted to members for approval before the start of the {{financial year}} financial year. It is prepared under [[act]] and [[regs]], and under the CIPFA Prudential Code for Capital Finance in Local Authorities and Treasury Management in the Public Services Code of Practice, to both of which the authority has formally adopted the clauses.\n\nMembers are asked to approve the treasury management strategy and the borrowing strategy set out below, the annual investment strategy and the counterparty criteria within it, the policy on the [[mrp]], and the prudential and treasury indicators and limits given in section 7, including the authorised limit for external debt.\n\n{{Name the committee that considered the strategy and when, and any scrutiny or audit committee that reviewed it beforehand.}}',
+  intro_body: 'The authority has formally adopted the clauses of both CIPFA Codes and maintains the treasury management practices that sit beneath them.\n\nMembers are asked to approve the treasury management strategy and the borrowing strategy set out below, the annual investment strategy and the counterparty criteria within it, the policy on the [[mrp]], and the prudential and treasury indicators and limits given in section 7, including the authorised limit for external debt.\n\n{{Name the committee that considered the strategy and when, and any scrutiny or audit committee that reviewed it beforehand.}}',
   econ: "{{Most authorities take this section from their treasury adviser and say so. Replace the paragraph below with your adviser's commentary, or edit it to match your own view.}}\n\nThe Monetary Policy Committee has held Bank Rate at {{rate}} since {{date}}. Inflation has {{risen / fallen / held}} against the 2% target, and the Committee's published guidance points to {{a gradual easing / no early change}}. Growth remains {{subdued / steady}}, and the labour market has {{loosened / held firm}}. Gilt yields have {{risen / fallen}} across the curve over the period, which feeds directly into PWLB rates: the certainty rate is set at 60 basis points over the equivalent gilt, and the standard rate at 80.",
   rateview: 'For planning purposes the authority has adopted the interest rate assumptions set out in section 2, taken from {{your adviser, or the market-implied path shown}}. Where the assumption is the path implied by the market it is stated as such: it is what is currently priced rather than a forecast, and the authority does not treat it as one.\n\nThe strategy is not dependent on rates following that path. The borrowing requirement identified by the liability benchmark is driven by the balance sheet rather than by the rate view, and the timing of any borrowing will be taken in the light of rates prevailing at the time.',
-  borrow_body: "The authority will borrow only to meet a requirement identified by the liability benchmark, and will not borrow in order to invest at a profit. Sources considered are the Public Works Loan Board at the certainty rate, other local authorities, the UK Infrastructure Bank where the scheme qualifies, and the market where terms are better than PWLB on a like-for-like basis.\n\nThe authority's preference is for the cheapest borrowing consistent with managing refinancing risk. That means it will not concentrate maturities in a small number of years, and will weigh the saving from short-dated borrowing against the risk of having to refinance a large amount at an unknown rate. Internal borrowing is used where it is available, recognising that it defers rather than avoids the requirement and that reserves used in this way must be replaced when they are needed.\n\n{{State the value of new borrowing planned in the year, the sources you expect to use, and who may authorise a loan.}}",
+  borrow_body: "Sources considered are the Public Works Loan Board at the certainty rate, other local authorities, the UK Infrastructure Bank where the scheme qualifies, and the market where terms are better than PWLB on a like-for-like basis.\n\nThe authority's preference is for the cheapest borrowing consistent with managing refinancing risk. That means it will not concentrate maturities in a small number of years, and will weigh the saving from short-dated borrowing against the risk of having to refinance a large amount at an unknown rate. Internal borrowing is used where it is available, recognising that it defers rather than avoids the requirement and that reserves used in this way must be replaced when they are needed.\n\n{{State the value of new borrowing planned in the year, the sources you expect to use, and who may authorise a loan.}}",
   resched: "{{Answer 'yes' to the rescheduling question in section 4 to include the fuller clause. Otherwise:}} The authority reviews its debt portfolio for rescheduling opportunities but does not expect to undertake any in the year. Premature repayment of PWLB debt is assessed against the discount rate applying at the time; where that rate is below the coupon on the loan a premium is payable, and the authority will only repay early where the whole-life saving is demonstrable and affordable.",
-  invest_body: "The authority's investment priorities are, in order, the security of the sum invested, then the liquidity needed to meet its cash flow, and only then the yield obtained. It will not sacrifice security or liquidity in pursuit of return.\n\nBalances arise from reserves, provisions, working capital and the timing difference between receipts and payments. The authority distinguishes between the balance it must hold to remain liquid — its minimum liquidity balance of {{£m}}, set by reference to the largest short-term outflow it could face — and any balance held above that, which is available for investment over a longer horizon at a better return.\n\nInstruments used are {{list: DMADF, money market funds, call and notice accounts, fixed-term deposits, certificates of deposit, other local authorities, pooled funds}}. Investments are made in sterling only. The authority {{does / does not}} use externally managed or pooled funds; where it does, the fuller clause in the draft applies.\n\n{{State the maximum period for which funds may be committed, and the split you intend between instant access and term.}}",
-  credit: "Counterparties are selected from a list approved by the [[officer]] against published credit criteria, and every counterparty is subject to both a monetary limit and a maximum duration.\n\nThe minimum long-term rating for a bank or building society counterparty is {{A- / equivalent}}, taken from {{Fitch, Moody's and S&P}}, using the lowest of the ratings held. Ratings are supplemented by credit watches, outlooks and market indicators such as credit default swap spreads, so that a deteriorating counterparty is identified before a rating is formally changed. A counterparty falling below the minimum criteria is withdrawn from use immediately and no new investment is placed with it.\n\nLimits by counterparty type are {{£m and duration for each of: UK Government / DMADF, other local authorities, money market funds, UK banks, non-UK banks, building societies, pooled funds}}. A group of related counterparties counts as one for the purposes of the monetary limit.\n\n{{Name who may approve an exception, and what is reported to members when one is used.}}",
+  invest_body: "Balances arise from reserves, provisions, working capital and the timing difference between receipts and payments. The authority distinguishes between the balance it must hold to remain liquid — its minimum liquidity balance of {{£m}}, set by reference to the largest short-term outflow it could face — and any balance held above that, which is available for investment over a longer horizon at a better return.\n\nInstruments used are {{list: DMADF, money market funds, call and notice accounts, fixed-term deposits, certificates of deposit, other local authorities, pooled funds}}. Investments are made in sterling only. The authority {{does / does not}} use externally managed or pooled funds; where it does, the fuller clause in the draft applies.\n\n{{State the maximum period for which funds may be committed, and the split you intend between instant access and term.}}",
+  credit: "The approved counterparty list is maintained by the [[officer]], who authorises any addition to it.\n\nThe minimum long-term rating for a bank or building society counterparty is {{A- / equivalent}}, taken from {{Fitch, Moody's and S&P}}, using the lowest of the ratings held. Ratings are supplemented by credit watches, outlooks and market indicators such as credit default swap spreads, so that a deteriorating counterparty is identified before a rating is formally changed. A counterparty falling below the minimum criteria is withdrawn from use immediately and no new investment is placed with it.\n\nLimits by counterparty type are {{£m and duration for each of: UK Government / DMADF, other local authorities, money market funds, UK banks, non-UK banks, building societies, pooled funds}}. A group of related counterparties counts as one for the purposes of the monetary limit.\n\n{{Name who may approve an exception, and what is reported to members when one is used.}}",
   mrp_body: 'The authority will make prudent provision for the repayment of debt in accordance with [[mrpGuidance]].\n\nFor capital expenditure financed by borrowing, provision is made on {{an asset life, equal instalment / an asset life, annuity / a capital expenditure}} basis, over a period no longer than the useful life of the asset the expenditure created. Provision begins in the financial year following the one in which the asset became operational.\n\nFor finance leases and arrangements accounted for as such, the provision is equal to the principal element of the rent or charge payable in the year.\n\nThe authority {{may / does not}} make voluntary revenue provision in addition. Where it does, the amount is reported to members and, once made, is not reversed except with their approval.\n\n{{If you apply a different method to any category of expenditure, state which and why. If you have a capital receipts strategy that bears on MRP, cross-refer to it.}}',
   activity_body: 'Borrowing and investment activity in the period is set out below against the strategy approved by members.\n\nNew borrowing of {{£m}} was taken in {{period}} at an average rate of {{%}}, against a plan of {{£m}}. {{Explain any material difference.}} Repayments of {{£m}} fell due and were met from {{internal balances / new borrowing}}. External debt at the period end stood at {{£m}}, against the authorised limit of {{£m}} and the capital financing requirement of {{£m}}.\n\nInvestment balances averaged {{£m}} over the period and stood at {{£m}} at the period end, earning an average rate of {{%}} against a benchmark of {{benchmark}}. No counterparty failed to repay in full and on time, and no institution on the approved list was downgraded below the minimum criteria while funds were placed with it. {{Amend if either did occur, and say what was done.}}',
   deals: '{{Some authorities list every transaction and others summarise. If you list them, one line each: date, counterparty, amount, rate, and maturity. If you summarise, give the number of deals, the total value and the weighted average rate, by instrument type. Delete this section if your practice is not to publish deal-level detail.}}',
@@ -6234,17 +6262,17 @@ const SECTIONS = [
         d:DRAFT.invest_body, ph:"Security, liquidity, yield — in that order. Instruments used, and the balance "
            +"between internally and externally managed funds."}]},
 
-  {k:"credit", n:"5c", t:"Creditworthiness and counterparty policy", kind:"yours", in:FWD,
-   lead:"Who you will lend to, how much, and for how long.",
-   qs:[{k:"credit", l:"Creditworthiness and counterparty policy",
-        d:DRAFT.credit, ph:"Minimum credit criteria, the rating agencies used, monetary and time limits by "
-           +"counterparty type, and what happens on a downgrade."}]},
-
   {k:"corefunds", n:"5b", t:"Core funds and expected investment balances", kind:"both", in:FWD,
    lead:"The balances available to invest, which drive LB5.",
    qs:[{k:"corefunds_body", l:"Core funds and cash flow",
         d:DRAFT.corefunds_body, ph:"Reserves, balances and provisions held; the extent to which they are used for "
            +"internal borrowing; and the expected pattern of cash flow across the year."}]},
+
+  {k:"credit", n:"5c", t:"Creditworthiness and counterparty policy", kind:"yours", in:FWD,
+   lead:"Who you will lend to, how much, and for how long.",
+   qs:[{k:"credit", l:"Creditworthiness and counterparty policy",
+        d:DRAFT.credit, ph:"Minimum credit criteria, the rating agencies used, monetary and time limits by "
+           +"counterparty type, and what happens on a downgrade."}]},
 
   {k:"mrp", n:"6", t:"[[mrpTitle]]", kind:"both", in:FWD,
    lead:"The statement members approve. Your ledger carries the charge; the policy is yours.",
@@ -7034,10 +7062,10 @@ function cpRender(){
   host.innerHTML = `
     <div class="cpnote">Grey figures are the common starting point from
       <b>${CPB.councils || 0} authorities'</b> ${esc(CPB.basis_note || "current strategies")},
-      surveyed ${esc(CPB.as_at || "")} — type over them. What is common is not what is
+      surveyed ${esc(cpAsAt())} — type over them. What is common is not what is
       right for you.</div>
 
-    <h3 class="cph">1 · Limits, duration, basis and credit floor</h3>
+    <h3 class="cph">1 · Limits, duration and credit quality</h3>
     <p class="cpsub">One line per counterparty type. State a limit per counterparty, an
       aggregate limit across a group, sector or fund manager, or both — each as a sum, a
       share of the portfolio, or both. Where a sum and a share are both given, the lower
@@ -7118,14 +7146,19 @@ function cpRender(){
 
     <h3 class="cph">4 · Approved instruments</h3>
     <div class="cpchecks tight five">
-      ${CP_INSTRUMENTS.map(([k,t]) => chk("cpi", k, t, null, (CPB.instruments||{})[
-        {tbills:"treasury bills / gilts",cds:"certificates of deposit",
-         supra:"supranational / MDB bonds",
-         corpbond:"corporate bonds",notice:"notice / call accounts",
-         covered:"covered bonds / repo",reits:"REITs",frn:"floating rate notes",
-         // No survey figure for ETFs: the corpus was catalogued before they
-         // were asked about, and a nil would read as "no council uses these".
-         etf:null}[k]] || 0)).join("")}
+      ${CP_INSTRUMENTS.map(([k,t]) => {
+        /* No survey figure for ETFs: the corpus was catalogued before they
+           were asked about. The comment saying so has been here all along and
+           the `|| 0` on the end defeated it — chk() omits the badge for null
+           and was never given one, so ETFs showed a hard 0 and read as "no
+           council uses these", which is the opposite of "we did not ask". */
+        const key = {tbills:"treasury bills / gilts",cds:"certificates of deposit",
+          supra:"supranational / MDB bonds",
+          corpbond:"corporate bonds",notice:"notice / call accounts",
+          covered:"covered bonds / repo",reits:"REITs",frn:"floating rate notes",
+          etf:null}[k];
+        return chk("cpi", k, t, null, key == null ? null : ((CPB.instruments||{})[key] || 0));
+      }).join("")}
     </div>
 
     ${(CPB.wording||[]).length ? `<details class="cpwrap">
@@ -7399,6 +7432,15 @@ function cpProgress(){
  * every row, because a median over nine councils and a median over 166 are
  * different kinds of fact and the reader is entitled to tell them apart.
  * ======================================================================== */
+/* "surveyed 2026-09" is a database column, not a sentence. */
+function cpAsAt(){
+  const v = String(CPB.as_at || "");
+  const m = /^(\d{4})-(\d{2})$/.exec(v);
+  if(!m) return v;
+  return ["January","February","March","April","May","June","July","August",
+          "September","October","November","December"][+m[2]-1] + " " + m[1];
+}
+
 function cpSurveyHTML(){
   const S_ = CPB.sectors || {};
   /* The unit belongs in the group heading, not in all ninety cells. Every
@@ -7433,7 +7475,7 @@ function cpSurveyHTML(){
 
   return `<p class="cpsub">Every counterparty policy we could read from a published
       strategy: <b>${CPB.councils}</b> authorities, <b>${CPB.rows}</b> separate limits,
-      surveyed ${esc(CPB.as_at||"")}. Counts differ by row because not every authority
+      surveyed ${esc(cpAsAt())}. Counts differ by row because not every authority
       publishes every measure — the <i>n</i> is given so a median over nine councils is not
       read as one over a hundred. Nothing here is a recommendation.</p>
     <div class="cpsurvwrap"><table class="otable cpsurv">
@@ -7522,9 +7564,13 @@ function execSummary(d, hra){
       : `remains below the loans currently held throughout the period`}.
     ${z.over > 0.05 ? `By ${fy(z.fy)} loans exceed the benchmark by
       <b>£${m1(z.over)}m</b>.` : ""}</p>
-    <p>The counterparty policy, the prudential indicators and the
-    ${esc(natText("[[mrpTitle]]").toLowerCase())} are set out below and are recommended
-    for approval together.</p>`;
+    ${/* "the counterparty policy, the prudential indicators and the loans fund
+          and the repayment of advances" put three "and"s in one clause and
+          left the reader parsing where the list ended. Naming the policy
+          rather than the thing it governs also matches the recommendation
+          above it, which asks members to approve a policy. */""}
+    <p>Members are asked to approve the counterparty policy, the prudential indicators and
+    the policy on the ${esc(natText("[[mrp]]"))} together; all three are set out below.</p>`;
 }
 
 function docSections(){
@@ -7576,7 +7622,7 @@ function docSections(){
     b: `<p>Members are asked to:</p><ol class="recs">
         <li>approve the ${esc(reportTitle())} for ${fy(S.fy0)};</li>
         <li>approve the prudential and treasury management indicators set out in it;</li>
-        ${IN2("mrp") ? `<li>approve the ${esc(natText("[[mrpTitle]]").toLowerCase())};</li>` : ""}
+        ${IN2("mrp") ? `<li>approve the policy on the ${esc(natText("[[mrp]]"))};</li>` : ""}
         <li>note the counterparty policy and investment limits it contains.</li>
         </ol>` + (S.choices.wrapoptions === "yes"
         ? `<h4>Options considered</h4>`
@@ -10256,7 +10302,21 @@ function syncLedger(force){
     // the warning appears.
     : "";
 }
+/* TWO REDRAWS, AND THE DIFFERENCE IS THE FOCUSED FIELD.
+ *
+ * refresh() leaves the input you are typing in alone. applyLoans() forces
+ * every cell from state, which is what a STRUCTURAL change needs — a source
+ * added or removed, a tab switched, a different council chosen — because then
+ * the field under the cursor is stale too.
+ *
+ * applyLoans was deleted as collateral in a commit that removed three
+ * genuinely dead functions beside it, and its seven callers were left. Every
+ * one threw a ReferenceError halfway through its handler, so adding a debt
+ * source or switching to Investments silently stopped doing the rest of its
+ * job. It parses, so node --check passed; test_coverage now has a
+ * called-but-never-defined check that would have failed. */
 function refresh(){ syncLedger(); render(); }
+function applyLoans(){ syncLedger(true); render(); }
 
 /* ---- what is held -------------------------------------------------------
  *
