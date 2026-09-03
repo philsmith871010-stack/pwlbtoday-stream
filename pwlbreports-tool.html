@@ -10260,11 +10260,13 @@ function stampSaved(word){
        questions rather than the least important. lfmethod is Scotland's and
        mrpmethod is England and Wales'; both are set so the preset is complete
        whichever authority it lands on. */
-    /* NO REAL FIRM NAMED. A demonstration is a fabricated report, and putting
+    /* NO REAL FIRM NAMED — a demonstration is a fabricated report, and putting
        a named adviser in one attributes an invented contract, an invented fee
-       and an invented scope to a real business. Blank reads through as "the
-       authority's treasury adviser" wherever the draft needs the phrase. */
-    S.choices = {adviser:"", mrpmethod:"asset", lfmethod:"annuity",
+       and an invented scope to a real business. But NOT BLANK either: a choice
+       counts as answered when it is non-empty, so blanking this quietly took
+       the demonstration from 22 of 22 to 21, and step 4 from a tick to a
+       part-done. An obviously fictional name does both jobs. */
+    S.choices = {adviser:"Example Treasury Advisers", mrpmethod:"asset", lfmethod:"annuity",
                  cycle:"thrice", vrp:"no", advance:"no", resched:"no",
                  pooled:"yes", nontreas:"no", mifid:"yes",
                  commprop:"no", commborrow:"no", pwlbtoday:"yes",
