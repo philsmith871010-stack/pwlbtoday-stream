@@ -46,6 +46,20 @@
   --l-exc:#c25708;    /* excess investments                   */
   --ours:#1a7f4b; --yours:#c25708; --derived:#5b4bb3;
   --fill-bg:rgba(194,87,8,.10); --fill-line:rgba(194,87,8,.55);
+  /* LB5's own four, from the consultation's published chart of it. Its
+     liquidity balance is the same dark blue as the CFR line and its benchmark
+     the same orange as other balance sheet items — the two we already had —
+     and the strategic and over-benchmark bands are the Office greens and
+     blues it draws them in. Ours were a purple and a dark orange that
+     appeared nowhere in the Code. */
+  --l-liq:#1f5879; --l-strategic:#92d050; --l-excess:#00b0f0;
+  /* LB3's two held quantities, from the consultation's chart of it: the loans
+     it holds in the same cyan LB5 uses for balances above benchmark, and the
+     investments it holds in magenta. Ours were a muted blue and a dark
+     purple. LB3's three lines — liability benchmark, investment benchmark and
+     net — were already the Code's blue, orange and green, as is the red
+     dashed authorised limit on LB2. */
+  --l-loans:#00b0f0; --l-invheld:#a0208c;
   --seq1:#a8c8e8; --seq2:#7fb0dd; --seq3:#5695d1; --seq4:#2f6fb0;
   --seq5:#1d4f86; --seq6:#0f3059;
   --cell:#ffffff; --cell-ours:#eef7f2; --cell-derived:#f2f0fa;
@@ -74,6 +88,8 @@
 
     --l-debt:#6fb5e0; --l-cfr:#5b9ec9; --l-obs:#f0955a; --l-ntp:#6fae5c;
     --fill-bg:rgba(240,149,90,.16); --fill-line:rgba(240,149,90,.6);
+    --l-liq:#5b9ec9; --l-strategic:#a6dd6b; --l-excess:#3ac2f5;
+    --l-loans:#3ac2f5; --l-invheld:#d95bc0;
     --l-lb:#5b9ec9; --l-al:#ef6a55; --l-inv:#f0955a; --l-ei:#8a7fc0;
     --l-br:#5b9ec9; --l-strat:#a99ae8; --l-exc:#e8974a;
     --ours:#4cb583; --yours:#e8974a; --derived:#a99ae8;
@@ -95,6 +111,8 @@
   --orange:#e8974a; --good:#4cb583; --alert:#e0776a;
   --l-debt:#6fb5e0; --l-cfr:#5b9ec9; --l-obs:#f0955a; --l-ntp:#6fae5c;
     --fill-bg:rgba(240,149,90,.16); --fill-line:rgba(240,149,90,.6);
+    --l-liq:#5b9ec9; --l-strategic:#a6dd6b; --l-excess:#3ac2f5;
+    --l-loans:#3ac2f5; --l-invheld:#d95bc0;
   --l-lb:#5b9ec9; --l-al:#ef6a55; --l-inv:#f0955a; --l-ei:#8a7fc0;
   --l-br:#5b9ec9; --l-strat:#a99ae8; --l-exc:#e8974a;
   --ours:#4cb583; --yours:#e8974a; --derived:#a99ae8;
@@ -1969,6 +1987,11 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
   .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 const m1 = v => (Math.round(v*10)/10).toLocaleString("en-GB",{minimumFractionDigits:1,maximumFractionDigits:1});
+/* ONE width for every line on every chart, declared where BOTH chart() and
+   the legend swatch can see it. Set per series at the call site it drifted:
+   the authorised limit was 2 while the four lines beside it were 2.2 —
+   invisible alone, wrong against the consultation's own chart. */
+const LINE_W = 2.2;
 const fy = y => y + "/" + String((y+1)%100).padStart(2,"0");
 const num = v => { const n=parseFloat(String(v).replace(/[£,\s]/g,"")); return isFinite(n)?n:0; };
 
@@ -2019,7 +2042,7 @@ function chart(d, spec){
   // column is clipped at the floor of a range computed from positives.
   const negK = (spec.bars||[]).concat(spec.lines||[]).filter(b=>b.neg).map(b=>b.k);
   // A series drawn below the axis is drawn from the negated value everywhere:
-  // the path, the range, the end dot and the hover.
+  // the path, the range and the hover.
   const V = (p, k) => { const v = p[k];
     return (v == null || !isFinite(v)) ? v : (negK.indexOf(k) >= 0 ? -Math.abs(v) : v); };
   // Zero is folded into the range only when the axis is meant to include it.
@@ -2088,6 +2111,17 @@ function chart(d, spec){
     });
     return out;
   };
+  /* THE VALUE AXIS AS THE CONSULTATION WRITES IT: "£300m", "£0m", "-£50m" —
+     the unit against the number, so a reader is never counting zeroes to work
+     out what 600.0 meant.
+
+     NOT called money(). paste.js has a global money() that parses "£12.4m"
+     INTO a number, and the first version of this was declared in a different
+     scope, so every tick silently ran through that instead and came out as
+     the bare number it started as. Two functions named for the same noun
+     doing opposite jobs is a collision waiting for exactly that. */
+  const axisMoney = v =>
+    (v < 0 ? "-£" : "£") + m1(Math.abs(v)).replace(/\.0$/, "") + "m";
   const gl=[];
   const ticks = [];
   if(gstep) for(let v = AXLO; v <= AXHI + gstep*1e-6; v += gstep) ticks.push(v);
@@ -2096,7 +2130,7 @@ function chart(d, spec){
     gl.push(`<line x1="${P.l}" y1="${Y(v).toFixed(1)}" x2="${W-P.r}" y2="${Y(v).toFixed(1)}"
       stroke="var(--hair)" stroke-width="1"/><text x="${P.l-9}" y="${(Y(v)+3.4).toFixed(1)}"
       text-anchor="end" font-family="var(--mono)" font-size="11.5" letter-spacing="-0.1"
-      fill="var(--ink2)">${spec.fmt ? spec.fmt(v) : m1(v)}</text>`);});
+      fill="var(--ink2)">${spec.fmt ? spec.fmt(v) : axisMoney(v)}</text>`);});
   // A left rule and a baseline: the plot reads as a framed field rather than
   // as lines floating on the page.
   gl.push(`<line x1="${P.l}" y1="${P.t}" x2="${P.l}" y2="${P.t+ih}"
@@ -2237,13 +2271,8 @@ function chart(d, spec){
     class="ctip" data-tip="${esc(JSON.stringify(tip))}"
     aria-label="${esc(chartAlt(d, spec))}">${gl.join("")}${fills}${bars}${zero}${mk}${mark}
     ${spec.lines.map(l=>`<path d="${path(l.k)}" fill="none" stroke="${l.c}"
-      stroke-width="${l.w||2}" stroke-linejoin="round" stroke-linecap="round"${
+      stroke-width="${l.w||LINE_W}" stroke-linejoin="round" stroke-linecap="round"${
       l.dash?` stroke-dasharray="${l.dash}"`:""}/>`).join("")}
-    ${spec.lines.filter(l=>(l.w||2)>=2).map(l=>{
-      const last=d[d.length-1];
-      return last && last[l.k]!=null && isFinite(V(last,l.k))
-        ? `<circle cx="${X(d.length-1).toFixed(1)}" cy="${Y(V(last,l.k)).toFixed(1)}" r="2.6"
-             fill="${l.c}" stroke="var(--card)" stroke-width="1.4"/>` : "";}).join("")}
     ${tx.map(i=>`<text x="${X(i).toFixed(1)}" y="${H-7}" text-anchor="middle"
       font-family="var(--mono)" font-size="11.5" fill="var(--ink2)">${esc(xlab(d[i].fy))}</text>`).join("")}
     ${hit}
@@ -2316,7 +2345,7 @@ const swatch = x => x.bar
   ? `<i class="lfill" style="background:${x.c};opacity:${
        Math.max(0.28, x.o == null ? .16 : x.o)};border:1px solid ${x.c}"></i>`
   : `<svg class="lsw" width="20" height="6" aria-hidden="true"><line x1="0" y1="3" x2="20"
-       y2="3" stroke="${x.c}" stroke-width="${Math.max(2, x.w || 2)}"${
+       y2="3" stroke="${x.c}" stroke-width="${x.w || LINE_W}"${
        x.dash ? ` stroke-dasharray="${x.dash}"` : ""}/></svg>`;
 const legend = items => `<div class="legend">${items.map(x=>
   `<span>${swatch(x)}${esc(x.t)}</span>`).join("")}</div>`;
@@ -3512,7 +3541,7 @@ function rateLevelChart(){
   const d = h.map((r,i)=>Object.assign({fy:r.d.slice(2,7), i}, r));
   return `<div class="chartwrap">${chart(d,{label:"PWLB certainty rates, 12 months",
       h:250, zero:"tight", fmt:v=>v.toFixed(2)+"%", mtfp:false,
-      lines:on.map((k,ix)=>({k, c:seqFor(ix,on.length), w:1.9, t:tenorLabel(k)}))})}
+      lines:on.map((k,ix)=>({k, c:seqFor(ix,on.length), t:tenorLabel(k)}))})}
     ${legend(on.map((k,ix)=>({c:seqFor(ix,on.length), t:k})))}</div>`;
 }
 
@@ -3530,7 +3559,7 @@ function rateChangeChart(){
   });
   return `<div class="chartwrap">${chart(d,{label:"Change over 12 months",
       h:200, fmt:v=>(v>0?"+":"")+v.toFixed(2), mtfp:false,
-      lines:on.map((k,ix)=>({k, c:seqFor(ix,on.length), w:1.9, t:tenorLabel(k)}))})}
+      lines:on.map((k,ix)=>({k, c:seqFor(ix,on.length), t:tenorLabel(k)}))})}
     ${legend(on.map((k,ix)=>({c:seqFor(ix,on.length), t:k})))}
     <p class="note" style="padding:0 4px 6px">Percentage points since
       ${esc(h[0].d)}. Above the line the term has risen; below, it has fallen.</p></div>`;
@@ -8055,6 +8084,12 @@ function crossFund(rows, hra, gfRows, side){
   });
 }
 
+/* The year axis carries the calendar year alone — 2026, not 2026/27 — which
+   is how the consultation labels its own charts, and it keeps a fifty-year
+   axis legible where a rotated "2026/27" does not. The financial year is
+   still what the tables and the prose say. */
+const yr = v => String(v);
+
 function indicatorBlock(d, fundLabel, hraSet, opts){
   const O = (opts === true) ? {skipLB5:true} : (opts || {});
   const skipLB5 = !!O.skipLB5;
@@ -8142,10 +8177,10 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
 
   return `
    ${!want("LB1") ? "" : IND("LB1","Net treasury position"+tag,
-     P({xlab:fy, label:"LB1", lines:[
-       {k:"cfr",t:"Capital financing requirement",c:"var(--l-cfr)",w:2.2},
-       {k:"obs",t:"Other balance sheet items",c:"var(--l-obs)",w:2.2,neg:true},
-       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:2.2}]})
+     P({xlab:yr, label:"LB1", lines:[
+       {k:"cfr",t:"Capital financing requirement",c:"var(--l-cfr)"},
+       {k:"obs",t:"Other balance sheet items",c:"var(--l-obs)",neg:true},
+       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)"}]})
      /* LB1 was the one indicator with no table under it. Every other one has
         the figures beneath the picture, which is what lets a reader check a
         line rather than take it — and LB1 is the indicator the whole framework
@@ -8157,18 +8192,18 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
                  {l:"Net treasury position",k:"ntp",cls:"key"}])
      + readoutHTML("LB1", d, fundLabel))}
    ${!want("LB2") ? "" : IND("LB2","Treasury benchmarks"+tag,
-     P({xlab:fy, label:"LB2", lines:[
-       {k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.2},
-       {k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",w:2.2,neg:true},
-       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:2.2},
-       {k:"al",t:"Authorised limit",c:"var(--l-al)",w:2,dash:"7 4"}]})
+     P({xlab:yr, label:"LB2", lines:[
+       {k:"lb",t:"Liability benchmark",c:"var(--l-lb)"},
+       {k:"tib",t:"Treasury investment benchmark",c:"var(--l-inv)",neg:true},
+       {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)"},
+       {k:"al",t:"Authorised limit",c:"var(--l-al)",dash:"7 4"}]})
      + otable(d,[{l:"Net treasury position",k:"ntp"},{l:"Treasury investment benchmark",k:"tib"},
                  {l:"Liability benchmark",k:"lb",cls:"lb"},{l:"Authorised limit",k:"al",cls:"key"}])
      + readoutHTML("LB2", d, fundLabel))}
    ${!want("LB3") ? "" : IND("LB3","Treasury commitments compared to the benchmarks"+tag,
      /* Commitments are COLUMNS against benchmark LINES, as the consultation
         draws them. The order here is the order of its own legend. */
-     P({xlab:fy, label:"LB3", h:350,
+     P({xlab:yr, label:"LB3", h:350,
        // Investments below the line, as the consultation's own table
        // brackets them; the figure in our tables keeps its sign.
        // A position stacks with the other positions; the benchmarks stay lines.
@@ -8178,11 +8213,15 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
           the benchmark measured against them are structurally nil on an HRA
           chart. Drawing a flat line of noughts and labelling it is not
           neutral: it invites a reader to wonder what happened to the money. */
-       bars:[{k:"el",t:"Existing loans",c:"var(--l-debt)"}].concat(XF).concat(
-             isHRA ? [] : [{k:"ei",t:"Existing investments",c:"var(--l-ei)",neg:true}]),
-       lines:[{k:"lb",t:"Liability benchmark",c:"var(--l-lb)",w:2.2}].concat(
-              isHRA ? [] : [{k:"tib",t:"Investment benchmark",c:"var(--l-inv)",w:2.2,neg:true}])
-              .concat([{k:"ntp",t:"Net",c:"var(--l-ntp)",w:2.2}])})
+       /* The consultation's own colours for LB3: loans in cyan, investments
+          held in magenta below the axis. Ours were a muted blue and a dark
+          purple that appear nowhere in the Code. The three lines under them —
+          liability benchmark, investment benchmark, net — already matched. */
+       bars:[{k:"el",t:"Existing loans",c:"var(--l-loans)"}].concat(XF).concat(
+             isHRA ? [] : [{k:"ei",t:"Existing investments",c:"var(--l-invheld)",neg:true}]),
+       lines:[{k:"lb",t:"Liability benchmark",c:"var(--l-lb)"}].concat(
+              isHRA ? [] : [{k:"tib",t:"Investment benchmark",c:"var(--l-inv)",neg:true}])
+              .concat([{k:"ntp",t:"Net",c:"var(--l-ntp)"}])})
      + otable(d,[{l:"Existing loan commitments",k:"el"},{l:"Liability benchmark",k:"lb",cls:"lb"}]
                 .concat(isHRA ? [] : [{l:"Existing investment commitments",k:"ei"}]))
      + noCross
@@ -8190,13 +8229,13 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
    ${!want("LB4") ? "" : IND("LB4","Borrowing requirement / over-borrowing"+tag,
      // "as a single series", and a column chart: over-borrowed years hang
      // below the zero line, which is the whole point of the picture.
-     P({xlab:fy, label:"LB4", h:300,
+     P({xlab:yr, label:"LB4", h:300,
        bars:[{k:"br",t:"Borrowing requirement / above-benchmark borrowing",c:"var(--l-br)"}],
        lines:[]})
      + otable(d,[{l:"Borrowing requirement",k:"need"},{l:"Above-benchmark borrowing",k:"over"}])
      + readoutHTML("LB4", d, fundLabel))}
    ${(skipLB5 || !want("LB5")) ? "" : IND("LB5","Treasury investment position",
-     P({data:d, label:"LB5", h:300, xlab:fy,
+     P({data:d, label:"LB5", h:300, xlab:yr,
        // Every series on LB5 is an investment, and the consultation's table
        // brackets every one of them.
        /* Balances are columns; the benchmark they are measured against stays
@@ -8209,12 +8248,21 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
           COMMITMENTS is a different measure, the contractual maturity of what
           is already placed, and stacking it on top would count the same money
           twice. It stays a line, beside the benchmark. */
-       bars:[{k:"liq",t:"Liquidity allowance",c:"var(--l-inv)",neg:true},
-             {k:"strategic",t:"Strategic treasury investments",c:"var(--l-strat)",neg:true},
-             {k:"excess",t:"Excess treasury investments",c:"var(--l-exc)",neg:true}],
-       lines:[{k:"tib",t:"Treasury investment benchmark",c:"var(--l-lb)",w:2.2,neg:true},
-              {k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:2,neg:true,
-               dash:"4 3"}]})
+       /* DRAWN UPWARDS, as the consultation draws it. Investments are
+          negative in the framework's own arithmetic — they offset debt — and
+          every other chart shows them that way. LB5 is the exception in the
+          published version: it is a chart about investments alone, and CIPFA
+          flips them, labelling each series "(flipped)" to say so. Below the
+          axis they were correct and unlike the thing they are modelled on.
+
+          AND NO EXISTING-COMMITMENTS LINE. The text lists it among LB5's
+          series; the published chart of LB5 does not draw it, and it is the
+          one series here that is not part of the investment balance. It stays
+          in the table below, where the reader can still find it. */
+       bars:[{k:"liq",t:"Liquidity allowance",c:"var(--l-liq)"},
+             {k:"strategic",t:"Strategic treasury investments",c:"var(--l-strategic)"},
+             {k:"excess",t:"Excess treasury investments",c:"var(--l-excess)"}],
+       lines:[{k:"tib",t:"Treasury investment benchmark",c:"var(--l-obs)"}]})
      /* All five series the consultation lists, in its order — the table was
         missing existing investment commitments, which is series (b) and is
         drawn on the chart directly above it. A table that omits a line the
@@ -8223,18 +8271,21 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
         And bracketed, like everything else that is an investment: the chart
         draws all five below the axis, and the table above it was showing the
         same quantities as positives. */
-     + otable(d,[{l:"Treasury investment benchmark",k:"tib",cls:"inv",neg:true},
-                 {l:"Existing investment commitments",k:"ei",neg:true},
-                 {l:"Liquidity allowance",k:"liq",neg:true},
-                 {l:"Strategic treasury investments",k:"strategic",neg:true},
-                 {l:"Excess treasury investments",k:"excess",neg:true}])
+     /* Positive here too, because the chart above it is. Bracketing these
+        while the chart drew them upwards would put the same five quantities
+        two ways on one page. */
+     + otable(d,[{l:"Treasury investment benchmark",k:"tib",cls:"inv"},
+                 {l:"Existing investment commitments",k:"ei"},
+                 {l:"Liquidity allowance",k:"liq"},
+                 {l:"Strategic treasury investments",k:"strategic"},
+                 {l:"Excess treasury investments",k:"excess"}])
      + readoutHTML("LB5", d, fundLabel))}
    ${!(want("LB6") && anyCross) ? "" : IND("LB6","General Fund / HRA treasury position",
      /* "LB3 (supplemental)" in the annex, and the sixth of the "Charts
         LB1-LB6" its own heading promises. Two-pool authorities only: it
         quantifies what one fund has lent the other, which under a single pool
         does not exist. */
-     P({data:D, xlab:fy, label:"LB6", h:275,
+     P({data:D, xlab:yr, label:"LB6", h:275,
        // The same wording as its own table row, brackets included: the chart
        // and the table under it were naming one series two ways.
        bars:[{k:"cross", t:crossLabel, c:"var(--l-strat)"}], lines:[]})
