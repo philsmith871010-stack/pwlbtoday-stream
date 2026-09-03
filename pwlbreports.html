@@ -144,14 +144,6 @@ h1 .em{
 .legend i{width:14px; height:2.5px; border-radius:2px; display:block}
 
 /* ---- figures ------------------------------------------------------------- */
-.figs{display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:1px;
-  background:var(--line); border:1px solid var(--line); border-radius:10px; overflow:hidden}
-.fig{background:var(--ground2); padding:26px 22px}
-.fig b{display:block; font-family:var(--mono); font-size:clamp(30px,3.6vw,40px);
-  font-weight:500; letter-spacing:-.03em; color:var(--ink); line-height:1;
-  font-variant-numeric:tabular-nums}
-.fig b i{font-style:normal; font-size:.55em; color:var(--muted); margin-left:2px}
-.fig span{display:block; font-size:13.5px; color:var(--ink2); margin-top:11px; line-height:1.45}
 
 /* ---- the inconsistency picture ------------------------------------------- */
 .scatterwrap{position:relative; margin:44px 0 0;
@@ -305,13 +297,13 @@ html.anim .rv.in{opacity:1; transform:none;
       <div>
         <h1 class="rv">The treasury report,<br>built to the <span class="em">liability&nbsp;benchmark</span>.</h1>
         <p class="sub rv">Strategies, outturns and monitoring reports, built to CIPFA's 2026
-          Codes. For housing authorities and for councils without an HRA. Paste eleven rows of
-          figures; a complete committee-ready draft comes back in seconds.</p>
+          Codes. Paste a few rows of figures; a complete committee-ready draft comes back in
+          seconds — every indicator, chart and table the Code asks for.</p>
         <div class="cta rv">
           <a class="btn" href="pwlbreports-tool.html">Open the tool <span class="arw">&rarr;</span></a>
           <a class="btn ghost" href="#why">Why we built it</a>
         </div>
-        <p class="freeline rv">No account · nothing leaves your browser · independent of any adviser</p>
+        <p class="freeline rv">No account · no fee · nothing leaves your browser</p>
       </div>
 
       <div class="chartcard rv">
@@ -383,36 +375,9 @@ html.anim .rv.in{opacity:1; transform:none;
       </div>
       <div class="card rv">
         <span class="n">02</span>
-        <h3>Advisers supply the templates</h3>
-        <p>So the shape of a report tells you who advises the council, not how it is doing.</p>
-      </div>
-      <div class="card rv">
-        <span class="n">03</span>
         <h3>A benchmark is for comparing</h3>
         <p>Which only works if everyone presents it the same way. Today nobody does.</p>
       </div>
-    </div>
-  </div>
-</section>
-
-<div class="wrap"><div class="rule"></div></div>
-
-<!-- ======================= EVIDENCE ======================= -->
-<section id="evidence">
-  <div class="wrap">
-    <p class="eyebrow rv">What it was built from</p>
-    <h2 class="rv">A survey, two Codes, a consultation, and the loan book.</h2>
-    <p class="lede rv">Not an opinion about how a treasury report ought to look. What the
-      Codes require, laid out the way the best-written reports lay it out.</p>
-
-    <div class="figs rv" id="figs" style="margin-top:44px">
-      <div class="fig"><b data-to="551">0</b><span>Treasury reports read</span></div>
-      <div class="fig"><b data-to="4265">0</b><span>Distinct headings in them</span></div>
-      <div class="fig"><b data-to="81">0</b><span>Per cent used by one council only</span></div>
-      <div class="fig"><b data-to="315">0</b><span>PWLB loan books built in</span></div>
-      <div class="fig"><b data-to="143">0</b><span>Counterparty policies behind every limit</span></div>
-      <div class="fig"><b data-to="73">0</b><span>Code requirements tracked by name</span></div>
-      <div class="fig"><b data-to="17188">0</b><span>Assertions checked on every change</span></div>
     </div>
   </div>
 </section>
@@ -428,7 +393,7 @@ html.anim .rv.in{opacity:1; transform:none;
     <div class="steps">
       <div class="step rv"><span class="k">01</span>
         <div><h3>Answer a few questions</h3></div>
-        <p>Which authority, which report, HRA or not. Or load a worked example and skip
+        <p>Which authority, which report, which year. Or load a worked example and skip
           straight to the end.</p></div>
       <div class="step rv"><span class="k">02</span>
         <div><h3>Paste your figures</h3></div>
@@ -454,32 +419,6 @@ html.anim .rv.in{opacity:1; transform:none;
 @media(min-width:1000px){#worth .cards > .card:last-child:nth-child(odd){grid-column:1/-1}}
 @media(max-width:760px){#worth .cards{grid-template-columns:1fr}}</style>
 
-
-<!-- ======================= HRA AND NON-HRA ======================= -->
-<section id="funds">
-  <div class="wrap">
-    <p class="eyebrow rv">Housing authorities, and councils without an HRA</p>
-    <h2 class="rv">One fund or two, and the report knows the difference.</h2>
-    <p class="lede rv">The 2026 proposals treat a housing authority differently at almost
-      every indicator, and differently again by how it apportions debt. Here it all follows from
-      one answer on the first screen.</p>
-
-    <div class="cards">
-      <div class="card rv"><span class="n">01</span><h3>No HRA</h3>
-        <p>Eleven rows, and housing is never mentioned. No second fund, no pooling question, no
-          controls you cannot use.</p></div>
-      <div class="card rv"><span class="n">02</span><h3>One pool</h3>
-        <p>The HRA is asked for seven rows, not eleven — no loans of its own, no investments, no
-          liquidity allowance.</p></div>
-      <div class="card rv"><span class="n">03</span><h3>Two pools</h3>
-        <p>LB1, LB2 and LB3 per fund, and LB6 between them. Inter-fund lending capped at the
-          surplus the lending fund actually has.</p></div>
-      <div class="card rv"><span class="n">04</span><h3>Measured on its own income</h3>
-        <p>Affordability for the General Fund, the HRA and the whole authority — the HRA's
-          struck against rents.</p></div>
-    </div>
-  </div>
-</section>
 
 <!-- ======================= WHAT IT LOOKS LIKE ======================= -->
 <section id="looks">
@@ -530,8 +469,8 @@ html.anim .rv.in{opacity:1; transform:none;
         <p>Every limit beside what 143 councils publish, so "is six months unusual?" has an
           answer.</p></div>
       <div class="card rv"><span class="n">05</span><h3>The same shape everywhere</h3>
-        <p>The Code's indicators, charts and colours — not a house style. Independent of any
-          adviser.</p></div>
+        <p>The Code's indicators, charts and colours — not a house style, so one
+          authority's report can be read against another's.</p></div>
       <div class="card rv"><span class="n">06</span><h3>It stays yours</h3>
         <p>No account, no upload, no fee. The figures never leave your browser.</p></div>
     </div>
@@ -539,38 +478,6 @@ html.anim .rv.in{opacity:1; transform:none;
 </section>
 
 <!-- ======================= HONESTY ======================= -->
-<section id="limits">
-  <div class="wrap">
-    <p class="eyebrow rv">What it does not claim</p>
-    <h2 class="rv">A drafting aid, not a compliance statement.</h2>
-    <p class="lede rv">It produces the indicators the Code requires. It does not certify
-      that your authority complies with anything.</p>
-    <ul>
-      <li class="rv"><b>Nothing is extrapolated.</b> Every year is a figure you entered.</li>
-      <li class="rv"><b>The loan book is a starting point.</b> It cannot see market debt or
-        borrowing you intend.</li>
-      <li class="rv"><b>Two pools are not split for you.</b> Nothing published says which pool a
-        loan sits in, so it asks rather than guesses.</li>
-      <li class="rv"><b>Two requirements are yours alone</b> — and are named, not dropped.</li>
-      <li class="rv"><b>Check every figure before committee.</b> It is a draft, and says so on
-        itself.</li>
-    </ul>
-  </div>
-</section>
-
-<!-- ======================= CLOSE ======================= -->
-<section class="close">
-  <div class="wrap">
-    <h2 class="rv">Open it, fill the worked example, and read it.</h2>
-    <p class="lede rv">Three worked authorities are built in — no HRA, one pool, two pools
-      — each filled to the last section.</p>
-
-    <div class="cta rv">
-      <a class="btn" href="pwlbreports-tool.html">Open PWLBreports <span class="arw">&rarr;</span></a>
-    </div>
-  </div>
-</section>
-
 <footer>
   <div class="wrap">
     <span><b>PWLB</b>reports &middot; from PWLBtoday</span>
@@ -737,31 +644,6 @@ setTimeout(()=> {
  * the figures ARE the argument, so making the reader watch them arrive is
  * not decoration.
  */
-function countUp(el){
-  const to = +el.dataset.to;
-  if(STILL){ el.textContent = to.toLocaleString("en-GB"); return; }
-  const t0 = performance.now(), ms = 1250;
-  (function tick(now){
-    const p = Math.min(1, (now - t0)/ms);
-    const e = 1 - Math.pow(1 - p, 3);
-    el.textContent = Math.round(to * e).toLocaleString("en-GB");
-    if(p < 1) requestAnimationFrame(tick);
-  })(t0);
-}
-(function counters(){
-  const figs = $$("#figs b");
-  if(!("IntersectionObserver" in window)){ figs.forEach(countUp); return; }
-  const io = new IntersectionObserver(es => es.forEach(e => {
-    if(e.isIntersecting){ countUp(e.target); io.unobserve(e.target); }
-  }), {threshold:.5});
-  figs.forEach(el => io.observe(el));
-  // A figure stuck at zero states something false, so it is never left to
-  // chance: if it has not counted within five seconds, it is simply written.
-  setTimeout(()=> figs.forEach(el => {
-    if(el.textContent === "0") el.textContent = (+el.dataset.to).toLocaleString("en-GB");
-  }), 5000);
-})();
-
 /* ---- the inconsistency picture -------------------------------------------
  * One mark per distinct section heading found in the corpus, scattered as the
  * sector writes them, resolving into the thirteen sections the Codes require.
