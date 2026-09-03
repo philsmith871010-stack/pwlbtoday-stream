@@ -204,7 +204,7 @@ table.ledger thead th.yr{z-index:3;background:var(--sunken);font-family:var(--sa
    17px, so half again as many years fit on screen. */
 table.ledger td input{width:100%;border:0;background:transparent;padding:0 9px;text-align:right;
   font-family:var(--mono);font-size:12px;line-height:1.35;border-radius:0}
-td.ours input{color:var(--ink2)}
+td.act input{color:var(--ink2)}
 tr.mtfp th.yr{border-left:3px solid var(--accent)}
 tr.beyond th.yr{color:var(--faint)}
 
@@ -237,8 +237,11 @@ table.ledger td:not(.nask){background:var(--cell)}
 table.ledger tbody th.yr{background:var(--cell)}
 table.ledger tbody tr:nth-child(even) td:not(.nask){background:var(--cell-alt)}
 table.ledger tbody tr:nth-child(even) th.yr{background:var(--cell-alt)}
-table.ledger tbody tr:nth-child(even) td.ours{background:var(--cell-ours-alt)}
-table.ledger tbody tr:nth-child(odd) td.ours{background:var(--cell-ours)}
+/* The prior-year actual row. Tinted because it is the one row that is not a
+   projection — it comes from a closed set of accounts — and it used to share
+   a class with the PWLB seeding, so the legend explained it as something it
+   was not. */
+table.ledger tbody td.act{background:var(--cell-ours)}
 table.ledger tbody tr:hover td input{background:var(--sunken)}
 table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offset:-2px}
 .chk{font-family:var(--sans);font-size:11px;padding:4px 9px}
@@ -315,7 +318,7 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
    ?reel=<demo> and framed by the landing page, so what a visitor scrolls
    through is the live tool rather than a screenshot that will go stale. */
 html.reel .railwrap,html.reel .stepnav,html.reel .panel:not(.doc),
-html.reel .toast,html.reel #pv,html.reel .stamp,html.reel header{display:none !important}
+html.reel #pv,html.reel .stamp,html.reel header{display:none !important}
 html.reel .shell{max-width:none;padding:0}
 html.reel body{background:var(--card)}
 html.reel .panel.doc{border:0;box-shadow:none;margin:0;border-radius:0}
@@ -1193,7 +1196,7 @@ svg.ctip .hits rect{cursor:crosshair}
   .no-print{display:none !important}
   /* The workspace is not the document. Only the draft prints. */
   .railwrap, .rail, .stepnav, .phead, .pv, .askbox, .pvveil, .libbox,
-  .cpsurv-modal, .toast, .ltools, .picker, #stepwrap > .panel:not(.doc){display:none !important}
+  .cpsurv-modal, .ltools, .picker, #stepwrap > .panel:not(.doc){display:none !important}
   .shell{max-width:none;padding:0}
   .panel.doc{border:0;box-shadow:none;padding:0;background:transparent}
   .doc .toc, .doc .warn{display:none}
@@ -1214,12 +1217,6 @@ svg.ctip .hits rect{cursor:crosshair}
 }
 /* A message you cannot miss. The step you are on decides which notes are on
    screen, so anything worth saying goes here as well. */
-.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:120;
-  background:var(--ink);color:var(--paper);font-family:var(--sans);font-size:13.5px;
-  font-weight:500;line-height:1.5;padding:11px 18px;border-radius:var(--r);
-  box-shadow:0 10px 34px rgba(15,26,36,.28);max-width:min(560px,88vw);
-  opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s ease}
-.toast.on{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 
 /* A year a column is not asked for. Hatched rather than blank, so it reads as
@@ -1555,7 +1552,6 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
       </div>
       <div class="ledgerwrap"><table class="ledger" id="ledger"></table></div>
       <div class="legendkey">
-        <span><i style="background:var(--cell-ours)"></i>seeded from the PWLB book — yours to amend</span>
         <span><i style="background:var(--cell)"></i>yours</span>
         <span><i style="border-left:3px solid var(--accent);border-radius:0"></i>your MTFP years</span>
       </div>
@@ -1806,7 +1802,12 @@ const COLS = [
   {k:"mrp",   l:"MRP",                          s:"charged in year"},
   {k:"rec",   l:"Capital receipts<br>applied",  s:"set aside"},
   {k:"obs",   l:"Other balance<br>sheet items", s:"LB1 (b)"},
-  {k:"loans", l:"Existing loan<br>commitments", s:"LB3 (d)", ours:true, pooled:true},
+  /* No tint. It marked a figure seeded from the PWLB book, and nothing seeds
+     this row from the book any more — the seeding button went when the debt
+     table became categories you type. A colour that once meant something and
+     now means nothing is worse than no colour: it invites the question and
+     has no answer. */
+  {k:"loans", l:"Existing loan<br>commitments", s:"LB3 (d)", pooled:true},
   {k:"inv",   l:"Existing investment<br>commitments", s:"LB3 (e)", gf:true},
   {k:"liq",   l:"Liquidity<br>allowance", s:"sets the benchmark", gf:true, scalar:true},
   {k:"capex", l:"Capital expenditure<br>financed by borrowing", mtfp:true},
@@ -1825,6 +1826,35 @@ const COLS = [
    drops everything else — currency signs, thousands separators, letters, a
    second point. Applied as it is typed rather than on blur, so the cell never
    shows a value the model does not hold. */
+/* ONE PLACE THAT KEEPS A NUMBER A NUMBER.
+ *
+ * Fourteen fields in the tool are declared inputmode="decimal" and three of
+ * them cleaned what was typed. The other eleven — the counterparty cash
+ * limits and durations, the approved limits, the group companies' figures,
+ * the prior-year actuals and the minimum liquidity balance — took "£12.4m",
+ * "circa 15" or anything else, and num() read whatever number it could find
+ * and dropped the rest without a word. A figure that is right by luck is the
+ * kind that is wrong on the one report nobody checks.
+ *
+ * Delegated, and in the CAPTURE phase on purpose: capture runs before the
+ * field's own listener, so every handler that reads e.target.value gets the
+ * cleaned text rather than what was typed. Wiring each site separately is how
+ * eleven of fourteen came to be missed, and how the fifteenth would be.
+ */
+function wireNumericFields(){
+  document.addEventListener("input", e => {
+    const t = e.target;
+    if(!t || t.tagName !== "INPUT" || t.inputMode !== "decimal") return;
+    const was = t.value, at = t.selectionStart;
+    const clean = numeric(was);
+    if(clean === was) return;
+    t.value = clean;
+    // Put the caret back where it was, less whatever was removed before it.
+    const back = was.length - clean.length;
+    try{ t.setSelectionRange(Math.max(0, at - back), Math.max(0, at - back)); }catch(_){}
+  }, true);
+}
+
 function numeric(v){
   let s = String(v == null ? "" : v).replace(/[^0-9.\-]/g, "");
   const neg = s.startsWith("-");
@@ -1874,6 +1904,18 @@ const hiddenFor = (fund, pool) =>
   fund === "hra" ? GF_ONLY.concat(pool === "one" ? POOLED : []) : [];
 /* Which columns the grid shows. A scalar is asked for once, above the grid,
    rather than fifty-one times inside it. */
+/* The funds the REPORT has — which is not the fund the figures grid happens to
+ * be showing.
+ *
+ * S.fund is a view selector: it says which tab of one step is open. The rail
+ * and the compliance check describe the report, and they were reading it, so
+ * clicking "Housing Revenue Account" to look at the HRA's figures took the
+ * tool from 7 of 8 complete to 5 of 8 and raised a liquidity gap — the HRA
+ * has no liquidity allowance by design, the General Fund managing liquidity
+ * for the whole authority. Looking at something is not changing it.
+ */
+function fundsInPlay(){ return S.hra === "no" ? ["gf"] : ["gf", "hra"]; }
+
 const colsFor = (fund, pool) => {
   const hide = new Set(hiddenFor(fund, pool));
   return COLS.filter(c => !c.scalar && !hide.has(c.k));
@@ -1933,7 +1975,13 @@ function chartAlt(d, spec){
 }
 
 function chart(d, spec){
-  const W=900, H=(spec.h||260)+14, P={t:18,r:18,b:32,l:70};
+  /* 900 by 325 rather than 900 by 260. At the old height the liability
+     benchmark charts were more than three times as wide as they were tall,
+     which flattens exactly the thing they exist to show — a benchmark falling
+     away under a loan portfolio that runs off more slowly. A quarter more
+     height gives the lines room to separate without the chart becoming a
+     square that wastes the page. */
+  const W=900, H=(spec.h||325)+14, P={t:18,r:18,b:32,l:70};
   const iw=W-P.l-P.r, ih=H-P.t-P.b;
   const keys=spec.lines.map(l=>l.k).concat((spec.fill||[]).map(f=>f.k))
     .concat((spec.bars||[]).map(b=>b.k));
@@ -2123,25 +2171,18 @@ function chart(d, spec){
     const slot = Math.max(1.2, (iw / Math.max(1, d.length)) * 0.94);
     const y0 = Y(0);
     let out = "";
-    /* A SOLO BAR DOES NOT JOIN THE STACK. Stacking is for series that
-       COMPOSE a total; a memo quantity that happens to be a position is not
-       part of that total, and stacking it says the total is bigger than it
-       is. It draws from zero in its own narrower slot, alongside. */
-    const solo = spec.bars.filter(b => b.solo), pile = spec.bars.filter(b => !b.solo);
+    /* NO SOLO BARS. One series was drawn alongside the stack rather than in
+       it — the inter-fund position on LB3 — and drawing it that way split
+       every slot in two, so the one chart in the set that had it drew
+       half-width columns with a gap down the middle of each year. It stacks
+       now, which is what the reader was asking of it anyway: the column
+       reaching the benchmark is how LB3 shows a shortfall being met. The
+       capability is removed rather than left switched off, because a chart
+       option nothing uses is one somebody switches back on without knowing
+       what it cost. */
     d.forEach((p, i) => {
       let up = 0, dn = 0;
-      solo.forEach(b => {
-        let v = p[b.k];
-        if(v == null || !isFinite(v) || v === 0) return;
-        if(b.neg) v = -Math.abs(v);
-        const yA = Y(0), yB = Y(v), top = Math.min(yA, yB), h = Math.abs(yA - yB);
-        if(h < 0.3) return;
-        const w = slot * 0.42;
-        out += `<rect x="${(X(i) - slot/2 + slot*0.58).toFixed(1)}" y="${top.toFixed(1)}"
-          width="${w.toFixed(2)}" height="${h.toFixed(1)}" fill="${b.c}"${
-          b.o == null ? "" : ` opacity="${b.o}"`}/>`;
-      });
-      pile.forEach(b => {
+      spec.bars.forEach(b => {
         let v = p[b.k];
         if(v == null || !isFinite(v) || v === 0) return;
         if(b.neg) v = -Math.abs(v);
@@ -2151,7 +2192,7 @@ function chart(d, spec){
         if(v >= 0) up += v; else dn += v;
         if(h < 0.3) return;
         out += `<rect x="${(X(i) - slot/2).toFixed(1)}" y="${top.toFixed(1)}"
-          width="${(solo.length ? slot*0.54 : slot).toFixed(2)}" height="${h.toFixed(1)}"
+          width="${slot.toFixed(2)}" height="${h.toFixed(1)}"
           fill="${b.c}"${b.o == null ? "" : ` opacity="${b.o}"`}/>`;
       });
     });
@@ -2255,12 +2296,33 @@ const legendFor = spec => legend(
   (spec.fill || []).filter(f => f.t).map(f => Object.assign({fill:true}, f))
     .concat((spec.bars || []).filter(b => b.t).map(b => Object.assign({bar:true}, b)))
     .concat((spec.lines || []).filter(l => l.t)));
+/* `neg` shows a row as the deduction it is.
+ *
+ * The model stores other balance sheet items as a positive magnitude, because
+ * the net treasury position is the CFR LESS them. The consultation presents
+ * the same quantity the other way up: its worked example has £245.03m of CFR,
+ * a net treasury position of £165.57m and "other balance sheet items started
+ * the projection at (£79.47m)" — bracketed, as a negative. Reading our table
+ * beside theirs, the same authority's figure had the opposite sign.
+ *
+ * Presentation, not arithmetic: nothing downstream changes, and the entry
+ * grid still asks for the magnitude, the same bargain the investment rows
+ * already make. */
 function otable(d, rows, n){
   const cols=d.slice(0, n||10);
+  /* Bracketed, not a minus sign — which is how the underpinning table already
+     writes a negative, and how the consultation writes one: "(£79.47m)". Two
+     tables in the same report were spelling the same quantity two ways. */
+  const cell = (c, r) => {
+    const v = c[r.k];
+    if(v == null || !isFinite(v)) return m1(v);
+    if(r.neg) return Math.abs(v) < 0.005 ? m1(0) : `(${m1(Math.abs(v))})`;
+    return v < 0 ? `(${m1(Math.abs(v))})` : m1(v);
+  };
   return `<div style="overflow-x:auto"><table class="otable">
     <thead><tr><th>£m</th>${cols.map(c=>`<th>${fy(c.fy)}</th>`).join("")}</tr></thead>
     <tbody>${rows.map(r=>`<tr class="${r.cls||''}"><td>${esc(r.l)}</td>${
-      cols.map(c=>`<td>${m1(c[r.k])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+      cols.map(c=>`<td>${cell(c, r)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 const IND=(n,t,b)=>`<section class="ind"><h3><span class="lbtag">${n}</span>${esc(t)}</h3>${b}</section>`;
 
@@ -3050,9 +3112,6 @@ function walkCheck(S, fund){
   return bad;
 }
 
-/* Existing PWLB loans, year by year, straight from the published book, plus
-   anything the user has added amortised on its own stated terms. This is the
-   one column we can fill for the full horizon. */
 function loanProfile(S, LB){
   const out = new Array(S.years).fill(0);
   S.loans.forEach(L => {
@@ -7004,7 +7063,7 @@ function docSections(){
         ${fy(d[d.length-1].fy)} as the minimum revenue provision is charged. No assumption is
         made about capital budgets not yet approved.</p>`
       + otable(d,[{l:"Capital financing requirement",k:"cfr"},
-                  {l:"Other balance sheet items",k:"obs"},
+                  {l:"Other balance sheet items",k:"obs",neg:true},
                   {l:"Net treasury position",k:"ntp",cls:"key"}])
       // Only where a previous report was actually loaded. It never invents a
       // movement, and it says which report it is moving from.
@@ -7440,8 +7499,14 @@ function indicatorParts(gf, hra, all, hasHRA, twoPool){
   if(twoPool) return [
     {model:gf,  label:"General Fund", cross:hra,  fund:"gf",  heading:"",
      tags:["LB1","LB2","LB3","LB4"]},
-    {model:hra, label:"HRA",          cross:null, fund:"hra", heading:"Housing Revenue Account",
-     tags:["LB1","LB2","LB3","LB4"]},
+    /* The HRA's LB3 carries the series too. The consultation asks for the
+       inter-fund relationship "on each LB3 chart", and the HRA is the fund
+       the shortfall belongs to — leaving it off its own chart showed the
+       column falling short of the benchmark and said nothing about what
+       closes the gap. It needs the General Fund's rows for the same reason
+       LB6 does: the cap is what the General Fund actually has spare. */
+    {model:hra, label:"HRA",          cross:hra,  fund:"hra", heading:"Housing Revenue Account",
+     gf, tags:["LB1","LB2","LB3","LB4"]},
     // LB5 is never split, and LB6 exists only here: it is the chart of what
     // one fund has lent the other, which a single pool does not have.
     {model:all, label:"",             cross:hra,  fund:"all", heading:"Whole authority",
@@ -7733,8 +7798,22 @@ function inlineColours(html){
  * balance sheet, found none, concluded there was no inter-fund position, and
  * suppressed itself: the button was offered and the panel came up empty. The
  * lender is named explicitly now rather than inferred from the caller. */
-function crossFund(rows, hra, gfRows){
+/* THE SIGN BELONGS TO THE CHART IT IS DRAWN ON.
+ *
+ * The quantity is computed once, from the HRA's side: positive means the HRA
+ * is short against its benchmark and is funded by the General Fund. Drawn on
+ * the General Fund's own chart that reading is upside down — the General Fund
+ * is LENDING, and a positive column there says it is borrowing more. Each
+ * chart now shows the position of the fund it belongs to: positive is money
+ * this fund has taken from the other, negative is money it has advanced.
+ *
+ * `side` is which fund's chart this is. LB6 is the whole authority's chart of
+ * the relationship itself, so it keeps the HRA's framing, which is what its
+ * row label says.
+ */
+function crossFund(rows, hra, gfRows, side){
   const lender = gfRows || rows;
+  const flip = side === "gf" ? -1 : 1;
   return rows.map((g,i)=>{
     const h = hra[i] || {lb:0, el:0};
     const L = lender[i] || {lb:0, el:0};
@@ -7744,7 +7823,7 @@ function crossFund(rows, hra, gfRows){
       ? Math.min(hraShort, gfSpare)   // the GF can only advance what it holds
       : hraShort;                     // the HRA is over-borrowed: it can lend it all
     return Object.assign({}, g, {
-      cross,
+      cross: cross * flip,
       // What the cap left behind: the HRA's own requirement, which is not an
       // inter-fund position and must not be drawn as one.
       crossUnmet: hraShort > 0 ? Math.max(0, hraShort - gfSpare) : 0
@@ -7758,7 +7837,7 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
   const only = O.only || null;
   const want = tag => !only || only.indexOf(tag) >= 0;
   const tag = fundLabel ? ` — ${esc(fundLabel)}` : "";
-  const D = hraSet ? crossFund(d, hraSet, O.gf) : d;
+  const D = hraSet ? crossFund(d, hraSet, O.gf, O.fund) : d;
 
   /* SERIES (f) BELONGS TO LB3, AND NOWHERE ELSE.
    *
@@ -7791,8 +7870,21 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
      zero columns saying nothing, which a reader still has to decode. Where
      there is no inter-fund position, the honest chart does not have the
      series on it, and the note below says so. */
+  /* IT STACKS. I drew it alongside instead, reasoning that money the General
+     Fund lends the HRA is already inside the General Fund's own borrowing and
+     stacking it again would double count. That is true of the General Fund's
+     side and it is not true of the HRA's, which is the side the series is
+     named from: where the HRA's external loans fall short of its benchmark,
+     the difference is funded from the General Fund, and stacking it is what
+     shows the shortfall being met — the column reaches the benchmark, which
+     is the whole question LB3 asks. On the General Fund's chart the same
+     quantity is negative and stacks downward, saying that much of what it
+     holds is on-lent rather than held for itself.
+     Drawn alongside it also cost the chart its shape: a solo series splits
+     every slot in two, so LB3 was the one chart in the set drawing half-width
+     columns with a gap down the middle of each year. */
   const anyCross = hraSet && D.some(r => Math.abs(r.cross || 0) > 0.05);
-  const XF = anyCross ? [{k:"cross", solo:true,
+  const XF = anyCross ? [{k:"cross",
     t:"HRA borrowing from / (lending to) the General Fund",
     c:"var(--l-strat)"}] : [];
   const noCross = hraSet && !anyCross
@@ -7811,8 +7903,17 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
    ${!want("LB1") ? "" : IND("LB1","Net treasury position"+tag,
      P({xlab:fy, label:"LB1", lines:[
        {k:"cfr",t:"Capital financing requirement",c:"var(--l-cfr)",w:2.2},
-       {k:"obs",t:"Other balance sheet items",c:"var(--l-obs)",w:2.2},
+       {k:"obs",t:"Other balance sheet items",c:"var(--l-obs)",w:2.2,neg:true},
        {k:"ntp",t:"Net treasury position",c:"var(--l-ntp)",w:2.2}]})
+     /* LB1 was the one indicator with no table under it. Every other one has
+        the figures beneath the picture, which is what lets a reader check a
+        line rather than take it — and LB1 is the indicator the whole framework
+        starts from, so it is the last one that should be a picture alone. Its
+        three series, in the Code's own order: (a) less (b) is the net position
+        the rest of the framework is built on. */
+     + otable(d,[{l:"Capital financing requirement",k:"cfr"},
+                 {l:"Other balance sheet items",k:"obs",neg:true},
+                 {l:"Net treasury position",k:"ntp",cls:"key"}])
      + readoutHTML("LB1", d, fundLabel))}
    ${!want("LB2") ? "" : IND("LB2","Treasury benchmarks"+tag,
      P({xlab:fy, label:"LB2", lines:[
@@ -7826,7 +7927,7 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
    ${!want("LB3") ? "" : IND("LB3","Treasury commitments compared to the benchmarks"+tag,
      /* Commitments are COLUMNS against benchmark LINES, as the consultation
         draws them. The order here is the order of its own legend. */
-     P({xlab:fy, label:"LB3", h:280,
+     P({xlab:fy, label:"LB3", h:350,
        // Investments below the line, as the consultation's own table
        // brackets them; the figure in our tables keeps its sign.
        // A position stacks with the other positions; the benchmarks stay lines.
@@ -7848,13 +7949,13 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
    ${!want("LB4") ? "" : IND("LB4","Borrowing requirement / over-borrowing"+tag,
      // "as a single series", and a column chart: over-borrowed years hang
      // below the zero line, which is the whole point of the picture.
-     P({xlab:fy, label:"LB4", h:240,
+     P({xlab:fy, label:"LB4", h:300,
        bars:[{k:"br",t:"Borrowing requirement / above-benchmark borrowing",c:"var(--l-br)"}],
        lines:[]})
      + otable(d,[{l:"Borrowing requirement",k:"need"},{l:"Above-benchmark borrowing",k:"over"}])
      + readoutHTML("LB4", d, fundLabel))}
    ${(skipLB5 || !want("LB5")) ? "" : IND("LB5","Treasury investment position",
-     P({data:d, label:"LB5", h:240, xlab:fy,
+     P({data:d, label:"LB5", h:300, xlab:fy,
        // Every series on LB5 is an investment, and the consultation's table
        // brackets every one of them.
        /* Balances are columns; the benchmark they are measured against stays
@@ -7882,7 +7983,7 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
         LB1-LB6" its own heading promises. Two-pool authorities only: it
         quantifies what one fund has lent the other, which under a single pool
         does not exist. */
-     P({data:D, xlab:fy, label:"LB6", h:220,
+     P({data:D, xlab:fy, label:"LB6", h:275,
        bars:[{k:"cross", t:"General Fund lending to / borrowing from the HRA",
               c:"var(--l-strat)"}], lines:[]})
      + otable(D,[{l:"HRA borrowing from / (lending to) the General Fund",k:"cross",cls:"key"}])
@@ -8220,7 +8321,12 @@ function groupPanel(){
  * ======================================================================== */
 const UNDER_ROWS = [
   {k:"cfr", l:"Capital financing requirement"},
-  {k:"obs", l:"Other balance sheet items"},
+  /* Shown as the deduction it is, which makes the top of this table read as
+     the sum it is: capital financing requirement plus other balance sheet
+     items equals the net treasury position. The consultation's own worked
+     example writes it (£79.47m) against a CFR of £245.03m and a net position
+     of £165.57m. */
+  {k:"obs", l:"Other balance sheet items", neg:true},
   {k:"ntp", l:"Net treasury position", b:true},
   {gap:true},
   {k:"tib", l:"Treasury investment benchmark", neg:true},
@@ -8710,14 +8816,16 @@ const CHECKS = [
   {k:"cfr", src:"PC E10", g:"Figures", in:CK_ALL,
    t:"A capital financing requirement is projected across the report's horizon",
    run(){
-     const g = S.g[S.fund] || S.g.gf, n = (g.cfr||[]).filter(v=>v).length;
+     // Every fund the report has, never the tab that happens to be open.
+     const n = Math.max(...fundsInPlay().map(f =>
+       ((S.g[f] || {}).cfr || []).filter(v => v).length));
      return n ? {v:"met", note:`${n} year${n===1?"":"s"} entered.`}
               : {v:"gap", note:"Nothing entered. Every indicator is built from it.", go:3};
    }},
   {k:"walk", src:"PC E9", g:"Figures", in:CK_ALL,
    t:"The CFR movement reconciles with the MRP and capital expenditure entered",
    run(){
-     const bad = walkCheck(S, S.fund);
+     const bad = fundsInPlay().reduce((a, f) => a.concat(walkCheck(S, f)), []);
      return bad.length
        ? {v:"gap", go:3, note:`${bad.length} year${bad.length===1?"":"s"} disagree — first at `
           + `${fy(bad[0].fy)}: entered ${m1(bad[0].cur)}, the walk implies ${m1(bad[0].implied)}. `
@@ -8728,7 +8836,11 @@ const CHECKS = [
   {k:"liq", src:"TMC LB", g:"Figures", in:CK_ALL,
    t:"A minimum liquidity allowance is set — it is what turns the net position into a benchmark",
    run(){
-     const g = S.g[S.fund] || S.g.gf;
+     /* The General Fund's, always. The HRA has no liquidity allowance under
+        either pooling approach — the consultation is explicit that the General
+        Fund manages liquidity for the whole authority — so asking the HRA tab
+        for one produced a gap that could never be closed. */
+     const g = S.g.gf || {};
      return (g.liq||[]).some(v=>v)
        ? {v:"met", note:`£${m1(S.minliq || (g.liq||[])[0] || 0)}m applied across every year.`}
        : {v:"gap", note:"Not set. Without it the liability benchmark is the net treasury "
@@ -8776,8 +8888,8 @@ const CHECKS = [
   {k:"nrs", src:"PC E10", g:"Figures", in:CK_ALL,
    t:"A net revenue stream is entered, so affordability can be computed",
    run(){
-     const g = S.g[S.fund] || S.g.gf;
-     return (g.nrs||[]).some(v=>v)
+     const has = fundsInPlay().some(f => ((S.g[f] || {}).nrs || []).some(v => v));
+     return has
        ? {v:"met", note:"Financing costs to net revenue stream are computed for every year entered."}
        : {v:"gap", note:"Not entered, so the affordability ratio cannot be shown — and having "
           + "regard to affordability is a duty, not an option.", go:3};
@@ -9118,8 +9230,11 @@ const LIVE_STEPS = new Set([2, 3, DRAFT_STEP, CHECK_STEP]);
  *   need:  what would move it on, or null when nothing is outstanding
  */
 function stepStatus(k){
-  const g = S.g[S.fund] || S.g.gf;
-  const any = key => (g[key] || []).some(v => v);
+  /* Never S.fund: that is which tab is open, and the rail describes the
+     report. The General Fund always exists, so it carries the year counts;
+     presence is asked of every fund the report has. */
+  const g = S.g.gf || {};
+  const any = key => fundsInPlay().some(f => ((S.g[f] || {})[key] || []).some(v => v));
 
   if(k === "setup"){
     if(!S.gss) return {state:"", note:"No authority chosen", need:"Pick your authority to fill the PWLB loan book."};
@@ -9176,7 +9291,7 @@ function stepStatus(k){
     if(!any("cfr")) return {state:"", note:"No capital financing requirement entered",
                             need:"Enter or paste a CFR — every indicator is built from it."};
     const yrs = (g.cfr||[]).filter(v=>v).length;
-    const bad = walkCheck(S, S.fund).length;
+    const bad = fundsInPlay().reduce((n, f) => n + walkCheck(S, f).length, 0);
     const noLiq = !any("liq");
     if(bad) return {state:"part", note:`${yrs} year${yrs===1?"":"s"} entered · CFR does not reconcile`,
                     need:"The CFR movement disagrees with the MRP and capital spend entered. Your figures are used as entered."};
@@ -9374,14 +9489,14 @@ function buildLedger(){
         return `<td class="drv" data-obs="1" title="derived: the capital financing requirement
           less the debt and investments held"></td>`;
       const v = (S.actual && S.actual[S.fund] || {})[c.k];
-      return `<td class="ours"><input type="text" inputmode="decimal" data-k="${c.k}"
+      return `<td class="act"><input type="text" inputmode="decimal" data-k="${c.k}"
         data-i="${A_IDX}" value="${v == null ? "" : m1(v)}" placeholder="—"
         aria-label="${esc(c.l.replace(/<br>/g," "))} ${fy(S.fy0-1)} actual"></td>`;
     }).join("") + `</tr>`;
   for(let i=0;i<S.years;i++){
     h += `<tr class="${i<MTFP?"mtfp":"beyond"}"><th class="yr">${fy(S.fy0+i)}</th>` +
       CS.map(c=> colAsked(c, i)
-        ? `<td class="${c.ours?"ours":""}">
+        ? `<td>
             <input type="text" inputmode="decimal" data-k="${c.k}" data-i="${i}" value="0.0"
               aria-label="${esc(c.l.replace(/<br>/g," "))} ${fy(S.fy0+i)}"></td>`
         // Beyond the MTFP a budget line is not nil, it is not forecast. An
@@ -9479,53 +9594,6 @@ function syncLedger(force){
     : "";
 }
 function refresh(){ syncLedger(); render(); }
-
-/* Say what happened, or what did not.
- *
- * This used to write into #projnote, which lives in step 3. Pressed from step
- * 2 the message went into an element with no offsetParent — invisible — so the
- * demonstration button refused and said so to nobody, and read as dead. A
- * message that might be off-screen is not a message, so it goes to a toast
- * that is always in view, and to the step's own note as well when that note
- * happens to be showing.
- */
-let _toast = null, _toastT = null;
-function flash(msg){
-  const el = $("projnote");
-  if(el && el.offsetParent) el.textContent = msg;
-  if(!_toast){
-    _toast = document.createElement("div");
-    _toast.className = "toast";
-    document.body.appendChild(_toast);
-  }
-  _toast.textContent = msg;
-  _toast.classList.add("on");
-  clearTimeout(_toastT);
-  _toastT = setTimeout(() => _toast.classList.remove("on"), 4200);
-}
-
-/* Seed the existing-loans row from the PWLB book.
- *
- * This used to run on every change, which made the row OURS: whatever an
- * authority typed into it was overwritten on the next keystroke elsewhere.
- * That was the wrong owner. We know the PWLB book with high confidence and
- * can run it off contractually, but the row has to carry market debt, LOBOs,
- * loans from other authorities and whatever new borrowing the authority
- * intends — none of which we can see. So the book is a starting point that
- * is applied when asked for, and the row belongs to the authority after that.
- *
- * Under a two-pool HRA it is not offered at all. The published book does not
- * say which pool a loan sits in, and nothing else does either; splitting it
- * on any rule we could invent would put a made-up number in front of members.
- */
-function seedLoansFromBook(){
-  if(S.hra === "two"){ flash("The book cannot be split between pools — enter each fund's own projection."); return; }
-  const prof = loanProfile(S, LB);
-  S.g[S.fund].loans = prof.slice();
-  S.loansSeeded = S.fund;
-  syncLedger(true); render();
-}
-function applyLoans(){ syncLedger(true); render(); }
 
 /* ---- what is held -------------------------------------------------------
  *
@@ -10693,6 +10761,7 @@ function stampSaved(word){
   // here and survives every re-render of its own contents.
   cpRender(); cpWire();
   wireSteps();
+  wireNumericFields();
 
   /* ---- reel mode ---------------------------------------------------------
    *
