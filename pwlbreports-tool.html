@@ -759,8 +759,20 @@ table.pwlbtab td.num,table.pwlbtab th.num{text-align:right}
 .legend i.lfill{width:20px;height:10px;border-radius:2px}
 .legend i.lbar{width:11px;height:13px;border-radius:1px}
 .legend .lsw{flex:none}
+/* ROOM AROUND A BLOCK, NOT INSIDE IT. Tightening the rows was right and left
+   the tables and charts crowding the prose either side of them — 8px above a
+   table that follows a paragraph reads as part of the paragraph. The air goes
+   between the blocks, where it separates one idea from the next, rather than
+   between the rows, where the rules already do that job. */
 .otable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;
-  font-variant-numeric:tabular-nums;margin-top:8px}
+  font-variant-numeric:tabular-nums;margin:18px 0 6px}
+.doc .otable{margin:20px 0 8px}
+.under .ugap td{height:9px;border:0;padding:0}
+.doc .chartwrap{margin:22px 0 10px}
+.doc .legend{margin-bottom:20px}
+.doc .note{margin-top:10px;margin-bottom:22px}
+.doc .readout{margin-top:16px;margin-bottom:6px}
+.doc h4{margin-top:26px}
 /* ROW HEIGHT IS WHAT MAKES A FINANCIAL TABLE LOOK PROFESSIONAL OR NOT.
    Seven pixels above and below a 12.5px figure gives a 27px row, so a
    five-year indicator table ran the depth of a chart and a fifty-year run-off
@@ -2736,9 +2748,27 @@ function actualRow(S, fund){
     : (A.gf || {});
   if(!ACTUAL_COLS.some(k => +f[k])) return null;      // nothing entered: no row
   const n = k => +f[k] || 0;
-  const cfr = n("cfr"), obs = n("obs"), liq = n("liq");
+  /* AT THE OPENING DATE, OTHER BALANCE SHEET ITEMS ARE DERIVED, NOT ENTERED.
+   *
+   * The consultation is precise about this and I had missed it: "At the
+   * latest balance sheet date, the net treasury position is known from the
+   * actual treasury principal amounts at the balance sheet date. The capital
+   * financing requirement is also known, so AT THE STARTING POINT, OTHER
+   * BALANCE SHEET ITEMS ARE CALCULATED, as the difference between the net
+   * treasury position and the CFR."
+   *
+   * Two of the three are facts from the accounts -- the CFR, and the loans
+   * and investments actually held. The third is what reconciles them, and
+   * asking somebody to type it invites a figure that does not: the
+   * underpinning table then opens at one net position, closes at another, and
+   * nothing says which is wrong.
+   *
+   * So it is computed. If an authority enters it anyway, the entry is kept —
+   * it is their balance sheet — but the reconciliation is what it is. */
+  const cfr = n("cfr"), liq = n("liq");
   const el = n("loans"), ei = n("inv");
-  const ntp = cfr - obs;
+  const ntp = el - ei;
+  const obs = f.obs != null && +f.obs ? n("obs") : cfr - ntp;
   const hraTwoPool = fund === "hra" && S.hra === "two";
   const tib = hraTwoPool ? 0 : Math.max(liq, -ntp);
   const lb  = hraTwoPool ? ntp : ntp + tib;
@@ -2938,9 +2968,8 @@ function marketBlock(){
   // else's forecast of a rate that resets before it is read.
   return `<h4>PWLB rates</h4>${curveTable()}
     ${rateBlock()}${rangeTable()}
-    <p class="note">Rates as at <b>${esc(mkDate())}</b>, from PWLBtoday. This page carries a
-      snapshot taken when it was built; on pwlbtoday.org the same tables refresh with each
-      reset.</p>`;
+    <p class="note">PWLB certainty rates as at <b>${esc(mkDate())}</b>, from the PWLB's own
+      published notices. Rates reset each working day; check them before you transact.</p>`;
 }
 
 /* ===========================================================================
@@ -6221,6 +6250,12 @@ function docSections(){
         those proposals the operational boundary and the maturity structure of borrowing are no
         longer formal indicators.</p>`},
 
+   {k:"under", n:"7b", t:"The data underpinning the indicators",
+    b: `<p>The figures behind the charts above, as the Code recommends they be provided.
+        The net treasury position opens the table and closes it: everything between shows
+        how the authority moves from one to the other, so the table can be checked from top
+        to bottom.</p>` + underpinningAll()},
+
    {k:"afford", n:"7c", t:"Affordability", b: affordBlock(d)},
 
    {k:"compliance", n:"7b", t:"Compliance with treasury and prudential limits",
@@ -7073,7 +7108,8 @@ function actualPanel(){
   S.actual = S.actual || {};
   const funds = S.hra === "no" ? [["gf","Whole authority"]]
                                : [["gf","General Fund"],["hra","HRA"]];
-  const cols = COLS.filter(c => ACTUAL_COLS.indexOf(c.k) >= 0);
+  // obs is derived at the opening date, so it is not asked for.
+  const cols = COLS.filter(c => ACTUAL_COLS.indexOf(c.k) >= 0 && c.k !== "obs");
   return `<p class="cpsub">The Code asks that the table and charts commence with the most
       recent actual year-end, taken from the statement of accounts. Enter
       ${fy(S.fy0 - 1)} and every chart starts there; leave it and they start at
@@ -7119,6 +7155,102 @@ function groupPanel(){
       <span class="hintline">"Paid to the authority" is the intra-group transfer that comes
         out of the group figures. "Income from third parties" is what the group actually
         earns from outside itself.</span></div>`;
+}
+
+/* ===========================================================================
+ * The data underpinning the charts, as the consultation prints it.
+ *
+ * "The data underpinning the charts should also be provided, for a
+ * recommended 10-year period, to aid the understanding of the charts."
+ *
+ * We were providing it in pieces: three or four rows under each chart, each a
+ * different slice, none of them the whole. The consultation prints ONE table
+ * of sixteen rows, and it is better than our fragments for a reason worth
+ * stating -- IT RECONCILES. The net treasury position is the first bold line
+ * and the last, and everything between shows how the authority gets from one
+ * to the other: benchmarks, then commitments, then the borrowing that closes
+ * the gap, then the investments. A reader who adds up the bottom half and
+ * arrives back at the top has checked the whole model.
+ *
+ * Investments are negative, as they are throughout the consultation's own
+ * table: total borrowing plus total investments IS the net treasury position,
+ * and that identity only reads if one of them is signed.
+ * ======================================================================== */
+const UNDER_ROWS = [
+  {k:"cfr", l:"Capital financing requirement"},
+  {k:"obs", l:"Other balance sheet items"},
+  {k:"ntp", l:"Net treasury position", b:true},
+  {gap:true},
+  {k:"tib", l:"Treasury investment benchmark", neg:true},
+  {k:"lb",  l:"Liability benchmark"},
+  {k:"al",  l:"Authorised limit"},
+  {gap:true},
+  {k:"el",  l:"Existing loan commitments"},
+  {k:"ei",  l:"Existing investment commitments", neg:true},
+  {gap:true},
+  {k:"br",  l:"Cumulative borrowing requirement / (overborrowing)"},
+  /* TOTAL BORROWING IS EXISTING LOANS PLUS THE REQUIREMENT, not the liability
+     benchmark. They are the same number in a projected year, which is why
+     using the benchmark looked right — and they are NOT the same in the
+     actual year, where there is no requirement yet and total borrowing is
+     simply the debt held. CIPFA's own table shows 178.10 against 178.10 in
+     the prior year and 125.52 + 108.58 = 234.10 in the first projected one. */
+  {d:"totborr", l:"Total borrowing", b:true},
+  {gap:true},
+  {k:"liq", l:"Liquidity investment balance", neg:true},
+  {k:"strategic", l:"“Strategic” investment balance", neg:true},
+  {k:"excess", l:"Over-benchmark investments", neg:true},
+  {d:"totinv", l:"Total investments", neg:true, b:true},
+  {gap:true},
+  {k:"ntp", l:"Net treasury position", b:true}
+];
+
+function underpinning(fund, years){
+  const d = buildModel(S, fund);
+  const a = actualRow(S, fund);
+  const cols = (a ? [a] : []).concat(d.slice(0, years || 10));
+  if(!cols.length) return "";
+  // The two rows that are sums rather than model fields, and the actual year
+  // where a projection concept has no value at all.
+  const derive = (r, k) => {
+    if(k === "totborr") return (r.el || 0) + (r.actual ? 0 : (r.br || 0));
+    if(k === "totinv")  return r.actual ? (r.ei || 0) : (r.inv || 0);
+    return null;
+  };
+  const cell = (r, x) => {
+    let v = x.d ? derive(r, x.d) : r[x.k];
+    if(x.k === "br" && r.actual) return "-";   // no requirement in a closed year
+    if(v == null || !isFinite(v)) return "–";
+    if(Math.abs(v) < 0.005) return "-";
+    if(x.neg) return `(${m1(Math.abs(v))})`;
+    // The row is headed "requirement / (overborrowing)", so the second case
+    // is bracketed rather than carrying a minus sign.
+    if(x.k === "br" && v < 0) return `(${m1(Math.abs(v))})`;
+    return m1(v);
+  };
+  return `<div style="overflow-x:auto"><table class="otable under">
+    <thead><tr><th>£m</th>${cols.map((r,i) =>
+      `<th>${fy(r.fy)}<br><i>${r.actual ? "prev year actual" : (i === (a?1:0) ? "current year"
+        : "estimate")}</i></th>`).join("")}</tr></thead>
+    <tbody>${UNDER_ROWS.map(x => x.gap
+      ? `<tr class="ugap"><td colspan="${cols.length+1}"></td></tr>`
+      : `<tr${x.b ? ' class="key"' : ""}><td class="w">${esc(x.l)}</td>${
+          cols.map(r => `<td>${cell(r, x)}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table></div>
+    <p class="note">Investments are shown as negative, as the Code's own illustration shows
+      them: total borrowing plus total investments is the net treasury position, so the table
+      returns to the figure it opened with. ${years && years > 10
+        ? `${years} years are shown.`
+        : "Ten years are shown, as recommended; the charts run the full projection."}</p>`;
+}
+
+/* Two pools means two balance sheets, so it means two tables. */
+function underpinningAll(){
+  if(S.hra === "two")
+    return `<h4>General Fund</h4>${underpinning("gf")}`
+         + `<h4 style="margin-top:22px">Housing Revenue Account</h4>${underpinning("hra")}`
+         + `<h4 style="margin-top:22px">Whole authority</h4>${underpinning("all")}`;
+  return underpinning(S.hra === "no" ? "gf" : "all");
 }
 
 /* ===========================================================================
