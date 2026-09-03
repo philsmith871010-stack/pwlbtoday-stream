@@ -10409,6 +10409,15 @@ function stampSaved(word){
 
     S.demoStamp = workFingerprint();
     if(typeof autoSave === "function") autoSave();
+    /* BACK TO THE PLACEHOLDER, so the control can be used again.
+     *
+     * It kept showing the demonstration just loaded, and a <select> fires
+     * change only when its value CHANGES — so picking that same entry from
+     * the menu again did nothing at all, and the selector read as broken to
+     * anyone who reached for the one already showing. The cancel path has
+     * always reset it; the success path did not. Which demonstration is
+     * loaded is said in the line below rather than held in the control. */
+    $("demokind").value = "";
     $("saved").textContent = `Demonstration filled — ${D.label}, every section written. `
       + `Every step is filled, including the counterparty policy. `
       + `Change anything; nothing here is fixed.`;
