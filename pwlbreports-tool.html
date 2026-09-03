@@ -443,7 +443,16 @@ html.reel p:has(.ph-inline){display:none !important}
   color:var(--muted);line-height:1.4;margin-top:2px}
 
 .cpopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:9px}
-.cpopt{display:flex;gap:10px;align-items:flex-start;padding:12px 13px;cursor:pointer;
+/* An option that carries the figure it needs. The radio and its wording stay
+   one label, so clicking the words still picks the option; the input sits
+   beside them, outside the label, so using it does not re-click the radio. */
+.cpoptlab{display:flex;gap:10px;align-items:flex-start;cursor:pointer;flex:1 1 auto;min-width:0}
+.cpopt .cpin{display:flex;align-items:center;gap:6px;flex:0 0 auto;
+  font-family:var(--sans);font-size:11px;color:var(--ink2);font-weight:600}
+.cpopt .cpin select,.cpopt .cpin input{font-family:var(--mono);font-size:12px;
+  padding:3px 6px;border:1px solid var(--line2);border-radius:3px;
+  background:var(--card);color:var(--ink)}
+.cpopt{display:flex;gap:10px;align-items:center;padding:12px 13px;cursor:pointer;
   border:1px solid var(--line);border-radius:var(--r-sm);background:var(--card);
   transition:border-color .15s ease,background .15s ease,box-shadow .15s ease}
 .cpopt:hover{border-color:var(--line2)}
@@ -556,6 +565,24 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 .cpopts.tight .cpopt b{font-size:12px;line-height:1.3}
 
 /* Fields that belong together, on one line. */
+/* A limit cell: a sum and a share, each with its unit against it, on one
+   line. Two boxes rather than a unit dropdown — a dropdown makes the reader
+   choose before typing and makes "both" impossible to say. */
+.cplim{display:flex;align-items:center;gap:3px;min-width:0}
+.cplim input{min-width:0;flex:1 1 44px}
+.cpu{font-family:var(--mono);font-size:11px;color:var(--muted);flex:0 0 auto}
+.cpagg{display:flex;align-items:center;gap:6px;min-width:0}
+.cpagg select{flex:0 0 auto;max-width:132px}
+.cpbas{font-family:var(--sans);font-size:11px;color:var(--muted);white-space:nowrap}
+/* An authority's own type names itself in place, on the line it will occupy.
+   It has to beat the table's own rule for a text input, which is monospaced
+   and right-aligned because every other one holds a figure. */
+.cptable .cprow .cpt input.cpown,
+.cptable.tight .cprow .cpt input.cpown{font-family:var(--sans);font-size:12px;
+  text-align:left;padding:3px 7px;border:1px solid var(--line2);border-radius:3px;
+  background:var(--card);color:var(--ink);flex:1 1 auto;min-width:0;max-width:none}
+.cptable .cprow .cpt{display:flex;align-items:center;gap:7px;min-width:0}
+.cptable .cprow .cpt .cpuse{flex:0 0 auto}
 .cprowflex{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 18px;margin-top:10px}
 .cprowflex label{font-family:var(--sans);font-size:11.5px;color:var(--ink2);font-weight:600;
   display:flex;flex-direction:column;gap:4px}
@@ -588,7 +615,10 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
    input, and the label collided with the field next to it. The name gets a
    sensible share and a ceiling, and the table stops stretching. */
 .cptable.wide{max-width:860px}
-.cptable.wide .cprow{grid-template-columns:minmax(180px,1fr) 70px 74px 136px 96px;
+/* Five columns: type, per-counterparty limit, aggregate limit with the
+   aggregate it applies to, months, rating. The two limit columns each hold a
+   sum and a share, so they are the wide ones. */
+.cptable.wide .cprow{grid-template-columns:minmax(150px,1fr) 118px 210px 62px 88px;
   gap:10px;align-items:center;padding:5px 12px}
 .cptable.wide .cprow.cphead{align-items:end}
 .cptable.wide .cprow .cpt{padding-top:0;min-width:0}
@@ -6459,29 +6489,66 @@ const CP_COUNTRY = [
    w:"The authority will not place investments with counterparties outside the United Kingdom."}
 ];
 
+/* Property funds are asked about in section 3, where the pooled fund types
+   are, and the Municipal Bonds Agency is a lender rather than an instrument an
+   authority invests in — both were being asked here as well. ETFs are added:
+   they are held by authorities that hold pooled funds and were the one common
+   vehicle with nowhere to be ticked. */
 const CP_INSTRUMENTS = [
   ["tbills","Treasury bills and gilts"], ["cds","Certificates of deposit"],
-  ["property","Property funds"], ["supra","Supranational and MDB bonds"],
-  ["corpbond","Corporate bonds"], ["notice","Notice and call accounts"],
-  ["covered","Covered bonds and repo"], ["reits","REITs"],
-  ["frn","Floating rate notes"], ["mba","Municipal Bonds Agency"]
+  ["supra","Supranational and MDB bonds"], ["corpbond","Corporate bonds"],
+  ["notice","Notice and call accounts"], ["covered","Covered bonds and repo"],
+  ["reits","REITs"], ["etf","Exchange-traded funds"],
+  ["frn","Floating rate notes"]
 ];
 
 /* What a limit is measured against, per row. */
-const CP_BASIS_OPTS = [["counterparty","per counterparty"],["sector","per sector"],
-  ["group","per ownership group"],["manager","per fund manager"]];
+/* What the AGGREGATE limit is measured across. "Per counterparty" is not on
+   this list any more: it has a column of its own now, and leaving it here let
+   a policy state two per-counterparty limits and mean neither. */
+const CP_BASIS_OPTS = [["group","per ownership group"],["sector","per sector"],
+  ["manager","per fund manager"]];
 const CP_RATINGS = [["","—"],["AAA","AAA"],["AA+","AA+"],["AA","AA"],["AA-","AA-"],
   ["A+","A+"],["A","A"],["A-","A-"],["BBB+","BBB+"],["none","not rated"]];
 
 const CP_POOL_TYPES = [["bond","Bond funds"],["prop","Property funds"],
   ["multi","Multi-asset / diversified"],["equity","Equity funds"]];
 
+/* TWO LIMITS, NOT ONE, and each may be a sum or a share.
+ *
+ * A sector carried one figure and a basis saying what it applied to, so a
+ * policy reading "£10m with any one counterparty and £20m across an ownership
+ * group" — which is how most of them read — could not be entered. Both are
+ * held now: cash/pct is the per-counterparty limit, gcash/gpct the aggregate,
+ * and `basis` says which aggregate that is rather than which single limit was
+ * meant. Where both a sum and a share are given, the lower binds, and the
+ * report says so once rather than against every line.
+ *
+ * MIGRATED, because the meaning of the old field depends on the old basis. A
+ * saved policy with basis "group" and £20m meant £20m PER GROUP; read under
+ * the new shape without moving it, that £20m silently becomes a per
+ * counterparty limit and the policy is loosened without anyone touching it.
+ */
+function cpMigrate(c){
+  Object.keys(c.sec || {}).forEach(k => {
+    const r = c.sec[k];
+    if(!r || r.v2) return;
+    if(r.basis && r.basis !== "counterparty" && r.cash != null && r.cash !== ""){
+      r.gcash = r.cash; r.cash = "";
+    }
+    // "per counterparty" was the old default and is no longer an aggregate.
+    if(!r.basis || r.basis === "counterparty") r.basis = "group";
+    r.v2 = true;
+  });
+  return c;
+}
+
 function cpState(){
   if(!S.cp) S.cp = {sec:{}, basis:{per_counterparty:true}, instr:{}, pool:{},
                     country:"", floor:"AA-", pct:"25", agencies:{},
                     ltrating:"A-", tiered:false, mmfrating:"AAA", split:false,
-                    nonspec:"", groupnote:""};
-  return S.cp;
+                    nonspec:"", groupnote:"", own:[]};
+  return cpMigrate(S.cp);
 }
 
 /* The benchmark line under a question. Deliberately a RANGE and a count, not
@@ -6563,14 +6630,51 @@ function cpRender(){
      you were content with could not be included at all. Ticking uses the
      typed figure where there is one and the starting figure where there is
      not, which is what accepting a default means. */
+  /* A limit cell holds a sum and a share, because a policy may state either
+     or both. Two narrow boxes rather than a unit dropdown: a dropdown makes
+     the reader choose before typing and makes "both" impossible to say. */
+  const lim = (k, cf, pf, ph) => `<span class="cplim">
+      <span class="cpu">£</span>${num(k, cf, ph)}
+      <span class="cpu">%</span>${num(k, pf, "")}</span>`;
   const row = x => `<div class="cprow ${(c.sec[x.k]||{}).on ? "on" : ""}">
       <span class="cpt"><label class="cpuse"><input type="checkbox" data-cpu="${x.k}"
         ${(c.sec[x.k]||{}).on ? "checked" : ""} aria-label="Include ${esc(x.t)}"
         >${esc(x.t)}</label></span>
-      <span>${num(x.k,"cash", cpDefault(x.b,"cash"))}</span>
+      <span>${lim(x.k, "cash", "pct", cpDefault(x.b,"cash"))}</span>
+      <span class="cpagg">${sel(x.k,"basis", CP_BASIS_OPTS)}
+        ${lim(x.k, "gcash", "gpct", "")}</span>
       <span>${num(x.k,"months", cpDefault(x.b,"months"))}</span>
-      <span>${sel(x.k,"basis", CP_BASIS_OPTS)}</span>
       <span>${sel(x.k,"rating", CP_RATINGS)}</span>
+    </div>`;
+
+  /* A type the authority names itself, on exactly the same line as the ten
+     built in: limit, duration, basis, rating. They are held apart from the
+     fixed sectors because those carry a survey benchmark and a key the report
+     writes its wording from — an authority's own type has neither, and giving
+     it a made-up benchmark would be inventing a comparison. */
+  const ownRow = (x, i) => `<div class="cprow ${x.on ? "on" : ""}">
+      <span class="cpt"><label class="cpuse"><input type="checkbox" data-cpo="${i}"
+        data-f="on" ${x.on ? "checked" : ""} aria-label="Include this type">
+        </label><input type="text" class="cpown" data-cpo="${i}" data-f="t"
+        value="${esc(x.t || "")}" placeholder="Name this counterparty type"
+        aria-label="Counterparty type name"></span>
+      <span class="cplim"><span class="cpu">£</span><input type="text" inputmode="decimal"
+        data-cpo="${i}" data-f="cash" value="${esc(x.cash || "")}" placeholder="—"
+        aria-label="Cash limit per counterparty"><span class="cpu">%</span>
+        <input type="text" inputmode="decimal" data-cpo="${i}" data-f="pct"
+        value="${esc(x.pct || "")}" aria-label="Percentage limit per counterparty"></span>
+      <span class="cpagg"><select data-cpo="${i}" data-f="basis">${CP_BASIS_OPTS.map(([v,t]) =>
+        `<option value="${v}" ${x.basis===v?"selected":""}>${esc(t)}</option>`).join("")}</select>
+        <span class="cplim"><span class="cpu">£</span><input type="text" inputmode="decimal"
+        data-cpo="${i}" data-f="gcash" value="${esc(x.gcash || "")}" placeholder="—"
+        aria-label="Aggregate cash limit"><span class="cpu">%</span>
+        <input type="text" inputmode="decimal" data-cpo="${i}" data-f="gpct"
+        value="${esc(x.gpct || "")}" aria-label="Aggregate percentage limit"></span></span>
+      <span><input type="text" inputmode="decimal" data-cpo="${i}" data-f="months"
+        value="${esc(x.months || "")}" placeholder="—" aria-label="Months"></span>
+      <span><select data-cpo="${i}" data-f="rating">${CP_RATINGS.map(([v, t]) =>
+        `<option value="${v}" ${x.rating===v?"selected":""}>${esc(t)}</option>`).join("")}</select>
+        <button type="button" class="rm" data-cprm="${i}" aria-label="Remove">×</button></span>
     </div>`;
 
   host.innerHTML = `
@@ -6580,13 +6684,22 @@ function cpRender(){
       right for you.</div>
 
     <h3 class="cph">1 · Limits, duration, basis and credit floor</h3>
-    <p class="cpsub">One line per counterparty type. The limit is the most that may be held,
-      the duration the longest term, the basis what the limit is measured against, and the
-      floor the minimum long-term rating accepted.</p>
+    <p class="cpsub">One line per counterparty type. State a limit per counterparty, an
+      aggregate limit across a group, sector or fund manager, or both — each as a sum, a
+      share of the portfolio, or both. Where a sum and a share are both given, the lower
+      binds.</p>
     <div class="cptable tight wide">
-      <div class="cprow cphead"><span>Include &amp; counterparty type</span><span>£m</span>
-        <span>Months</span><span>Limit applies</span><span>Min rating</span></div>
+      <div class="cprow cphead"><span>Include &amp; counterparty type</span>
+        <span>Per counterparty</span><span>Aggregate limit</span>
+        <span>Months</span><span>Min rating</span></div>
       ${CP_SECTORS.map(row).join("")}
+      ${(c.own || []).map((x, i) => ownRow(x, i)).join("")}
+    </div>
+    <div class="ltools" style="margin-top:8px">
+      <button type="button" id="cpaddtype">Add a counterparty type</button>
+      <span class="hintline">Ten types cover most policies. Anything else your
+        authority lends to — a housing company, a supranational, a pension pool —
+        goes here on the same terms.</span>
     </div>
     <div class="cprowflex">
       <span class="cpags"><b class="cplbl">Rating agencies used</b>
@@ -6605,19 +6718,33 @@ function cpRender(){
       <section>
         <h3 class="cph">2 · Counterparties outside the UK</h3>
         <div class="cpopts tight">
-          ${CP_COUNTRY.map(o => `<label class="cpopt ${c.country===o.k?"on":""}">
-            <input type="radio" name="cpcountry" data-cpc="${o.k}" ${c.country===o.k?"checked":""}>
-            <span><b>${esc(o.t)}</b><i class="cpb">${(CPB.geography||{})[
-              o.k==="sovereign"?"sovereign rating floor":
-              o.k==="share"?"capped as a share of funds":
-              o.k==="conditions"?"permitted, other conditions":"excluded outright"] || 0}
-              councils</i></span></label>`).join("")}
-        </div>
-        <div class="cprowflex">
-          <label>Sovereign floor <select data-cps="floor">${["AAA","AA+","AA","AA-","A+"]
-            .map(r=>`<option ${c.floor===r?"selected":""}>${r}</option>`).join("")}</select></label>
-          <label>Or cap, % of funds <input type="text" data-cps="pct" value="${esc(c.pct)}"
-            inputmode="decimal" size="4"></label>
+          ${CP_COUNTRY.map(o => {
+            /* The figure each option needs, inside the option. A sovereign
+               floor and a percentage cap were asked for underneath all four,
+               so both were on screen whichever was chosen and neither said
+               which one it belonged to. Shown only when its own option is
+               selected, and outside the <label> so that using it does not
+               re-click the radio. */
+            const extra = c.country !== o.k ? "" :
+              o.k === "share"
+                ? `<span class="cpin">% of funds <input type="text" data-cps="pct"
+                    value="${esc(c.pct)}" inputmode="decimal" size="4"></span>`
+              : (o.k === "sovereign" || o.k === "conditions")
+                ? `<span class="cpin">Sovereign floor <select data-cps="floor">${
+                    ["AAA","AA+","AA","AA-","A+"].map(r =>
+                      `<option ${c.floor===r?"selected":""}>${r}</option>`).join("")
+                  }</select></span>`
+              : "";
+            return `<div class="cpopt ${c.country===o.k?"on":""}">
+              <label class="cpoptlab">
+                <input type="radio" name="cpcountry" data-cpc="${o.k}" ${
+                  c.country===o.k?"checked":""}>
+                <span><b>${esc(o.t)}</b><i class="cpb">${(CPB.geography||{})[
+                  o.k==="sovereign"?"sovereign rating floor":
+                  o.k==="share"?"capped as a share of funds":
+                  o.k==="conditions"?"permitted, other conditions":"excluded outright"] || 0}
+                  councils</i></span></label>${extra}</div>`;
+          }).join("")}
         </div>
       </section>
       <section>
@@ -6639,10 +6766,12 @@ function cpRender(){
     <div class="cpchecks tight five">
       ${CP_INSTRUMENTS.map(([k,t]) => chk("cpi", k, t, null, (CPB.instruments||{})[
         {tbills:"treasury bills / gilts",cds:"certificates of deposit",
-         property:"property funds",supra:"supranational / MDB bonds",
+         supra:"supranational / MDB bonds",
          corpbond:"corporate bonds",notice:"notice / call accounts",
          covered:"covered bonds / repo",reits:"REITs",frn:"floating rate notes",
-         mba:"municipal bonds agency"}[k]] || 0)).join("")}
+         // No survey figure for ETFs: the corpus was catalogued before they
+         // were asked about, and a nil would read as "no council uses these".
+         etf:null}[k]] || 0)).join("")}
     </div>
 
     ${(CPB.wording||[]).length ? `<details class="cpwrap">
@@ -6674,9 +6803,30 @@ function cpWire(){
       // Nothing else needs redrawing as you type: re-rendering the step
       // would take the focus out of the input mid-keystroke.
     }
+    /* An authority's own type. Typing into one does not redraw the step,
+       for the same reason the fixed rows do not: the focus would leave the
+       field mid-keystroke. */
+    else if(el.dataset.cpo != null){
+      const x = (c.own = c.own || [])[+el.dataset.cpo];
+      if(x){ x[el.dataset.f] = el.type === "checkbox" ? el.checked : el.value;
+             if(el.dataset.f !== "on" && String(el.value).trim()) x.on = true; }
+    }
     else if(el.dataset.cps){ c[el.dataset.cps] = el.type === "checkbox" ? el.checked : el.value; }
     else return;
     renderRail();
+  });
+  host.addEventListener("click", e => {
+    const c = cpState(), el = e.target;
+    if(el.id === "cpaddtype"){
+      (c.own = c.own || []).push({on:true, t:"", cash:"", months:"", basis:"group", rating:""});
+      cpRender(); renderRail();
+      const last = host.querySelector(".cpown:last-of-type");
+      if(last) last.focus();
+    }
+    else if(el.dataset.cprm != null){
+      (c.own || []).splice(+el.dataset.cprm, 1);
+      cpRender(); renderRail(); render();
+    }
   });
   host.addEventListener("change", e => {
     const c = cpState(), el = e.target;
@@ -6685,11 +6835,23 @@ function cpWire(){
       rec.on = el.checked;
     }
     else if(el.dataset.cp){ (c.sec[el.dataset.cp] = c.sec[el.dataset.cp] || {})[el.dataset.f] = el.value; }
+    else if(el.dataset.cpo != null){
+      const x = (c.own = c.own || [])[+el.dataset.cpo];
+      if(x) x[el.dataset.f] = el.type === "checkbox" ? el.checked : el.value;
+    }
     else if(el.dataset.cpb){ c.basis[el.dataset.cpb] = el.checked; }
     else if(el.dataset.cpi){ c.instr[el.dataset.cpi] = el.checked; }
     else if(el.dataset.cpp){ c.pool[el.dataset.cpp] = el.checked; }
     else if(el.dataset.cpa){ c.agencies[el.dataset.cpa] = el.checked; }
     else if(el.dataset.cpc){ c.country = el.dataset.cpc; }
+    /* An authority's own type. Typing into one does not redraw the step,
+       for the same reason the fixed rows do not: the focus would leave the
+       field mid-keystroke. */
+    else if(el.dataset.cpo != null){
+      const x = (c.own = c.own || [])[+el.dataset.cpo];
+      if(x){ x[el.dataset.f] = el.type === "checkbox" ? el.checked : el.value;
+             if(el.dataset.f !== "on" && String(el.value).trim()) x.on = true; }
+    }
     else if(el.dataset.cps){ c[el.dataset.cps] = el.type === "checkbox" ? el.checked : el.value; }
     else return;
     cpRender(); renderRail();
@@ -6709,7 +6871,12 @@ function cpSectionHTML(){
     const d = cpDefault(b, f);
     return d === "\u2014" ? "" : d;
   };
-  const rows = CP_SECTORS.filter(s => (c.sec[s.k]||{}).on);
+  /* The authority's own types sit in the table beside the ten built in. They
+     carry no survey benchmark and no key for the wording below, so they are
+     kept apart in the state and joined only here, where the table is drawn. */
+  const rows = CP_SECTORS.filter(s => (c.sec[s.k]||{}).on)
+    .concat((c.own || []).filter(x => x.on && (x.t || "").trim())
+      .map((x, i) => ({k: "own" + i, t: x.t.trim(), b: null, own: x})));
   if(!rows.length && !c.country) return "";
   const BAS = {counterparty:"per counterparty", sector:"per sector",
                group:"per ownership group", manager:"per fund manager"};
@@ -6733,8 +6900,20 @@ function cpSectionHTML(){
   const instr = CP_INSTRUMENTS.filter(([k]) => c.instr[k]).map(([,t]) => unTitle(t));
   const pools = CP_POOL_TYPES.filter(([k]) => c.pool[k]).map(([,t]) => unTitle(t));
   const country = CP_COUNTRY.find(o => o.k === c.country);
-  const anyRating = rows.some(s => (c.sec[s.k]||{}).rating);
-  const anyMonths = rows.some(s => val(s.k, s.b, "months"));
+  const rec = s => s.own || c.sec[s.k] || {};
+  const fig = (s, f) => s.own ? (s.own[f] || "") : val(s.k, s.b, f);
+  /* "£10m", "10%", or "£10m or 10%, whichever is lower" — the last is what a
+     policy stating both actually means, and saying it in the cell saves a
+     footnote the reader has to carry to every line. */
+  const limit = (s, cf, pf) => {
+    const cash = fig(s, cf), pct = fig(s, pf);
+    const cs = cash ? "£" + esc(cash) + "m" : "";
+    const ps = pct ? esc(pct) + "%" : "";
+    return cs && ps ? `${cs} or ${ps}, whichever is lower` : (cs || ps || "—");
+  };
+  const anyRating = rows.some(s => rec(s).rating);
+  const anyMonths = rows.some(s => fig(s, "months"));
+  const anyAgg    = rows.some(s => fig(s, "gcash") || fig(s, "gpct"));
   let out = "";
 
   /* THE LEAD-IN FOLLOWS HOW AUTHORITIES ACTUALLY WRITE IT: the permission
@@ -6756,22 +6935,23 @@ function cpSectionHTML(){
     out += `<div style="overflow-x:auto"><table class="otable cptab">
       <thead><tr>
         <th>Counterparty type</th>
-        <th>Cash limit</th>` +
+        <th>Per counterparty</th>` +
+        (anyAgg ? `<th>Aggregate limit</th>` : "") +
         (anyMonths ? `<th>Maximum duration</th>` : "") +
-        `<th class="w">Limit applies</th>` +
         (anyRating ? `<th class="w">Minimum long-term rating</th>` : "") +
       `</tr></thead><tbody>` +
       rows.map(s => {
-        const v = c.sec[s.k] || {};
-        const cash = val(s.k, s.b, "cash"), mo = val(s.k, s.b, "months");
+        const v = rec(s), mo = fig(s, "months");
         const months = mo ? (+mo % 12 === 0 && +mo >= 12
             ? `${+mo / 12} year${+mo === 12 ? "" : "s"}`
             : `${esc(mo)} months`) : "—";
+        const agg = limit(s, "gcash", "gpct");
         return `<tr>
           <td>${esc(s.t)}</td>
-          <td>${cash ? "£" + esc(cash) + "m" : "—"}</td>` +
+          <td>${limit(s, "cash", "pct")}</td>` +
+          (anyAgg ? `<td>${agg === "—" ? "—"
+                      : `${agg} <span class="cpbas">${esc(BAS[v.basis || "group"])}</span>`}</td>` : "") +
           (anyMonths ? `<td>${months}</td>` : "") +
-          `<td class="w">${esc(BAS[v.basis || "counterparty"])}</td>` +
           (anyRating ? `<td class="w">${v.rating === "none" ? "not rated"
                         : v.rating ? esc(v.rating) : "—"}</td>` : "") +
         `</tr>`;
@@ -7991,9 +8171,19 @@ function indicatorBlock(d, fundLabel, hraSet, opts){
        lines:[{k:"tib",t:"Treasury investment benchmark",c:"var(--l-lb)",w:2.2,neg:true},
               {k:"ei",t:"Existing investment commitments",c:"var(--l-ei)",w:2,neg:true,
                dash:"4 3"}]})
-     + otable(d,[{l:"Treasury investment benchmark",k:"tib",cls:"inv"},{l:"Liquidity allowance",k:"liq"},
-                 {l:"Strategic treasury investments",k:"strategic"},
-                 {l:"Excess treasury investments",k:"excess"}])
+     /* All five series the consultation lists, in its order — the table was
+        missing existing investment commitments, which is series (b) and is
+        drawn on the chart directly above it. A table that omits a line the
+        reader can see is the one place they cannot check it.
+
+        And bracketed, like everything else that is an investment: the chart
+        draws all five below the axis, and the table above it was showing the
+        same quantities as positives. */
+     + otable(d,[{l:"Treasury investment benchmark",k:"tib",cls:"inv",neg:true},
+                 {l:"Existing investment commitments",k:"ei",neg:true},
+                 {l:"Liquidity allowance",k:"liq",neg:true},
+                 {l:"Strategic treasury investments",k:"strategic",neg:true},
+                 {l:"Excess treasury investments",k:"excess",neg:true}])
      + readoutHTML("LB5", d, fundLabel))}
    ${!(want("LB6") && anyCross) ? "" : IND("LB6","General Fund / HRA treasury position",
      /* "LB3 (supplemental)" in the annex, and the sixth of the "Charts
