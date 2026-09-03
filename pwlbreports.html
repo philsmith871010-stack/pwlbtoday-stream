@@ -748,7 +748,7 @@ setTimeout(()=> {
   if(!view || !frame) return;
 
   const LOGICAL = 1180, HOLD = 2600, FADE = 560;
-  let stops = [], at = 0, timer = null;
+  let stops = [], at = 0, timer = null, tries = 0;
 
   const fit = () => { inner.style.transform = "scale(" + (view.clientWidth / LOGICAL) + ")"; };
 
@@ -782,7 +782,13 @@ setTimeout(()=> {
       .map(el => ({ y: top(el), h: el.getBoundingClientRect().height }))
       .filter(o => o.h > 90)
       // Centre each in the window, and never above the top of the document.
-      .map(o => Math.max(0, Math.round(o.y - (win - Math.min(o.h, win)) / 2)));
+      .map(o => Math.max(0, Math.round(o.y - (win - Math.min(o.h, win)) / 2)))
+      /* EVERY STOP MUST BE A NUMBER. Measured before the section has a
+         height, win is zero or NaN and every stop comes out NaN — and
+         "translateY(-NaNpx)" is invalid CSS, so the browser drops it and the
+         frame sits at the top of the document showing nothing in particular.
+         A silent no-op is exactly what this looked like. */
+      .filter(y => isFinite(y));
   }
 
   function step(){
@@ -803,7 +809,15 @@ setTimeout(()=> {
     catch(e){}
     frame.style.height = h + "px";
     stops = findStops();
-    if(!stops.length) stops = [0];
+    /* The iframe fires load before it has laid its document out, so the first
+       measurement can come back with nothing usable. Try again rather than
+       settling for a frame parked at the top: this is a cold-load-only
+       failure, which is the kind that is invisible in development and the
+       only kind a visitor sees. */
+    if(!stops.length){
+      if(tries++ < 8){ setTimeout(start, 500); return; }
+      stops = [0];
+    }
     at = 0;
     clearInterval(timer);
     step();
