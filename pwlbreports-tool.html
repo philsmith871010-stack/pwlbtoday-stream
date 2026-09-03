@@ -4933,20 +4933,26 @@ function readout(tag, d, fundLabel){
   }
 
   if(tag === "LB4"){
+    /* Both series defined whether or not they arise, for the same reason as
+       LB5: a member meeting a legend entry with no figure still needs to know
+       what it would have meant. */
     const need = R.peakOf(d,"need"), over = R.peakOf(d,"over");
-    if(need.need < 0.05 && over.over < 0.05)
-      return [`Neither a borrowing requirement nor an above-benchmark position arises on these `
-        + `figures: existing commitments match the benchmark throughout.`];
-    if(need.need >= 0.05)
-      bits.push(`New borrowing of up to ${R.m(need.need)} is implied, peaking in `
-        + `${R.fyOf(need)}. The profile above determines the maturities to seek: borrowing `
-        + `long where the requirement persists, and short where it falls away.`);
-    if(over.over >= 0.05)
-      bits.push(`An above-benchmark position of up to ${R.m(over.over)} arises in `
-        + `${R.fyOf(over)}, meaning debt is held that current plans do not require. That is `
-        + `permitted — the benchmark is not a limit — but it carries a cost of carry, and the `
-        + `Code expects new borrowing that increases such a position to be considered `
-        + `carefully.`);
+    bits.push(`<b>The borrowing requirement</b> is the amount by which the liability `
+      + `benchmark exceeds the loans already held — borrowing the authority will have to `
+      + `arrange to fund its plans. `
+      + (need.need >= 0.05
+         ? `Up to ${R.m(need.need)} is implied, peaking in ${R.fyOf(need)}. The profile `
+           + `above determines the maturities to seek: borrowing long where the requirement `
+           + `persists, and short where it falls away.`
+         : `None arises on these figures: existing commitments meet the benchmark in `
+           + `every year.`));
+    bits.push(`<b>Above-benchmark borrowing</b> is the reverse — debt held that current `
+      + `plans do not require. It is permitted, because the benchmark is not a limit, but `
+      + `the money sits invested at less than it costs to borrow. `
+      + (over.over >= 0.05
+         ? `Up to ${R.m(over.over)} arises in ${R.fyOf(over)}, and the Code expects new `
+           + `borrowing that would increase such a position to be considered carefully.`
+         : `None arises on these figures.`));
     return bits;
   }
 
@@ -4956,20 +4962,34 @@ function readout(tag, d, fundLabel){
       + `${R.fyOf(a)}, peaking at ${R.m(pk.inv)} in ${R.fyOf(pk)}.`);
     bits.push(`The liquidity allowance of ${R.m(a.liq)} is the floor: the minimum the `
       + `authority intends to hold to manage cash flow.`);
+    /* WHAT THE SERIES ARE, WHETHER OR NOT THEY ARISE.
+     *
+     * These were explained only when they had a figure, so on the common case
+     * — a net borrower, where both are nil — a member met two series in the
+     * legend and two rows in the table with nothing anywhere saying what they
+     * would have meant. A chart carrying a line it does not explain asks the
+     * reader to already know. Each is now defined first and quantified
+     * second. */
     const strat = d.some(r=>r.strategic > 0.05), exc = d.some(r=>r.excess > 0.05);
-    if(strat)
-      bits.push(`Strategic treasury investments arise where the benchmark exceeds the `
-        + `liquidity allowance — a surplus beyond day-to-day needs, reaching `
-        + `${R.m(R.peakOf(d,"strategic").strategic)} in ${R.fyOf(R.peakOf(d,"strategic"))}.`);
-    if(exc)
-      bits.push(`Excess treasury investments of up to `
-        + `${R.m(R.peakOf(d,"excess").excess)} arise in `
-        + `${R.fyOf(R.peakOf(d,"excess"))}. These are the consequence of holding debt above `
-        + `the benchmark: the cash borrowed but not yet required sits invested, and the `
-        + `difference between the rate paid and the rate earned is the cost of carry.`);
+    bits.push(`<b>Strategic treasury investments</b> are balances the authority holds `
+      + `beyond what it needs for day-to-day cash — the amount by which the treasury `
+      + `investment benchmark exceeds the liquidity allowance. Because they are not `
+      + `needed at short notice they can be placed for longer, at a better return. `
+      + (strat ? `They reach ${R.m(R.peakOf(d,"strategic").strategic)} in `
+                 + `${R.fyOf(R.peakOf(d,"strategic"))}.`
+               : `None arise here: the authority is a net borrower throughout, so its `
+                 + `benchmark never rises above the liquidity allowance.`));
+    bits.push(`<b>Excess treasury investments</b> are balances held above the benchmark. `
+      + `They can only arise from borrowing more than the liability benchmark: the cash `
+      + `is borrowed before it is needed and sits invested meanwhile, and the difference `
+      + `between the rate paid and the rate earned is the cost of carry. `
+      + (exc ? `They reach ${R.m(R.peakOf(d,"excess").excess)} in `
+               + `${R.fyOf(R.peakOf(d,"excess"))}, and the Code points to repaying debt `
+               + `as the way to close them.`
+            : `None arise here, so no borrowing is being carried ahead of need.`));
     if(!strat && !exc)
-      bits.push(`No strategic or excess balances arise: investments sit at the liquidity `
-        + `allowance throughout, which is the position the benchmark treats as optimal.`);
+      bits.push(`Investments therefore sit at the liquidity allowance throughout, which is `
+        + `the position the benchmark treats as optimal.`);
     return bits;
   }
   return bits;
