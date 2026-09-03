@@ -4990,6 +4990,30 @@ function readout(tag, d, fundLabel){
     if(!strat && !exc)
       bits.push(`Investments therefore sit at the liquidity allowance throughout, which is `
         + `the position the benchmark treats as optimal.`);
+
+    /* THE QUESTION THE CHART INVITES AND DID NOT ANSWER.
+     *
+     * Existing investment commitments are drawn below the benchmark whenever
+     * an authority holds more cash today than the benchmark says it needs —
+     * which is common, and looks exactly like excess investment. It is not:
+     * excess measures the PROJECTED balance against the benchmark, and the
+     * projected balance is set by borrowing. An authority short of its
+     * liability benchmark closes that gap by borrowing, and its investments
+     * settle at the benchmark; what it happens to hold under contract today
+     * runs off. Without this the reader is left with two lines that appear to
+     * contradict the sentence above them. */
+    if(a.ei > a.tib + 0.05){
+      const overBy = a.ei - a.tib;
+      bits.push(`The authority holds ${R.m(a.ei)} of investments under existing `
+        + `commitments, ${R.m(overBy)} more than the benchmark. That is not excess `
+        + `investment: excess arises from holding <b>debt</b> above the benchmark, and `
+        + (a.over > 0.05
+           ? `the above-benchmark borrowing shown in LB4 is what produces the excess `
+             + `balances above.`
+           : `this authority is ${R.m(a.need)} short of its liability benchmark rather `
+             + `than above it. The commitments run off as they mature, and once the `
+             + `borrowing requirement is met the balance settles at the benchmark.`));
+    }
     return bits;
   }
   return bits;
