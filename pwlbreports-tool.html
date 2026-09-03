@@ -22,7 +22,7 @@
      the hues run in one direction too, deep blue through teal to green. A
      reader learns where they are from the colour before reading the number.
      Assigning seven unrelated colours would look busier and say less. */
-  --s1:#1b4f8a; --s2:#1a6b8f; --s3:#177f86; --s4:#1a8a72;
+  --s0:#3f4a57; --s1:#1b4f8a; --s2:#1a6b8f; --s3:#177f86; --s4:#1a8a72;
   --s5:#2a8f5c; --s6:#4a9247; --s7:#5f8f3a; --s8:#1a7f4b;
 
   /* Series colours are fixed by MEANING, not by chart. Net treasury position
@@ -80,10 +80,10 @@
     --hair:#1c2732;
     --accent:#8fb6de; --accent-soft:#1c2b3a; --on-accent:#0e151d;
     --orange:#e8974a; --good:#4cb583; --alert:#e0776a;
-  --s1:#6ea8dd; --s2:#5cb3d1; --s3:#4fc0bd; --s4:#4fc4a2;
+  --s0:#8a97a5; --s1:#6ea8dd; --s2:#5cb3d1; --s3:#4fc0bd; --s4:#4fc4a2;
   --s5:#5ec98a; --s6:#7fcb72; --s7:#9ccb6a; --s8:#4cb583;
 
-    --s1:#6ea8dd; --s2:#5cb3d1; --s3:#4fc0bd; --s4:#4fc4a2;
+    --s0:#8a97a5; --s1:#6ea8dd; --s2:#5cb3d1; --s3:#4fc0bd; --s4:#4fc4a2;
     --s5:#5ec98a; --s6:#7fcb72; --s7:#9ccb6a; --s8:#4cb583;
 
     --l-debt:#6fb5e0; --l-cfr:#5b9ec9; --l-obs:#f0955a; --l-ntp:#6fae5c;
@@ -1218,6 +1218,30 @@ svg.ctip .hits rect{cursor:crosshair}
 .xb.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .xb.on:hover{color:var(--on-accent);opacity:.92}
 .hintline:empty{display:none}
+/* Step zero. Prose, not a form — the only step with nothing to fill in, so it
+   is set wider and quieter than the panels that follow it. */
+.s0lede{font-family:var(--sans);font-size:15px;line-height:1.62;color:var(--ink2);
+  max-width:74ch;margin:0 0 22px}
+.s0grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  margin:0 0 20px}
+.s0card{background:var(--sunken);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 16px}
+.s0card h3{font-family:var(--sans);font-size:13.5px;font-weight:600;color:var(--ink);
+  margin:0 0 7px}
+.s0card p{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--ink2);margin:0}
+.s0start{display:flex;gap:22px;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--r);
+  padding:14px 16px;margin:0 0 18px}
+.s0start > div:first-child{flex:1;min-width:260px}
+.s0start h3{font-family:var(--sans);font-size:13.5px;font-weight:600;color:var(--ink);
+  margin:0 0 6px}
+.s0start p{font-family:var(--sans);font-size:12.5px;line-height:1.6;color:var(--ink2);margin:0}
+/* One control. The way onward is the panel nav at the foot, the same as
+   every other step — a second "Start" inside the load-a-file box read as
+   though starting were something that box did. */
+.s0btns{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.s0foot{font-family:var(--sans);font-size:12px;line-height:1.6;color:var(--muted);
+  border-top:1px solid var(--line);padding-top:14px;margin:0}
 /* The invitation to load a strategy rather than retype it. Quiet, but not so
    quiet it is missed — it is the difference between typing six figures and
    typing none. */
@@ -1497,6 +1521,61 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
   </nav>
 
   <main id="stepwrap">
+  <!-- STEP ZERO. What the thing is, what it will ask for, and what it will
+       never do — said once, before anybody types a figure. The rule it states
+       is the one the whole tool is built on, so it belongs at the front and
+       not only in a caveat at the end. -->
+  <section class="panel" data-step="0" hidden>
+    <div class="phead"><span class="n">0</span><h2>Before you start</h2></div>
+    <div class="pbody">
+      <p class="s0lede">This builds a treasury management report to the liability benchmark
+        framework in CIPFA&rsquo;s 2026 consultation &mdash; LB1 to LB6, the authorised limit,
+        the affordability indicators &mdash; and wraps them in the committee paper they travel
+        in. You supply the figures; it assembles the document and exports to Word.</p>
+
+      <div class="s0grid">
+        <div class="s0card">
+          <h3>Every figure is yours</h3>
+          <p>Nothing here is forecast, estimated or filled in on your behalf. The tool does the
+            arithmetic the Codes set out &mdash; the same inputs always give the same output
+            &mdash; and assumes nothing you did not type. A year you leave blank is nil, and the
+            charts show what that implies rather than a guess dressed as one.</p>
+        </div>
+        <div class="s0card">
+          <h3>What it will ask for</h3>
+          <p>Your capital financing requirement and reserves by year, the loans and investments
+            you hold, a liquidity allowance, and the budget lines across your MTFP. All of it
+            comes from your ledger, your treasury system or your capital programme &mdash; the
+            figures step takes a block pasted straight out of Excel.</p>
+        </div>
+        <div class="s0card">
+          <h3>What it will not do</h3>
+          <p>It will not work out your interest payable, your investment income or an HRA
+            recharge. Those need assumptions only you can make &mdash; when you draw, how much,
+            at what rate, whether a LOBO is called. Do that maths in your own systems, enter the
+            result, and say in the commentary what you assumed.</p>
+        </div>
+      </div>
+
+      <div class="s0start">
+        <div>
+          <h3>Already have a version?</h3>
+          <p>If you have a report saved from this tool &mdash; last year&rsquo;s strategy, or the
+            one you are monitoring against &mdash; open it now rather than starting from a blank
+            page. It carries your wording, your policy and your figures, and for a monitoring
+            report it fills the approved column for you.</p>
+        </div>
+        <div class="s0btns">
+          <label class="filebtn" for="libopen0">Open a file</label>
+          <input type="file" id="libopen0" accept=".json,application/json" hidden>
+        </div>
+      </div>
+
+      <p class="s0foot">It is a drafting aid, not a compliance statement, and it is not advice.
+        Check every figure before it reaches a committee.</p>
+    </div>
+  </section>
+
   <section class="panel" data-step="1">
     <div class="phead"><span class="n">1</span><h2>Your authority and report</h2></div>
     <div class="pbody"><div class="setup">
@@ -9737,6 +9816,15 @@ function checkHTML(){
  * freely; nothing is gated.
  * ======================================================================== */
 const STEPS = [
+  /* STEP ZERO, NOT A RENUMBERED STEP ONE. The eight steps below keep the
+     numbers they have always had — in the rail, in the panel markup, in the
+     colour ramp, in every check.js "go" target and in LIVE_STEPS. This file
+     already carries the scar from the last time a step was inserted and four
+     places meant "the last step" by number; adding an intro at 0 leaves all
+     of them alone. It carries `intro`, so the progress count still says "of
+     8": there is nothing on it to complete. */
+  {n:0, k:"start", t:"Before you start", s:"what this is, and what you need",
+   intro:true},
   {n:1, k:"setup",     t:"Authority",   s:"and which report"},
   {n:2, k:"portfolio", t:"What you hold", s:"debt and investments"},
   {n:3, k:"figures",   t:"Your figures", s:"the projection"},
@@ -9893,6 +9981,7 @@ function stepStatus(k){
             note: `${words.toLocaleString("en-GB")} words · ${gaps} figure${gaps===1?"":"s"} still to supply`,
             need: null};
   }
+  if(k === "start") return {state:"", note:"read me first", need:null};
   return {state:"", note:"", need:null};
 }
 
@@ -9908,11 +9997,13 @@ function renderRail(){
       <span class="rt"><b>${esc(s.t)}</b><i>${esc(st.note || s.s)}</i></span>
     </button>`;
   }).join("");
-  const done = STEPS.filter(s => stepStatus(s.k).state === "done").length;
+  // The intro is not a step with work in it, so it is not in the denominator.
+  const real = STEPS.filter(s => !s.intro);
+  const done = real.filter(s => stepStatus(s.k).state === "done").length;
   const bar = $("railbar");
-  if(bar) bar.style.width = Math.round(done / STEPS.length * 100) + "%";
+  if(bar) bar.style.width = Math.round(done / real.length * 100) + "%";
   const cnt = $("railcount");
-  if(cnt) cnt.textContent = `${done} of ${STEPS.length} complete`;
+  if(cnt) cnt.textContent = `${done} of ${real.length} complete`;
 }
 
 function showStep(n){
@@ -9924,7 +10015,12 @@ function showStep(n){
   // The policy step renders from state, so it is built on arrival rather than
   // held in the DOM for six steps that never look at it.
   if(n === 5 && typeof cpRender === "function") cpRender();
-  STEP = Math.max(1, Math.min(STEPS.length, n));
+  /* Clamped against the step NUMBERS, not the array length. With an intro at
+     zero the two stopped being the same: nine entries numbered 0 to 8, so
+     Math.min(STEPS.length, n) would have allowed a step 9 that does not
+     exist, and Math.max(1, ...) made step 0 unreachable. */
+  const lo = STEPS[0].n, hi = STEPS[STEPS.length - 1].n;
+  STEP = Math.max(lo, Math.min(hi, n));
   document.querySelectorAll("[data-step]").forEach(el => {
     el.hidden = (+el.dataset.step !== STEP);
   });
@@ -9987,7 +10083,11 @@ function wireSteps(){
     if(!b) return;
     showStep(+b.dataset.go);
   });
-  showStep(1);
+  /* The intro is where you land the first time and never again: once an
+     authority is chosen there is work in the browser, and being returned to
+     a page of orientation on every visit is the thing that makes people stop
+     reading it. */
+  showStep(S.gss ? 1 : 0);
 }
 
 /* ---- the ledger: years down, measures across ---------------------------- */
@@ -11168,7 +11268,12 @@ function stampSaved(word){
   $("whoami").value = whoAmI();
   $("whoami").addEventListener("input", e=>{ setWho(e.target.value); });
 
-  $("libopen").addEventListener("change", e=>{
+  /* ONE HANDLER, TWO WAYS IN. The file picker is offered on step 1 beside the
+     save controls and again on step 0, where somebody who already has a
+     version should be told to open it BEFORE typing anything. Attaching the
+     same function to both beats a second copy that drifts, and beats pointing
+     a label at an input sitting inside a panel the browser has hidden. */
+  function openLibraryFile(e){
     const f = e.target.files && e.target.files[0];
     if(!f) return;
     const rd = new FileReader();
@@ -11201,6 +11306,10 @@ function stampSaved(word){
     rd.onerror = () => { $("saved").textContent = "That file could not be read."; };
     rd.readAsText(f);
     e.target.value = "";
+  }
+  ["libopen", "libopen0"].forEach(id => {
+    const el = $(id);
+    if(el) el.addEventListener("change", openLibraryFile);
   });
   $("issued").addEventListener("change", e=>{
     const k = KEY();
