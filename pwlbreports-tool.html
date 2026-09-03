@@ -3623,10 +3623,42 @@ function marketFacts(){
  * cannot identify it says so about, rather than guessing and being quietly
  * wrong about somebody's debt.
  * ======================================================================== */
+/* A CSV field can contain the separator, and ours routinely does.
+ *
+ * This split on every comma, quotes or not. Our own downloadable template
+ * writes amounts as "10,000,000" — quoted, because that is what CSV requires
+ * of a field containing a comma — so the template came back as three fields
+ * where the amount should be, the amount column was destroyed, and the parser
+ * reported "0 loans read, 4 rows without an amount ignored". The tool could
+ * not read the file the tool had just written, which is the round trip the
+ * page advertises.
+ *
+ * Quotes are honoured for both separators, not just the comma: a lender
+ * called "Smith, Jones and Co" pasted from a spreadsheet arrives quoted
+ * whichever way it was copied. "" inside a quoted field is a literal quote,
+ * as the format says.
+ */
+function splitLine(line, sep){
+  const out = []; let cur = "", inq = false;
+  for(let i = 0; i < line.length; i++){
+    const ch = line[i];
+    if(inq){
+      if(ch === '"'){
+        if(line[i+1] === '"'){ cur += '"'; i++; } else inq = false;
+      } else cur += ch;
+    }
+    else if(ch === '"') inq = true;
+    else if(ch === sep){ out.push(cur); cur = ""; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out.map(x => x.trim());
+}
+
 function splitRows(txt){
-  return txt.replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean)
-    .map(l => l.indexOf("\t")>=0 ? l.split("\t") : l.split(/\s*,\s*/))
-    .map(c => c.map(x=>x.trim()));
+  return txt.replace(/\r\n?/g, "\n").split("\n").filter(l => l.trim())
+    .map(l => splitLine(l, l.indexOf("\t") >= 0 ? "\t" : ","))
+    .filter(c => c.some(x => x !== ""));
 }
 const MONEY = /^[£$]?\s*-?[\d,]+(\.\d+)?\s*(m|k|bn)?$/i;
 function money(v){
