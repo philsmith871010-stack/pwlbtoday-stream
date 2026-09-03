@@ -1112,6 +1112,29 @@ svg.ctip .hits rect{cursor:crosshair}
 .cpsurvhead .pvsub{flex:1;min-width:180px}
 .cpsurvwrap{overflow-x:auto;margin:10px 0 18px}
 .cpsurv th{font-size:10.5px;white-space:nowrap}
+/* Three sections, and they have to LOOK like three sections. The group
+   headings inherited otable's right-alignment, so "Cash limit" sat left of
+   its own five columns and "Duration" sat squarely over "max" — the reader
+   could not tell which heading owned which column, which is the whole job of
+   a grouped header. Centred over the span, with a rule down each boundary. */
+.cpsurv tr.grp th{text-align:center;font-size:11px;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink);padding-bottom:5px}
+.cpsurv tr.grp th i{font-style:normal;font-family:var(--mono);text-transform:none;
+  letter-spacing:0;color:var(--muted);font-weight:400}
+.cpsurv th.g,.cpsurv td.g{border-left:1px solid var(--line2)}
+.cpsurv th.n,.cpsurv td.n{color:var(--muted)}
+.cpsurv th,.cpsurv td{padding-top:2px;padding-bottom:2px}
+/* nowrap so a counterparty name is one line, but NOT width:1% with it — that
+   collapsed the column to nothing and the names ran straight over the n
+   beside them. Let the column size to its own content. */
+/* otable is table-layout:fixed, which sizes columns by the first row and
+   ignores content. That left the counterparty names in a 92px box needing
+   264px, so they simply overflowed across the n beside them — the cells never
+   "overlapped", the text escaped its cell. This table has ten narrow numeric
+   columns and one long label, which is exactly the case fixed layout cannot
+   do; auto sizes to content, and cpsurvwrap already scrolls if that overruns. */
+.cpsurv{table-layout:auto;width:100%}
+.cpsurv td.w{white-space:nowrap;padding-right:18px}
 .cpsurv td.med{font-weight:600;color:var(--ink)}
 .cpsurv td.none{color:var(--muted);font-style:italic;text-align:left}
 .cptally{display:grid;grid-template-columns:minmax(150px,260px) 1fr auto;gap:6px 12px;
@@ -7120,14 +7143,19 @@ function cpProgress(){
  * ======================================================================== */
 function cpSurveyHTML(){
   const S_ = CPB.sectors || {};
-  const num = (v, u) => v == null ? "–" : (u === "£" ? "£" + v + "m" : v + " mo");
-  const band = (b, u) => !b ? `<td colspan="5" class="none">too few publish it</td>`
-    : `<td>${b.n}</td><td>${num(b.p25,u)}</td><td class="med">${num(b.med,u)}</td>
-       <td>${num(b.p75,u)}</td><td>${num(b.max,u)}</td>`;
+  /* The unit belongs in the group heading, not in all ninety cells. Every
+     cash figure is £m and every duration is months, so "£15m" and "12.1 mo"
+     repeated down the column bought nothing and cost the width that was
+     pushing the counterparty names onto five lines each. */
+  const num = v => v == null ? "–" : String(v);
+  const band = b => !b
+    ? `<td colspan="5" class="none g">too few publish it</td>`
+    : `<td class="g n">${b.n}</td><td>${num(b.p25)}</td><td class="med">${num(b.med)}</td>
+       <td>${num(b.p75)}</td><td>${num(b.max)}</td>`;
   // s.b is the label the survey uses; s.t is what the page calls it.
   const rows = CP_SECTORS.map(s => {
     const d = S_[s.b] || {};
-    return `<tr><td class="w">${esc(s.t)}</td>${band(d.cash,"£")}${band(d.months,"")}</tr>`;
+    return `<tr><td class="w">${esc(s.t)}</td>${band(d.cash)}${band(d.months)}</tr>`;
   }).join("");
 
   // The survey's own keys are storage names, not English.
@@ -7152,10 +7180,11 @@ function cpSurveyHTML(){
       read as one over a hundred. Nothing here is a recommendation.</p>
     <div class="cpsurvwrap"><table class="otable cpsurv">
       <thead>
-        <tr><th rowspan="2" class="w">Counterparty type</th>
-            <th colspan="5">Cash limit</th><th colspan="5">Duration</th></tr>
-        <tr><th>n</th><th>25th</th><th>median</th><th>75th</th><th>max</th>
-            <th>n</th><th>25th</th><th>median</th><th>75th</th><th>max</th></tr>
+        <tr class="grp"><th rowspan="2" class="w">Counterparty type</th>
+            <th colspan="5" class="g">Cash limit <i>£m</i></th>
+            <th colspan="5" class="g">Duration <i>months</i></th></tr>
+        <tr><th class="g n">n</th><th>25th</th><th>median</th><th>75th</th><th>max</th>
+            <th class="g n">n</th><th>25th</th><th>median</th><th>75th</th><th>max</th></tr>
       </thead><tbody>${rows}</tbody></table></div>
     ${tally("What the limit is measured against", CPB.basis,
             "More than one may apply, so these do not sum to " + CPB.councils + ".")}
