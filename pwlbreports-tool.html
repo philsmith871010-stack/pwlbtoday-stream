@@ -2382,7 +2382,33 @@ function wireDocNav(){
   docNavMark();
 }
 
+/* Build the draft now, wherever we are standing.
+ *
+ * render() skips the document while it is off screen, which is right — it is
+ * the most expensive thing on the page — but it leaves two callers needing to
+ * build it deliberately: a filled demonstration, which should not present the
+ * one step of eight that reads as unfinished, and the market refresh, which
+ * lands from the network after everything else and would otherwise mark a
+ * built draft stale and leave it that way.
+ *
+ * One function for both, because the second was found by the first one's fix
+ * silently coming undone on the live site and not locally: the fetch had
+ * already resolved on a page that had been open a while, so the race only
+ * showed on a cold load. */
 let _docDirty = true;
+function buildDraftNow(){
+  const el = $("doc");
+  if(!el || typeof documentHTML !== "function") return false;
+  const c = LB[S.gss];
+  el.innerHTML =
+    `<div class="dh"><span>Draft — ${esc(c ? c.n : "your authority")}</span>
+      <span>Assembled from your ledger and your commentary</span></div>`
+    + documentHTML(false);
+  _docDirty = false;
+  if(typeof wireDocNav === "function") wireDocNav();
+  return true;
+}
+
 function render(){
   const c = LB[S.gss];
   const docVisible = (typeof STEP === "undefined")
@@ -10112,7 +10138,15 @@ function stampSaved(word){
   $("asat").value = MKT.as_at || "";
   // Refresh in the background. The page is already usable from the snapshot,
   // so nothing waits on the network and a failure is not an error state.
-  refreshMarket().then(ok => { if(ok){ renderSections(); render();
+  refreshMarket().then(ok => { if(ok){
+    /* A DRAFT THAT WAS BUILT STAYS BUILT. render() marks it stale because the
+       market data behind it just moved, which is true — but leaving it stale
+       is what undid the demonstration's eighth green step, and only on a cold
+       load, because on a warm one this had already resolved before the
+       demonstration ran. Bring it up to date instead of abandoning it. */
+    const wasBuilt = !_docDirty;
+    renderSections(); render();
+    if(wasBuilt && buildDraftNow() && typeof renderRail === "function") renderRail();
     const el=$("saved"); if(el) el.textContent = `Market data refreshed to ${fcDate(MKT.as_at)}.`; } });
   $("asat").addEventListener("change", e=>{
     S.asAt = e.target.value || null;
@@ -10577,18 +10611,7 @@ function stampSaved(word){
        looked unfinished on a demonstration whose whole point is to be
        finished. Building it here means the word count the rail then shows is
        a real one, which is the reason it refused to show a count before. */
-    const _doc = $("doc");
-    if(_doc && typeof documentHTML === "function"){
-      _doc.innerHTML = `<div class="dh"><span>Draft — ${esc(LB[S.gss] ? LB[S.gss].n
-          : "your authority")}</span><span>Assembled from your ledger and your commentary</span></div>`
-        + documentHTML(false);
-      if(typeof _docDirty !== "undefined") _docDirty = false;
-      if(typeof wireDocNav === "function") wireDocNav();
-      // The rail was drawn before this, while the draft was still unbuilt, so
-      // it is holding "open it to build the draft". Draw it again now there
-      // is a word count to report.
-      if(typeof renderRail === "function") renderRail();
-    }
+    if(buildDraftNow() && typeof renderRail === "function") renderRail();
 
     S.demoStamp = workFingerprint();
     if(typeof autoSave === "function") autoSave();
