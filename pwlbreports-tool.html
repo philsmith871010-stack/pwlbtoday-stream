@@ -326,6 +326,13 @@ html.reel .docnav{display:none}
    visitor is being shown the document, not the workshop. */
 html.reel .warn,html.reel .why,html.reel .reqtag,
 html.reel .pick,html.reel .picker,html.reel .pickhint{display:none !important}
+/* A clause's own inline prompt — "Explain how the authority obtains market
+   intelligence…" — is an instruction to the author, and there are nine of
+   them. Hiding just the span would leave the sentence around it broken, so
+   the paragraph goes with it: it says nothing a reader of a finished report
+   was meant to see. :has is the whole point here, and where it is not
+   supported the prompt simply shows as it does in the tool. */
+html.reel p:has(.ph-inline){display:none !important}
 /* .lbtag stays: "LB2" names the Code indicator the chart is, which is the
    report saying what it is showing, not the tool saying anything. */
 
@@ -4929,7 +4936,7 @@ decision on its future is expected in 2027/28. The authority is satisfied that t
 indicators do not disclose a risk that the single-entity indicators conceal.`,
 
 advisers:
-`The authority retains Arlingclose as its external treasury management adviser under a contract \
+`The authority retains an external treasury management adviser under a contract \
 running to 31 March 2028. The scope of the contract covers credit advice, interest rate views, \
 technical guidance on the Codes, and training for officers and members.
 
@@ -4985,7 +4992,7 @@ grounds the authority will prefer the one with the stronger published transition
 Borrowing taken to fund the capital programme carries the environmental appraisal made for the \
 schemes themselves, which is reported with the capital strategy.`,
 
-wconsult: `The strategy was prepared with advice from Arlingclose and reviewed by the Corporate \
+wconsult: `The strategy was prepared with advice from the authority's treasury adviser and reviewed by the Corporate \
 Management Team on 6 January 2026 and by the Audit and Governance Committee on 14 January 2026. \
 Background papers are the Capital Strategy 2026/27, the Medium Term Financial Strategy 2026/27 \
 to 2029/30, and the treasury management practices and schedules adopted by the authority.`
@@ -10558,7 +10565,11 @@ function stampSaved(word){
        questions rather than the least important. lfmethod is Scotland's and
        mrpmethod is England and Wales'; both are set so the preset is complete
        whichever authority it lands on. */
-    S.choices = {adviser:"Arlingclose", mrpmethod:"asset", lfmethod:"annuity",
+    /* NO REAL FIRM NAMED. A demonstration is a fabricated report, and putting
+       a named adviser in one attributes an invented contract, an invented fee
+       and an invented scope to a real business. Blank reads through as "the
+       authority's treasury adviser" wherever the draft needs the phrase. */
+    S.choices = {adviser:"", mrpmethod:"asset", lfmethod:"annuity",
                  cycle:"thrice", vrp:"no", advance:"no", resched:"no",
                  pooled:"yes", nontreas:"no", mifid:"yes",
                  commprop:"no", commborrow:"no", pwlbtoday:"yes",

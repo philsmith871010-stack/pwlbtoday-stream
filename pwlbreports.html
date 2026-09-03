@@ -252,13 +252,15 @@ html.anim .rv.in{opacity:1; transform:none;
    invites someone to stop and read a report they should be opening instead. */
 .reelview{position:relative;height:min(44vh,360px);overflow:hidden;background:#fff}
 .reelinner{position:absolute;top:0;left:0;width:1180px;transform-origin:top left}
+/* IT STOPS ON THINGS RATHER THAN SCROLLING PAST THEM. It used to run the
+   whole document past at 620px a second: any one thing was on screen for
+   half a second, and two-thirds of what went by was body prose, which is the
+   least persuasive part of a treasury report. Now it fades between the charts
+   and tables — the parts worth looking at — and holds each one still long
+   enough to be seen. */
 .reelview iframe{display:block;width:1180px;border:0;background:#fff;
-  animation:reelrun var(--dur,90s) linear infinite alternate;will-change:transform}
-.reelview.paused iframe{animation-play-state:paused}
-@keyframes reelrun{
-  from{transform:translateY(0)}
-  to{transform:translateY(var(--travel,-6000px))}
-}
+  opacity:0;transition:opacity .55s ease;will-change:opacity}
+.reelview.lit iframe{opacity:1}
 /* A soft edge top and bottom so the document reads as passing through a
    window rather than being cut off by one. */
 .reelview::after{content:"";position:absolute;inset:0;pointer-events:none;
@@ -432,7 +434,8 @@ html.anim .rv.in{opacity:1; transform:none;
   <div class="wrap">
     <p class="eyebrow rv">What comes out</p>
     <h2 class="rv">Does your strategy read like this?</h2>
-    <p class="lede rv">Not a screenshot — the tool itself, running a worked example.</p>
+    <p class="lede rv">Every chart the Code asks for, the table underneath it, and a plain
+      sentence saying what it shows.</p>
 
     <div class="reel rv">
       <div class="reelbar">
@@ -448,8 +451,7 @@ html.anim .rv.in{opacity:1; transform:none;
       </div>
     </div>
 
-    <p class="reelcap rv">Every figure, chart and sentence comes from the one set of
-      numbers. Nothing in it can disagree with anything else in it.</p>
+    <p class="reelcap rv">A worked example, running in the tool — not a picture of one.</p>
   </div>
 </section>
 
@@ -732,64 +734,99 @@ setTimeout(()=> {
 
 /* ---- the reel -------------------------------------------------------------
  *
- * Scale the framed tool to the width available, measure how tall the report
- * actually is, and set the travel and the duration from that — so the scroll
- * covers the whole document at a steady reading pace whatever the report grows
- * into. Nothing is hard-coded to today's length.
+ * The framed tool, showing the parts of its own output worth looking at: each
+ * chart and each table, centred in the window, held still, faded between.
  *
- * The iframe is same-origin, so its height can simply be read. If that ever
- * stops being true the reel falls back to a fixed travel rather than breaking:
- * a slightly wrong scroll is a much smaller failure than a blank frame.
+ * The stops are found in the document at run time rather than written down as
+ * pixel positions. A list of offsets would be right on the day it was measured
+ * and quietly wrong afterwards — the report grows a section and every stop
+ * lands somewhere else — which is the same reason this frames the live tool
+ * instead of a screenshot.
  */
 (function(){
   const view = $("#reelview"), inner = $("#reelinner"), frame = $("#reelframe");
   if(!view || !frame) return;
 
-  /* Quick on purpose. Nobody is meant to read the report here — the point is
-     to see, in a few seconds, that it is a finished paper with charts and
-     tables laid out properly. Slow enough to make that out, fast enough that
-     the whole document goes past while somebody is still on the section. */
-  const PX_PER_SEC = 620;
-  const LOGICAL = 1180;
+  const LOGICAL = 1180, HOLD = 2600, FADE = 560;
+  let stops = [], at = 0, timer = null;
 
-  function fit(){
-    const w = view.clientWidth;
-    inner.style.transform = "scale(" + (w / LOGICAL) + ")";
-  }
+  const fit = () => { inner.style.transform = "scale(" + (view.clientWidth / LOGICAL) + ")"; };
 
-  function measure(){
-    let h = 9000;
-    try{
-      const d = frame.contentDocument;
-      if(d && d.body) h = Math.max(d.body.scrollHeight, d.documentElement.scrollHeight);
-    }catch(e){ /* cross-origin one day: keep the fallback */ }
-    frame.style.height = h + "px";
+  function findStops(){
+    let d; try{ d = frame.contentDocument; }catch(e){ return []; }
+    const body = d && d.querySelector(".docbody");
+    if(!body) return [];
     const scale = view.clientWidth / LOGICAL;
-    // How far it can travel before the foot of the document reaches the foot
-    // of the window. Never negative: a short report simply does not move.
-    const travel = Math.max(0, h - (view.clientHeight / scale));
-    view.style.setProperty("--travel", "-" + Math.round(travel) + "px");
-    view.style.setProperty("--dur", Math.max(8, Math.round(travel / PX_PER_SEC)) + "s");
+    const win = view.clientHeight / scale;          // window height in the frame's own pixels
+    const top = el => el.getBoundingClientRect().top + (frame.contentWindow.scrollY || 0);
+
+    /* IN ORDER OF WHAT MAKES THE CASE, not in page order. Page order opens on
+       PWLB market rates, which any rates page has; the liability benchmark
+       charts are the thing nobody else draws, so they go first. Then what the
+       authority holds, then a wide table to show ten years laid out properly.
+       Twenty-one stops is a sixty-six second loop nobody watches to the end —
+       eight is under half a minute and every one of them earns its place. */
+    const seen = new Set();
+    const uniq = list => list.filter(el => {
+      const k = (el.textContent || "").replace(/\s+/g, "").slice(0, 60);
+      if(seen.has(k)) return false;
+      seen.add(k); return true;
+    });
+    const lb    = uniq([...body.querySelectorAll(".ind .chartwrap")]);
+    const bars  = uniq([...body.querySelectorAll(".barwrap")]);
+    const wide  = uniq([...body.querySelectorAll(".otable")]
+                    .filter(t => t.rows[0] && t.rows[0].cells.length >= 9));
+    const picks = lb.concat(bars, wide).slice(0, 8);
+
+    return picks
+      .map(el => ({ y: top(el), h: el.getBoundingClientRect().height }))
+      .filter(o => o.h > 90)
+      // Centre each in the window, and never above the top of the document.
+      .map(o => Math.max(0, Math.round(o.y - (win - Math.min(o.h, win)) / 2)));
   }
 
-  frame.addEventListener("load", () => { fit(); setTimeout(measure, 600); });
-  window.addEventListener("resize", () => { fit(); measure(); }, {passive:true});
-  fit();
+  function step(){
+    if(!stops.length) return;
+    view.classList.remove("lit");
+    setTimeout(() => {
+      frame.style.transform = "translateY(-" + stops[at] + "px)";
+      at = (at + 1) % stops.length;
+      view.classList.add("lit");
+    }, FADE);
+  }
 
-  /* It runs, and it keeps running. No pause control and no pause on hover:
-     this is a five-second impression of a finished document, not something to
-     be read here — the report itself is one click away and scrolls properly.
-     Hover-pause in particular made the frame feel stuck to the pointer.
+  function start(){
+    fit();
+    let h = 9000;
+    try{ const d = frame.contentDocument;
+         if(d && d.body) h = Math.max(d.body.scrollHeight, d.documentElement.scrollHeight); }
+    catch(e){}
+    frame.style.height = h + "px";
+    stops = findStops();
+    if(!stops.length) stops = [0];
+    at = 0;
+    clearInterval(timer);
+    step();
+    // Motion stops for anyone who has asked for less of it: the first stop is
+    // shown and nothing moves after that.
+    if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    timer = setInterval(step, HOLD + FADE);
+  }
 
-     Motion still stops in the two places it should: off screen, where it
-     would be animating a 1.2MB page for nobody, and under
-     prefers-reduced-motion, where the CSS removes the animation outright and
-     the document can be scrolled by hand. */
+  frame.addEventListener("load", () => setTimeout(start, 700));
+  window.addEventListener("resize", () => { fit(); stops = findStops(); }, {passive:true});
+
+  // Off screen it is a 1.2MB page animating for nobody.
   if("IntersectionObserver" in window){
-    new IntersectionObserver(es => view.classList.toggle("paused", !es[0].isIntersecting),
-      {rootMargin:"200px"}).observe(view);
+    new IntersectionObserver(es => {
+      if(es[0].isIntersecting){ if(!timer && stops.length
+          && !window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+        timer = setInterval(step, HOLD + FADE); } }
+      else { clearInterval(timer); timer = null; }
+    }, {rootMargin:"200px"}).observe(view);
   }
 })();
+
 
 </script>
 </body>
