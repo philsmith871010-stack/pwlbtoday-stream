@@ -227,6 +227,57 @@ html.anim .rv.in{opacity:1; transform:none;
   .step .k{padding-top:0}
   section{padding:78px 0}
 }
+
+/* ---------------------------------------------------------------------------
+ * The reel: the report itself, scrolling.
+ *
+ * This is not a screenshot. It is the tool, in an iframe, running the worked
+ * example — ?reel= fills a demonstration, opens the draft and hides everything
+ * that is not the document. A picture of a report goes stale the moment the
+ * report changes and nobody notices for months; this cannot, because it is the
+ * thing it is showing.
+ *
+ * The frame renders at a fixed 1180px and is scaled to fit, so the layout is
+ * always the desktop one and the type stays crisp rather than reflowing into a
+ * narrow column that flatters nothing.
+ * ------------------------------------------------------------------------ */
+.reel{margin-top:46px;border:1px solid var(--line2);border-radius:14px;overflow:hidden;
+  background:#fff;box-shadow:0 50px 90px -40px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.03)}
+.reelbar{display:flex;align-items:center;gap:7px;padding:11px 15px;
+  background:var(--panel2);border-bottom:1px solid var(--line2)}
+.reelbar .dot{width:9px;height:9px;border-radius:50%;background:var(--line2);flex:none}
+.reelbar .rt{margin-left:9px;font-family:var(--mono);font-size:11px;color:var(--muted);
+  letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reelbar .rp{margin-left:auto;flex:none;font-family:var(--mono);font-size:11px;
+  letter-spacing:.05em;color:var(--ink2);background:transparent;border:1px solid var(--line2);
+  border-radius:99px;padding:3px 11px;cursor:pointer}
+.reelbar .rp:hover{border-color:var(--l-lb);color:var(--ink)}
+.reelview{position:relative;height:min(76vh,640px);overflow:hidden;background:#fff}
+.reelinner{position:absolute;top:0;left:0;width:1180px;transform-origin:top left}
+.reelview iframe{display:block;width:1180px;border:0;background:#fff;
+  animation:reelrun var(--dur,90s) linear infinite alternate;will-change:transform}
+.reelview.paused iframe{animation-play-state:paused}
+@keyframes reelrun{
+  from{transform:translateY(0)}
+  to{transform:translateY(var(--travel,-6000px))}
+}
+/* A soft edge top and bottom so the document reads as passing through a
+   window rather than being cut off by one. */
+.reelview::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(#fff 0,rgba(255,255,255,0) 34px,
+             rgba(255,255,255,0) calc(100% - 40px),#fff 100%)}
+.reelcap{margin:20px auto 0;max-width:70ch;text-align:center;font-size:14.5px;
+  color:var(--muted);line-height:1.6}
+.reelcap b{color:var(--ink2);font-weight:600}
+@media (max-width:900px){ .reelview{height:58vh} }
+/* No autoplay for anyone who has asked for less motion — a long, continuous
+   scroll is exactly what that setting is about. The document sits still and
+   can be scrolled by hand instead. */
+@media (prefers-reduced-motion:reduce){
+  .reelview iframe{animation:none}
+  .reelview{overflow:auto}
+}
+
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .rv{opacity:1; transform:none; transition:none}
@@ -474,6 +525,41 @@ html.anim .rv.in{opacity:1; transform:none;
 <style>#worth .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media(min-width:1000px){#worth .cards > .card:nth-child(5){grid-column:1/-1}}
 @media(max-width:760px){#worth .cards{grid-template-columns:1fr}}</style>
+
+<!-- ======================= WHAT IT LOOKS LIKE ======================= -->
+<section id="looks">
+  <div class="wrap">
+    <p class="eyebrow rv">What comes out</p>
+    <h2 class="rv">Does your strategy read like this?</h2>
+    <p class="lede rv">A treasury strategy is read by people who do not write treasury
+      strategies: members, a scrutiny committee, an auditor coming to it cold. What follows is
+      the whole worked example, running past — every chart the Code asks for, every table
+      underneath it, and a plain sentence under each saying what it shows. It is not a picture
+      of a report. It is the tool, in a frame, producing this one now.</p>
+
+    <div class="reel rv">
+      <div class="reelbar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="rt">Annual treasury strategy · worked example · 2026/27</span>
+        <button type="button" class="rp" id="reelpause" aria-pressed="false">Pause</button>
+      </div>
+      <div class="reelview" id="reelview">
+        <div class="reelinner" id="reelinner">
+          <iframe id="reelframe" loading="lazy" scrolling="no" tabindex="-1"
+                  title="A worked example of the report this produces, scrolling"
+                  src="pwlbreports-tool.html?reel=one"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <p class="reelcap rv">Nothing in it was typed twice. <b>The charts, the tables and the
+      sentences are the same figures</b>, so they cannot disagree with each other, and a
+      reader who checks one has checked them all. The passages still marked
+      <i>to be written</i> are left showing on purpose: what only your authority can say is
+      asked for by name rather than filled with something plausible.</p>
+  </div>
+</section>
+
 <!-- ======================= WHAT IT IS WORTH ======================= -->
 <section id="worth">
   <div class="wrap">
@@ -827,6 +913,71 @@ function countUp(el){
   };
   on(); window.addEventListener("scroll", on, {passive:true});
 })();
+
+/* ---- the reel -------------------------------------------------------------
+ *
+ * Scale the framed tool to the width available, measure how tall the report
+ * actually is, and set the travel and the duration from that — so the scroll
+ * covers the whole document at a steady reading pace whatever the report grows
+ * into. Nothing is hard-coded to today's length.
+ *
+ * The iframe is same-origin, so its height can simply be read. If that ever
+ * stops being true the reel falls back to a fixed travel rather than breaking:
+ * a slightly wrong scroll is a much smaller failure than a blank frame.
+ */
+(function(){
+  const view = $("#reelview"), inner = $("#reelinner"), frame = $("#reelframe"),
+        pause = $("#reelpause");
+  if(!view || !frame) return;
+
+  const PX_PER_SEC = 190;          // a flick-through, not a crawl
+  const LOGICAL = 1180;
+
+  function fit(){
+    const w = view.clientWidth;
+    inner.style.transform = "scale(" + (w / LOGICAL) + ")";
+  }
+
+  function measure(){
+    let h = 9000;
+    try{
+      const d = frame.contentDocument;
+      if(d && d.body) h = Math.max(d.body.scrollHeight, d.documentElement.scrollHeight);
+    }catch(e){ /* cross-origin one day: keep the fallback */ }
+    frame.style.height = h + "px";
+    const scale = view.clientWidth / LOGICAL;
+    // How far it can travel before the foot of the document reaches the foot
+    // of the window. Never negative: a short report simply does not move.
+    const travel = Math.max(0, h - (view.clientHeight / scale));
+    view.style.setProperty("--travel", "-" + Math.round(travel) + "px");
+    view.style.setProperty("--dur", Math.max(20, Math.round(travel / PX_PER_SEC)) + "s");
+  }
+
+  frame.addEventListener("load", () => { fit(); setTimeout(measure, 600); });
+  window.addEventListener("resize", () => { fit(); measure(); }, {passive:true});
+  fit();
+
+  /* WCAG 2.2.2: anything that moves for more than five seconds needs a way to
+     stop it. Hovering pauses as well, so a reader who wants to look at one
+     table can simply put the pointer on it. */
+  let held = false;
+  const sync = () => view.classList.toggle("paused", held || hover || !onScreen);
+  let hover = false, onScreen = true;
+  view.addEventListener("pointerenter", () => { hover = true; sync(); });
+  view.addEventListener("pointerleave", () => { hover = false; sync(); });
+  pause.addEventListener("click", () => {
+    held = !held;
+    pause.textContent = held ? "Play" : "Pause";
+    pause.setAttribute("aria-pressed", String(held));
+    sync();
+  });
+  // Off-screen it is a 1.2MB page animating for nobody.
+  if("IntersectionObserver" in window){
+    new IntersectionObserver(es => { onScreen = es[0].isIntersecting; sync(); },
+      {rootMargin:"200px"}).observe(view);
+  }
+})();
+
 </script>
 </body>
 </html>

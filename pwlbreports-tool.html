@@ -45,6 +45,7 @@
   --l-strat:#7f6fbf;  /* strategic investments / cross-fund   */
   --l-exc:#c25708;    /* excess investments                   */
   --ours:#1a7f4b; --yours:#c25708; --derived:#5b4bb3;
+  --fill-bg:rgba(194,87,8,.10); --fill-line:rgba(194,87,8,.55);
   --seq1:#a8c8e8; --seq2:#7fb0dd; --seq3:#5695d1; --seq4:#2f6fb0;
   --seq5:#1d4f86; --seq6:#0f3059;
   --cell:#ffffff; --cell-ours:#eef7f2; --cell-derived:#f2f0fa;
@@ -72,6 +73,7 @@
     --s5:#5ec98a; --s6:#7fcb72; --s7:#9ccb6a; --s8:#4cb583;
 
     --l-debt:#6fb5e0; --l-cfr:#5b9ec9; --l-obs:#f0955a; --l-ntp:#6fae5c;
+    --fill-bg:rgba(240,149,90,.16); --fill-line:rgba(240,149,90,.6);
     --l-lb:#5b9ec9; --l-al:#ef6a55; --l-inv:#f0955a; --l-ei:#8a7fc0;
     --l-br:#5b9ec9; --l-strat:#a99ae8; --l-exc:#e8974a;
     --ours:#4cb583; --yours:#e8974a; --derived:#a99ae8;
@@ -92,6 +94,7 @@
   --accent:#8fb6de; --accent-soft:#1c2b3a; --on-accent:#0e151d;
   --orange:#e8974a; --good:#4cb583; --alert:#e0776a;
   --l-debt:#6fb5e0; --l-cfr:#5b9ec9; --l-obs:#f0955a; --l-ntp:#6fae5c;
+    --fill-bg:rgba(240,149,90,.16); --fill-line:rgba(240,149,90,.6);
   --l-lb:#5b9ec9; --l-al:#ef6a55; --l-inv:#f0955a; --l-ei:#8a7fc0;
   --l-br:#5b9ec9; --l-strat:#a99ae8; --l-exc:#e8974a;
   --ours:#4cb583; --yours:#e8974a; --derived:#a99ae8;
@@ -308,7 +311,28 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
 
 /* output */
 .doc{padding:44px 60px 50px;font-family:var(--serif)}
-.doc > *{max-width:1040px;margin-left:auto;margin-right:auto}
+/* Reel mode: the document, and nothing that is not the document. Driven by
+   ?reel=<demo> and framed by the landing page, so what a visitor scrolls
+   through is the live tool rather than a screenshot that will go stale. */
+html.reel .railwrap,html.reel .stepnav,html.reel .panel:not(.doc),
+html.reel .toast,html.reel #pv,html.reel .stamp,html.reel header{display:none !important}
+html.reel .shell{max-width:none;padding:0}
+html.reel body{background:var(--card)}
+html.reel .panel.doc{border:0;box-shadow:none;margin:0;border-radius:0}
+html.reel .doc{padding:52px 64px 60px}
+html.reel .docnav{display:none}
+/* Tool affordances are not part of the report. The "sections still to be
+   written" banner and the WHY tags are the tool talking to its author; a
+   visitor is being shown the document, not the workshop. */
+html.reel .warn,html.reel .why,html.reel .reqtag{display:none !important}
+/* .lbtag stays: "LB2" names the Code indicator the chart is, which is the
+   report saying what it is showing, not the tool saying anything. */
+
+/* THE DOCUMENT FILLS THE PANEL. It was capped at 1040px and centred, which
+   on a wide window left a third of the page empty beside every table — and
+   the tables are the part of a treasury report that most wants the room: ten
+   years of figures across, in a monospaced column each. */
+.doc > *{max-width:none;margin-left:0;margin-right:0}
 @media(max-width:760px){.doc{padding:26px 20px}}
 .doclogo{max-height:56px;max-width:260px;margin:0 auto 14px 0;display:block}
 .doc .dh{font-family:var(--sans);font-size:10px;letter-spacing:.11em;text-transform:uppercase;
@@ -710,7 +734,7 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 /* The bar charts sit under the tables and were on their own measure, so the
    label column started in one place in a table and another in a chart. Same
    246px label, same right edge, one grid down the page. */
-.doc .barwrap,#pvbody .barwrap{max-width:min(100%,838px)}
+.doc .barwrap,#pvbody .barwrap{max-width:100%}
 .doc .barrow,#pvbody .barrow{grid-template-columns:246px 58px 1fr 84px;gap:0}
 .doc .barrow.rated,#pvbody .barrow.rated{grid-template-columns:246px 58px 1fr 84px}
 .doc .barrow .br{padding-right:10px}
@@ -843,12 +867,27 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 .doc .otable th:not(:first-child),.doc .otable td:not(:first-child),
 #pvbody .otable th:not(:first-child),#pvbody .otable td:not(:first-child){width:74px}
 .doc .otable td.w,.doc .otable th.w{width:246px;white-space:normal}
+/* EXCEPT WHERE .w IS THE PROSE, NOT THE LABEL.
+   The class is overloaded: in the figure tables it marks a 246px label
+   column, and in the counterparty rules it marks the "How it applies"
+   column, which is a paragraph and wants the rest of the page. Pinned at
+   246px that table sat at a third of the width with its sentences broken
+   over eight lines each. Here the first column is the fixed one and the
+   prose takes what is left. */
+.doc .cprules{width:100%;table-layout:fixed}
+.doc .cprules th:first-child,.doc .cprules td:first-child{width:210px}
+.doc .cprules td.w,.doc .cprules th.w{width:auto;white-space:normal}
 .under .ugap td{height:9px;border:0;padding:0}
 .doc .chartwrap{margin:22px 0 10px}
 .doc .legend{margin-bottom:20px}
 .doc .note{margin-top:10px;margin-bottom:22px}
 .doc .readout{margin-top:16px;margin-bottom:6px}
 .doc h4{margin-top:26px}
+/* A decision the authority has still to make, inside a finished sentence.
+   Quiet enough to read past, marked enough that nobody signs it off by
+   accident — and it survives into the Word export, highlighted. */
+.fillin{background:var(--fill-bg);border-bottom:1px dotted var(--fill-line);
+  padding:0 2px;border-radius:2px}
 /* ROW HEIGHT IS WHAT MAKES A FINANCIAL TABLE LOOK PROFESSIONAL OR NOT.
    Seven pixels above and below a 12.5px figure gives a 27px row, so a
    five-year indicator table ran the depth of a chart and a fifty-year run-off
@@ -1184,11 +1223,18 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
    in it that can be wider than the page, tables and charts, each scroll
    inside their own container. */
 .panel.doc{overflow:visible}
-.docwrap{display:flex;align-items:flex-start;gap:26px}
+.docwrap{display:flex;align-items:flex-start}
 .docbody{flex:1 1 auto;min-width:0}
 .docnav{flex:0 0 auto;position:sticky;top:calc(var(--railh,96px) + 12px);width:212px;
-  max-height:calc(100vh - var(--railh,96px) - 40px);display:flex;flex-direction:column;gap:8px}
-.docnav.shut{width:34px}
+  margin-right:26px;max-height:calc(100vh - var(--railh,96px) - 40px);
+  display:flex;flex-direction:column;gap:8px}
+/* FOLDED, IT TAKES NO WIDTH. It was 34px plus a 26px gap, so closing the rail
+   still indented the whole report by sixty pixels — the document paid for a
+   control it was not showing. Zero-width, with the burger hanging back into
+   the panel's own 60px gutter, where it sits beside the text rather than in
+   front of it. */
+.docnav.shut{width:0;margin-right:0}
+.docnav.shut .burger{margin-left:-46px}
 /* The burger. Three lines that become a cross when the rail is open, so the
    control says what pressing it does rather than what it opened. */
 .burger{width:34px;height:34px;flex:0 0 auto;display:flex;flex-direction:column;
@@ -1221,6 +1267,10 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
 @media (max-width:820px){
   .docwrap{display:block}
   .docnav{position:static;width:auto;max-height:none;margin:0 0 14px}
+  .docnav.shut{width:auto;margin:0 0 14px}
+  /* The gutter is 20px on a narrow window, not 60, so the burger cannot hang
+     back into it without leaving the panel. */
+  .docnav.shut .burger{margin-left:0}
   .docnav .dnl{max-height:44vh}
 }
 .dsec{scroll-margin-top:calc(var(--railh,96px) + 12px)}
@@ -6807,8 +6857,20 @@ function docSections(){
   const d = buildModel(S,"gf");
   const hra = S.hra!=="no" ? buildModel(S,"hra") : null;
   const t = k => (S.text[k]||"").trim();
+  /* {{ }} IS A PROMPT, NOT SYNTAX.
+   *
+   * The draft wording carries the author's decisions in double braces —
+   * "{{financial year}}", "{{property held for rental return, loans to
+   * subsidiaries}}" — and para() escaped the text and passed the braces
+   * through raw. So every draft, on screen and in the exported document,
+   * showed template syntax in the middle of a sentence, which reads as a bug
+   * rather than as a question being asked. Marked up, it reads as what it is:
+   * this bit is yours, and here is the choice. Run AFTER esc(), because esc
+   * leaves the braces alone and running it first would escape the markup. */
+  const fillin = h => h.replace(/\{\{([^{}]*)\}\}/g,
+    (_, inner) => `<span class="fillin" title="Your authority's own wording">${inner}</span>`);
   const para = s => s.split(/\n\s*\n/).filter(x=>x.trim())
-    .map(x=>`<p>${esc(x.trim()).replace(/\n/g,"<br>")}</p>`).join("");
+    .map(x=>`<p>${fillin(esc(x.trim()).replace(/\n/g,"<br>"))}</p>`).join("");
   const gap = (what) => `<p class="gap">To be written: ${esc(what)}</p>`;
   const peakNeed = d.reduce((a,b)=>b.need>a.need?b:a,d[0]);
   const peakInv  = d.reduce((a,b)=>b.inv>a.inv?b:a,d[0]);
@@ -7455,9 +7517,32 @@ function documentHTML(forExport){
   // hand a committee. Resolve each token to a literal before export.
   const resolved = inlineColours(head + body + caveat());
   return `<!doctype html><html><head><meta charset="utf-8">
-    <title>${esc(name)} — ${esc(rep.t)}</title><style>
+    <title>${esc(name)} — ${esc(rep.t)}</title>
+    <!-- Word reads these two and opens the file as a document rather than a
+         web page. The content is still HTML — that is Word's own "Web Page"
+         format — but it arrives as a .doc, so double-clicking it opens Word
+         instead of a browser. -->
+    <meta name="ProgId" content="Word.Document">
+    <meta name="Generator" content="Microsoft Word">
+    <style>
+    /* LANDSCAPE, AND IT IS THE TABLES THAT DECIDE IT.
+       Fourteen of this document's twenty-four tables carry more than nine
+       columns and the widest carries twelve. On A4 portrait the text block is
+       17.5cm, which leaves about 35pt for each year column once the label has
+       its room — and "1,217.2" at 9.5pt Arial is about 34pt wide. It fits by
+       a point, so any longer figure wraps mid-column or pushes the table off
+       the page. Landscape gives 56pt: the same table with room to breathe.
+       Anyone who disagrees can change it in Word in one click. */
+    @page WordSection1{size:841.9pt 595.3pt;mso-page-orientation:landscape;
+      margin:1.6cm 2cm 1.6cm 2cm}
+    div.WordSection1{page:WordSection1}
     body{font-family:Georgia,'Times New Roman',serif;font-size:11.5pt;line-height:1.55;
-      max-width:17.5cm;margin:2cm auto;color:#111}
+      width:25.7cm;margin:0;color:#111}
+    /* Prose keeps a reading measure. A 25.7cm line of 11.5pt serif runs to
+       about 115 characters, which is punishing for the people who actually
+       read this — so the text block stops short and the tables and charts,
+       which are the reason for the landscape page, use all of it. */
+    p,.plain,.readout,.caveat,ul,ol{margin-right:8.5cm}
     h2{font-size:22pt;margin:0 0 3pt;letter-spacing:-0.4pt}
     h3{font-size:12.5pt;margin:20pt 0 7pt;font-family:Arial,sans-serif}
     .secn{color:#5a7fa8;font-weight:normal;margin-right:8pt}
@@ -7483,6 +7568,10 @@ function documentHTML(forExport){
       text-transform:uppercase;letter-spacing:.06em;color:#0a2540;margin-bottom:3pt}
     .plain p{font-family:Arial,sans-serif;font-size:11pt;line-height:1.5;margin:0}
     .gap{color:#a33;font-style:italic;font-family:Arial,sans-serif;font-size:10pt}
+    /* Left visible in the export on purpose: these are the passages the
+       authority has still to settle, and they should be impossible to miss
+       when the document is read in Word. */
+    .fillin{background:#fdf1c7;padding:0 2pt}
     .src{color:#555;font-size:9.5pt;font-family:Arial,sans-serif}
     .readout{margin:8pt 0 0;padding:7pt 9pt;background:#f4f6f8;border-left:3pt solid #2f6fb0}
     .readout p{font-family:Arial,sans-serif;font-size:10.5pt;line-height:1.55;margin:0 0 6pt}
@@ -7491,7 +7580,7 @@ function documentHTML(forExport){
     .caveat{margin-top:20pt;padding:8pt 10pt;background:#f4f4f4;border-left:3pt solid #c60;
       font-family:Arial,sans-serif;font-size:9pt;line-height:1.5}
     svg{max-width:100%;height:auto}
-    </style></head><body>${resolved}</body></html>`;
+    </style></head><body><div class="WordSection1">${resolved}</div></body></html>`;
 }
 
 /* Swap every var(--token) for the colour it currently resolves to, so the
@@ -9525,7 +9614,16 @@ const KEY_OLD = () => `lb:${S.gss||"none"}:${S.report}`;
  * Debounced, because this runs off render() and render() runs on a keystroke.
  */
 let _auto = null;
+/* Reel mode never writes. The landing page frames the tool with ?reel=, and
+   the demonstration it fills is saved under exactly the key a real visitor's
+   own work uses — authority, report type, opening year. Left alone, opening
+   the marketing page would silently overwrite an Aberdeen City strategy
+   somebody had been drafting. A page that shows you the product must not be
+   able to destroy your copy of it. */
+let NO_SAVE = false;
+
 function autoSave(){
+  if(NO_SAVE) return;
   // Before an authority is chosen there is nothing to file it under.
   if(!S.gss) return;
   clearTimeout(_auto);
@@ -9533,6 +9631,9 @@ function autoSave(){
 }
 
 function saveVersion(quiet){
+  // Belt and braces: fillDemo calls this directly, and libNote below writes to
+  // the library index as well. One guard on the timer is not enough.
+  if(NO_SAVE) return;
   try{
     localStorage.setItem(KEY(), JSON.stringify({
       v:3, gss:S.gss, report:S.report, fy0:S.fy0, hra:S.hra, years:S.years,
@@ -10243,7 +10344,11 @@ function stampSaved(word){
   $("expdoc").addEventListener("click", async ()=>{
     const html = documentHTML(true);
     const who=(LB[S.gss]||{n:"authority"}).n.replace(/\W+/g,"-").toLowerCase();
-    const fn=`${S.report}-${who}-${S.fy0}.html`;
+    // .doc, not .html. The bytes are the same — Word's own "Web Page" format
+    // is HTML — but a file called .html opens in a browser when you
+    // double-click it, which is not what a button labelled "Download for
+    // Word" should do.
+    const fn=`${S.report}-${who}-${S.fy0}.doc`;
     if(DOWNLOADS){
       try{ await DOWNLOADS.save({filename:fn, data:html});
         $("dhint").textContent=`Saved ${fn}. Open it in Word — headings, tables and charts carry over.`; }
@@ -10253,7 +10358,7 @@ function stampSaved(word){
       return;
     }
     const a=document.createElement("a");
-    a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));
+    a.href=URL.createObjectURL(new Blob([html],{type:"application/msword"}));
     a.download=fn; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(a.href),2000);
     $("dhint").textContent=`Downloading ${fn}. Open it in Word.`;
@@ -10521,6 +10626,32 @@ function stampSaved(word){
   // here and survives every re-render of its own contents.
   cpRender(); cpWire();
   wireSteps();
+
+  /* ---- reel mode ---------------------------------------------------------
+   *
+   * ?reel=one — fill that demonstration, open the draft, and hide everything
+   * that is not the document: the step rail, the export buttons, the section
+   * rail, the panel chrome. The landing page frames this and scrolls it, so
+   * what a visitor sees really is the report the tool produces rather than a
+   * picture of one taken at some point in the past. A copied screenshot goes
+   * stale silently; this cannot, because it IS the tool.
+   *
+   * Nothing here is reachable without the parameter, and the parameter only
+   * ever fills a demonstration — there is no state it can reach that a
+   * visitor could not reach by choosing the same demonstration by hand.
+   * -------------------------------------------------------------------- */
+  const reel = new URLSearchParams(location.search).get("reel");
+  if(reel && DEMOS[reel]){
+    // Set BEFORE the demonstration is filled, not after: fillDemo saves once
+    // itself, and every render after it queues another.
+    NO_SAVE = true;
+    document.documentElement.classList.add("reel");
+    fillDemo(reel);
+    showStep(DRAFT_STEP);
+    // The section rail is navigation, and a reel is not navigated.
+    const nv = $("docnav"); if(nv) nv.remove();
+    window.scrollTo(0, 0);
+  }
 })();
 
 
