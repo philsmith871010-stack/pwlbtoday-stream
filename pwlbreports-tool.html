@@ -1923,9 +1923,11 @@ function chart(d, spec){
     });
     return out;
   })();
-  const mark = `<text x="${W-P.r}" y="${P.t+11}" text-anchor="end"
-    font-family="var(--sans)" font-size="11" font-weight="600"
-    fill="var(--muted)" opacity=".42" letter-spacing="0.5">PWLBtoday</text>`;
+  /* NO WATERMARK. The chart belongs to the authority's report, and a tool
+     that signs the charts inside somebody else's committee paper is making a
+     claim on a document that is not its own -- the same reason the site mark
+     came off the draft. */
+  const mark = "";
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"
     class="ctip" data-tip="${esc(JSON.stringify(tip))}"
     aria-label="${esc(chartAlt(d, spec))}">${gl.join("")}${fills}${bars}${zero}${mk}${mark}
