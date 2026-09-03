@@ -313,13 +313,30 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
   display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .dsec{margin-top:30px;padding-top:22px;border-top:1px solid var(--hair);position:relative}
 .dsec:first-of-type{border-top:0;margin-top:20px;padding-top:0}
-.dsec h3{font-family:var(--sans);font-size:16px;font-weight:600;margin:0 0 12px;
-  letter-spacing:-.008em;padding-left:34px;position:relative;line-height:1.35}
-.dsec h3 .secn{position:absolute;left:0;top:2px;font-family:var(--mono);font-size:12px;
-  font-weight:500;color:var(--accent);opacity:.85;letter-spacing:0}
+/* A HEADING IN AN 8,700-WORD DOCUMENT HAS TO BE FINDABLE BY THUMBING.
+   These were 16px semibold with a small grey number floating beside them,
+   which is barely a step up from the 15px body text under them — a reader
+   scrolling for section 12 had to read to find it. The number is now a chip
+   in the accent, the heading carries real weight, and a short rule sits above
+   it so the eye catches the boundary rather than the words. */
+.dsec h3{font-family:var(--sans);font-size:18px;font-weight:600;margin:0 0 14px;
+  letter-spacing:-.014em;padding-left:38px;position:relative;line-height:1.3;
+  color:var(--ink)}
+.dsec h3 .secn{position:absolute;left:0;top:0;font-family:var(--mono);font-size:11.5px;
+  font-weight:600;color:var(--on-accent);background:var(--accent);letter-spacing:0;
+  min-width:24px;height:22px;border-radius:var(--r-sm);display:inline-flex;
+  align-items:center;justify-content:center;padding:0 5px;margin-right:0}
+.dsec::before{content:"";position:absolute;top:-1px;left:0;width:46px;height:2px;
+  background:var(--accent);border-radius:1px}
+.dsec:first-of-type::before{display:none}
 @media(max-width:600px){.dsec h3{padding-left:0}.dsec h3 .secn{position:static;
-  display:inline-block;margin-right:8px}}
-.dsec h4{font-family:var(--sans);font-size:12.5px;font-weight:600;margin:14px 0 5px}
+  display:inline-flex;margin-right:9px;vertical-align:2px}}
+/* An unnumbered wrapper section — recommendations, implications — is a
+   different kind of thing and says so by not wearing a number chip. */
+.dsec h3 .secn:empty{display:none}
+.dsec h3:has(.secn:empty){padding-left:0}
+.dsec h4{font-family:var(--sans);font-size:12.5px;font-weight:600;margin:18px 0 6px;
+  color:var(--accent);letter-spacing:.01em}
 .dsec p{font-size:15px;line-height:1.66;margin:0 0 13px;text-wrap:pretty}
 .dsec h4{letter-spacing:-.004em;font-size:13.5px}
 .gap{font-family:var(--sans);font-size:12.5px;color:var(--alert);font-style:italic;
@@ -687,6 +704,15 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
 .barwrap{margin:10px 0 2px}
 .barrow{display:grid;grid-template-columns:minmax(120px,190px) 1fr auto;gap:10px;
   align-items:center;padding:4px 0}
+/* The bar charts sit under the tables and were on their own measure, so the
+   label column started in one place in a table and another in a chart. Same
+   246px label, same right edge, one grid down the page. */
+.doc .barwrap{max-width:min(100%,838px)}
+.doc .barrow{grid-template-columns:246px 58px 1fr 84px;gap:0}
+.doc .barrow.rated{grid-template-columns:246px 58px 1fr 84px}
+.doc .barrow .br{padding-right:10px}
+.doc .barrow:not(.rated){grid-template-columns:246px 1fr 84px}
+.doc .barrow .bv{text-align:right}
 .barrow .bn{font-family:var(--sans);font-size:12.5px;color:var(--ink2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .barrow .bt{background:var(--line);border-radius:2px;height:16px;position:relative}
@@ -764,9 +790,18 @@ table.pwlbtab td.num,table.pwlbtab th.num{text-align:right}
    table that follows a paragraph reads as part of the paragraph. The air goes
    between the blocks, where it separates one idea from the next, rather than
    between the rows, where the rules already do that job. */
-.otable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px;
-  font-variant-numeric:tabular-nums;margin:18px 0 6px}
-.doc .otable{margin:20px 0 8px}
+/* ONE GRID FOR EVERY TABLE IN THE DOCUMENT.
+   Tables were sized to their own contents, so a ten-year table and a six-year
+   one had different column widths and 2026/27 sat in a different place in
+   each. A reader comparing two tables down the page was re-finding the
+   columns every time. Fixed label, fixed year, table not stretched: a shorter
+   table starts where the longer one starts and simply ends sooner. */
+.otable{border-collapse:collapse;font-family:var(--mono);font-size:12.5px;
+  font-variant-numeric:tabular-nums;margin:18px 0 6px;table-layout:fixed;width:100%}
+.doc .otable{margin:20px 0 8px;width:auto;min-width:min(100%,560px)}
+.doc .otable th:first-child,.doc .otable td:first-child{width:246px}
+.doc .otable th:not(:first-child),.doc .otable td:not(:first-child){width:74px}
+.doc .otable td.w,.doc .otable th.w{width:246px;white-space:normal}
 .under .ugap td{height:9px;border:0;padding:0}
 .doc .chartwrap{margin:22px 0 10px}
 .doc .legend{margin-bottom:20px}
