@@ -5900,15 +5900,15 @@ function complianceTable(){
 const PERF = [
   {grp:"Borrowing"},
   {k:"intpay",  l:"Interest payable",           u:"£m", s:"on borrowing and leases",
-   fund:true},
+   fund:"both"},
   {k:"avgdebt", l:"Average debt outstanding",   u:"£m", s:"the denominator of a rate paid",
-   noBudget:true, fund:true},
+   noBudget:true, fund:"both"},
   {k:"newborr", l:"New borrowing taken",        u:"£m", s:"leave blank if none",
-   noBudget:true, fund:true},
+   noBudget:true, fund:"two"},
   {k:"newrate", l:"Average rate on new borrowing", u:"%", s:"on the loans taken above",
    pct:true, noBudget:true},
   {k:"repaid",  l:"Debt repaid or matured",     u:"£m", s:"principal, in the period",
-   noBudget:true, fund:true},
+   noBudget:true, fund:"two"},
   {grp:"Investments"},
   {k:"intinc",  l:"Investment income",          u:"£m", s:"earned in the period"},
   {k:"avginv",  l:"Average investments held",   u:"£m", s:"the denominator of a return",
@@ -5920,15 +5920,38 @@ const PERF = [
 ];
 const PERF_COLS = [["budget","Budget"], ["actual","Actual"], ["prior","Prior year"]];
 
-/* The HRA split exists only where there is a fund to split into, and only on
-   the lines the sector actually splits. It is a sub-row under its parent, so
-   it is described once here and rendered under each. */
+/* THE TWO POOLING APPROACHES SPLIT DIFFERENT THINGS, AND THE SPLIT MEANS A
+ * DIFFERENT THING IN EACH.
+ *
+ * Under TWO pools the HRA has a debt portfolio of its own, so every debt line
+ * genuinely divides: its own loans, its own interest, its own new borrowing
+ * and its own repayments. "Of which HRA" is a subset, and true.
+ *
+ * Under ONE pool there is a single portfolio and the authority borrows once.
+ * There is no HRA borrowing and no HRA repayment to report — and the corpus
+ * agrees: of 107 one-pool monitoring papers, NOT ONE gives an HRA share of
+ * the year's new borrowing and 4% give one of repayments. What a pooled
+ * authority does report is the interest it recharges the HRA under the item 8
+ * determination, and a notional share of the debt or CFR behind it, which 38%
+ * of them publish. That is an apportionment for recharge, not a portfolio, so
+ * it is not called "of which".
+ *
+ * Offering all four either way invited a figure for something that does not
+ * exist, under a label that said it was part of a total it is not part of. */
 function perfFundCol(){
   if(S.hra === "no") return null;
-  return {k:"hra", t:"of which HRA",
-          s: S.hra === "two"
-            ? "the HRA's own pool"
-            : "the apportionment you charge the HRA — debt is pooled, so this is yours to state"};
+  return S.hra === "two"
+    ? {k:"hra", t:"of which HRA",
+       s:"the HRA's own pool — its own loans, and the interest on them"}
+    : {k:"hra", t:"charged to the HRA",
+       s:"debt is pooled, so this is the apportionment you recharge under the item 8 "
+       + "determination rather than a portfolio of its own — yours to state"};
+}
+/* A line splits where it carries a fund rule that this pooling approach
+   satisfies: "both" under either, "two" only where the HRA has its own debt. */
+function perfSplits(x){
+  if(!x.fund || S.hra === "no") return false;
+  return x.fund === "both" || S.hra === "two";
 }
 /* The three HRA cells hang off the same row as flat keys, so the existing
    input handler needs no change: data-p is the line, data-pc the column. */
@@ -5965,13 +5988,13 @@ function perfRows(){
         if(x.k === "ret"){ const d = perfDerive(c); v = d.v; derived = d.derived; }
         cells[c] = {v, derived};
       }
-      if(!(fc && x.fund)){ hra[c] = {v:null, na:true}; return; }
+      if(!perfSplits(x)){ hra[c] = {v:null, na:true}; return; }
       if(x.noBudget && c === "budget"){ hra[c] = {v:null, na:true}; return; }
       const hv = P[x.k] && P[x.k][perfHraKey(c)];
       hra[c] = {v:(hv == null || hv === "") ? null : +hv};
     });
     return Object.assign({}, x, {cells, hra,
-      splits: !!(fc && x.fund),
+      splits: perfSplits(x),
       anyHra: PERF_COLS.some(([c]) => hra[c] && hra[c].v != null),
       any: PERF_COLS.some(([c]) => cells[c].v != null)
         || PERF_COLS.some(([c]) => hra[c] && hra[c].v != null)});
@@ -6212,10 +6235,15 @@ function perfTable(){
       : bodyRow(r, r.cells, r.l) + (r.splits && r.anyHra
           ? bodyRow(r, r.hra, fc.t, "hrasub") : "")).join("")}</tbody>
     </table></div>
-    ${all.some(r=>r.anyHra) ? `<p class="note">The investment lines are whole-authority.
-      Treasury cash is one portfolio managed against one benchmark, so a return cannot be
-      apportioned between funds${S.hra === "one" ? `; the debt is pooled too, and the HRA
-      lines above are the authority's own apportionment` : ""}.</p>` : ""}
+    ${all.some(r=>r.anyHra) ? `<p class="note">${S.hra === "one"
+      ? `Debt is pooled, so the HRA lines above are the authority's own apportionment for
+         recharge under the item 8 determination rather than a portfolio of its own. The
+         year's borrowing and repayments are undertaken once, for the authority, and are not
+         split.`
+      : `The HRA operates its own debt pool, so the lines above are its own loans and the
+         interest on them.`}
+      The investment lines are whole-authority either way: treasury cash is one portfolio
+      managed against one benchmark, so a return cannot be apportioned between funds.</p>` : ""}
     ${perfNote(rows.filter(r=>!r.grp))}`;
 }
 
@@ -11138,7 +11166,12 @@ function stampSaved(word){
        against, which is the one thing the section exists to do. */
     if(S.hra !== "no"){
       const sh = S.hra === "two" ? 0.34 : 0.29;
-      ["intpay","avgdebt","newborr","repaid"].forEach(k => {
+      /* Under one pool the authority borrows once, so there is no HRA share
+         of the year's borrowing or repayment to fill — only the interest it
+         recharges and the notional debt behind it. */
+      const lines = S.hra === "two"
+        ? ["intpay","avgdebt","newborr","repaid"] : ["intpay","avgdebt"];
+      lines.forEach(k => {
         ["budget","actual","prior"].forEach(c => {
           if(S.perf[k] && S.perf[k][c] != null) S.perf[k]["hra_"+c] = r1(S.perf[k][c] * sh);
         });
