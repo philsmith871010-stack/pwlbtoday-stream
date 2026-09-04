@@ -983,7 +983,7 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
   padding-bottom:5px;line-height:1.25}
 .otable tbody tr:last-child td{border-bottom:0}
 .otable tr.key td{font-weight:600;border-top:1.5px solid var(--line2)}
-.otable tr.pihead td{font-weight:600;color:var(--ink);padding-top:9px;padding-bottom:2px;
+.otable tr.pihead td{text-align:left;font-weight:600;color:var(--ink);padding-top:9px;padding-bottom:2px;
   border-bottom:0;font-family:var(--sans)}
 .otable tr.lb td{color:var(--l-lb);font-weight:600}
 .otable tr.inv td{color:var(--l-inv);font-weight:600}
@@ -1094,10 +1094,32 @@ svg.ctip .hits rect{cursor:crosshair}
   white-space:nowrap;padding-right:18px}
 .perf td.pl b{font-weight:600;color:var(--ink);display:block;font-size:13px}
 .perf td.pl span{font-size:11px;color:var(--muted)}
-.perf input{width:104px;text-align:right;font-family:var(--mono);font-size:12.5px;
+.perf input{width:80px;text-align:right;font-family:var(--mono);font-size:12.5px;
   padding:3px 8px;border:1px solid var(--line2);border-radius:var(--r-sm);
   background:var(--card);color:var(--ink);font-variant-numeric:tabular-nums}
 .perf input:focus{outline:none;border-color:var(--accent)}
+/* Borrowing, then investments. The heading is a row of the table rather than
+   a paragraph above it, so it stays with its lines when the table scrolls. */
+.perf tr.grprow td{text-align:left;font-family:var(--sans);font-size:10.5px;font-weight:600;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);
+  background:var(--sunken);padding:6px 8px;border-bottom:1px solid var(--line2)}
+.perf tr.grprow:first-child td{padding-top:4px}
+/* "of which HRA" is a sub-row of the line above it, indented and quieter, so
+   the eye reads it as part of that line and not as another one. */
+/* NOT .sub — there is already a global .sub that uppercases, and a td picking
+   it up rendered "OF WHICH HRA" while the same words read normally in the
+   note below the table. Two classes named for the same idea doing different
+   things, which is how "money" and "LINE_W" went wrong earlier. */
+.perf td.pl.hrasub{padding-left:22px;position:relative;font-size:12px;color:var(--muted);
+  text-transform:none;letter-spacing:0}
+.perf td.pl.hrasub b{font-weight:600;font-size:12px;color:var(--ink2)}
+.perf td.pl.hrasub::before{content:"";position:absolute;left:9px;top:9px;width:6px;height:1px;
+  background:var(--line2)}
+.perf tr.subrow td{border-bottom:1px solid var(--hair)}
+.perf tr.subrow input{opacity:.88}
+/* And the same relationship in the drafted table. */
+.otable tr.hrasub td{color:var(--ink2);font-size:12px}
+.otable tr.hrasub td.w{padding-left:22px;font-style:italic}
 .perf td.nask{background:repeating-linear-gradient(135deg,transparent,transparent 4px,
   var(--hair) 4px,var(--hair) 5px)}
 /* A derived figure is shown, not typed into: it must not look like an input
@@ -1966,9 +1988,38 @@ function inNation(c){ return !c.nat || c.nat.indexOf(S.natOverride || nationOf(S
    authority's and is meant to stay visible. Keeping them as separate
    brackets means a term we know can never be mistaken for a gap they
    have to fill. */
-function natText(t){
-  const N = NAT();
+function natText(t, forNation){
+  const N = forNation ? (NATIONS[forNation] || NAT()) : NAT();
   return String(t).replace(/\[\[(\w+)\]\]/g, (m,k) => N[k] != null ? N[k] : m);
+}
+
+/* IS THIS STILL OUR WORDING, OR HAS THE AUTHOR MADE IT THEIRS?
+ *
+ * Section text is stored with its tokens already expanded, so the author
+ * edits real words rather than "[[mrp]]". The cost is that the words are
+ * frozen to whichever regime was current when they were seeded: load the
+ * Scottish demonstration, then pick your English council, and the
+ * introduction still asks members to approve "the policy on the repayment of
+ * loans fund advances" — a Scottish instrument, in an English committee
+ * paper, in the recommendation.
+ *
+ * A passage that matches our draft under ANY regime is one nobody has
+ * touched, so it may be re-expanded. One that matches none has been edited
+ * and is the author's; it is never rewritten under them. */
+function natSame(raw, cur){
+  return Object.keys(NATIONS).some(n => natText(raw, n) === cur);
+}
+
+/* WHICH of several candidate draftings this passage is, if any.
+ *
+ * A question can have one wording per report type as well as one per regime,
+ * so "is this still ours" has to be asked of every combination — and the
+ * answer has to say WHICH, because re-expanding the quarterly wording as the
+ * annual one would swap the passage for a different passage. Comparing only
+ * against the draft for the CURRENT report type missed it whenever the report
+ * type had moved on since the text was seeded, which is most of the time. */
+function natWhich(raws, cur){
+  return raws.filter(Boolean).find(raw => natSame(raw, cur)) || null;
 }
 
 const REPORTS = [{k:"tmss",t:"Annual treasury strategy"},{k:"mid",t:"Mid-year review"},
@@ -5836,25 +5887,42 @@ function complianceTable(){
  * the split is an apportionment -- the item 8 charge -- and is labelled as
  * one, because the authority making that apportionment is a different thing
  * from the tool assuming it. */
+/* BORROWING FIRST, THEN INVESTMENTS, because that is the order the money
+   matters in and the order the rest of the report already runs. It used to
+   interleave them — interest payable, investment income, average investments,
+   average debt, return, benchmark, new borrowing, rate, repaid — so a reader
+   looking for what the debt cost had to pick four lines out of nine.
+
+   Each line says its own unit, and the ones that carry an HRA split carry it
+   as a sub-row rather than an extra column: "of which HRA" was a single
+   figure against the actual, so there was no HRA budget and no HRA prior
+   year to compare it with. A sub-row gets all three. */
 const PERF = [
-  {k:"intpay",  l:"Interest payable",        u:"£m", s:"on borrowing and leases", fund:true},
-  {k:"intinc",  l:"Investment income",       u:"£m", s:"earned in the period"},
-  {k:"avginv",  l:"Average investments held", u:"£m", s:"the denominator of a return",
-   noBudget:true},
-  {k:"avgdebt", l:"Average debt outstanding", u:"£m", noBudget:true, fund:true},
-  {k:"ret",     l:"Rate of return achieved",  u:"%",  s:"derived where income and balance allow",
-   pct:true},
-  {k:"bench",   l:"Benchmark return",         u:"%",  s:"SONIA, 7-day, or your own measure",
-   pct:true, noBudget:true},
-  {k:"newborr", l:"New borrowing taken",      u:"£m", s:"leave blank if none", noBudget:true,
+  {grp:"Borrowing"},
+  {k:"intpay",  l:"Interest payable",           u:"£m", s:"on borrowing and leases",
    fund:true},
-  {k:"newrate", l:"Average rate on it",       u:"%",  pct:true, noBudget:true},
-  {k:"repaid",  l:"Debt repaid or matured",   u:"£m", noBudget:true, fund:true}
+  {k:"avgdebt", l:"Average debt outstanding",   u:"£m", s:"the denominator of a rate paid",
+   noBudget:true, fund:true},
+  {k:"newborr", l:"New borrowing taken",        u:"£m", s:"leave blank if none",
+   noBudget:true, fund:true},
+  {k:"newrate", l:"Average rate on new borrowing", u:"%", s:"on the loans taken above",
+   pct:true, noBudget:true},
+  {k:"repaid",  l:"Debt repaid or matured",     u:"£m", s:"principal, in the period",
+   noBudget:true, fund:true},
+  {grp:"Investments"},
+  {k:"intinc",  l:"Investment income",          u:"£m", s:"earned in the period"},
+  {k:"avginv",  l:"Average investments held",   u:"£m", s:"the denominator of a return",
+   noBudget:true},
+  {k:"ret",     l:"Rate of return achieved",    u:"%",  s:"income over average balance, unless you type your own",
+   pct:true},
+  {k:"bench",   l:"Benchmark return",           u:"%",  s:"SONIA, 7-day, or your own measure",
+   pct:true, noBudget:true}
 ];
 const PERF_COLS = [["budget","Budget"], ["actual","Actual"], ["prior","Prior year"]];
 
-/* The fund column exists only where there is a fund to split into, and only
-   on the lines the sector actually splits. */
+/* The HRA split exists only where there is a fund to split into, and only on
+   the lines the sector actually splits. It is a sub-row under its parent, so
+   it is described once here and rendered under each. */
 function perfFundCol(){
   if(S.hra === "no") return null;
   return {k:"hra", t:"of which HRA",
@@ -5862,6 +5930,10 @@ function perfFundCol(){
             ? "the HRA's own pool"
             : "the apportionment you charge the HRA — debt is pooled, so this is yours to state"};
 }
+/* The three HRA cells hang off the same row as flat keys, so the existing
+   input handler needs no change: data-p is the line, data-pc the column. */
+const perfHraKey = c => "hra_" + c;
+
 
 /* A return we can compute: income over the average balance held. Only when
    both are there, and never overwriting a figure the authority entered. */
@@ -5876,23 +5948,33 @@ function perfDerive(col){
 
 function perfRows(){
   const P = S.perf || {};
+  const fc = perfFundCol();
   return PERF.map(x => {
-    const cells = {};
+    /* A group heading is still a row, and three callers in check.js read
+       r.cells.prior without asking whether the row has any. Giving it empty
+       cells keeps every consumer working unchanged — a heading simply has no
+       figure in any column, which is true. Returning a bare {grp} threw
+       inside the rail's own status check, so the rail stopped rendering. */
+    if(x.grp) return {grp:x.grp, cells:{}, hra:{}};
+    const cells = {}, hra = {};
     PERF_COLS.forEach(([c]) => {
-      if(x.noBudget && c === "budget"){ cells[c] = {v:null, na:true}; return; }
-      const raw = P[x.k] && P[x.k][c];
-      let v = (raw == null || raw === "") ? null : +raw, derived = false;
-      if(x.k === "ret"){ const d = perfDerive(c); v = d.v; derived = d.derived; }
-      cells[c] = {v, derived};
+      if(x.noBudget && c === "budget"){ cells[c] = {v:null, na:true}; }
+      else {
+        const raw = P[x.k] && P[x.k][c];
+        let v = (raw == null || raw === "") ? null : +raw, derived = false;
+        if(x.k === "ret"){ const d = perfDerive(c); v = d.v; derived = d.derived; }
+        cells[c] = {v, derived};
+      }
+      if(!(fc && x.fund)){ hra[c] = {v:null, na:true}; return; }
+      if(x.noBudget && c === "budget"){ hra[c] = {v:null, na:true}; return; }
+      const hv = P[x.k] && P[x.k][perfHraKey(c)];
+      hra[c] = {v:(hv == null || hv === "") ? null : +hv};
     });
-    const fc = perfFundCol();
-    if(fc && x.fund){
-      const raw = P[x.k] && P[x.k][fc.k];
-      cells[fc.k] = {v:(raw == null || raw === "") ? null : +raw};
-    }
-    return Object.assign({}, x, {cells,
+    return Object.assign({}, x, {cells, hra,
+      splits: !!(fc && x.fund),
+      anyHra: PERF_COLS.some(([c]) => hra[c] && hra[c].v != null),
       any: PERF_COLS.some(([c]) => cells[c].v != null)
-        || (cells.hra && cells.hra.v != null)});
+        || PERF_COLS.some(([c]) => hra[c] && hra[c].v != null)});
   });
 }
 
@@ -5981,8 +6063,11 @@ function monPanel(){
        reporting against.</p>`;
   const cell = (r, c) => {
     const raw = (S.mon[r.k] || {})[c];
+    /* The placeholder is the derived figure where there is one, and the UNIT
+       where there is not — never a bare dash, which asks for a number without
+       saying what kind. */
     const ph = c === "latest" && r.latest.derived && r.latest.v != null
-      ? (r.pct ? r.latest.v.toFixed(2) : m1(r.latest.v)) : "—";
+      ? (r.pct ? r.latest.v.toFixed(2) : m1(r.latest.v)) : (r.pct ? "%" : "£m");
     return `<td><input type="text" inputmode="decimal" data-m="${r.k}" data-mc="${c}"
       value="${raw == null ? "" : raw}" placeholder="${esc(ph)}"
       aria-label="${esc(r.l)} ${c}"></td>`;
@@ -6037,51 +6122,70 @@ function perfPanel(){
   S.perf = S.perf || {};
   const rows = perfRows();
   const fc = perfFundCol();
+  /* EVERY BOX SAYS WHAT GOES IN IT. The unit sat only in the row's own
+     description, and half the rows had none — so a column of bare boxes asked
+     for "3.4" without ever saying whether that was millions or per cent. It
+     is on the line now, and it is the placeholder in every empty box. */
+  const box = (k, c, pct, hraRow) => {
+    const key = hraRow ? perfHraKey(c) : c;
+    const raw = (S.perf[k] || {})[key];
+    return `<td><input type="text" inputmode="decimal" data-p="${k}" data-pc="${key}"
+      value="${raw == null ? "" : raw}" placeholder="${pct ? "%" : "£m"}"
+      aria-label="${esc(k)} ${esc(key)}"></td>`;
+  };
+  const line = r => {
+    const cells = PERF_COLS.map(([c]) => {
+      if(r.cells[c].na) return `<td class="nask" title="a budget is not set for this"></td>`;
+      if(r.k === "ret" && r.cells[c].derived)
+        return `<td class="drv" title="income over average balance">${
+          r.cells[c].v.toFixed(2)}%</td>`;
+      return box(r.k, c, r.pct, false);
+    }).join("");
+    const own = `<tr><td class="pl"><b>${esc(r.l)}</b><span>${
+      esc(r.u === "%" ? "per cent" : "£m")}${r.s ? " · " + esc(r.s) : ""}</span></td>${cells}</tr>`;
+    if(!r.splits) return own;
+    /* The sub-row is a label and nothing else. Its explanation was repeated
+       under all four debt lines — the same forty words, four times, and long
+       enough to push the table 400px past its own container so the input
+       boxes scrolled off the right. It is said once, below the table. */
+    return own + `<tr class="subrow"><td class="pl hrasub"><b>${esc(fc.t)}</b></td>${
+      PERF_COLS.map(([c]) => r.hra[c].na
+        ? `<td class="nask"></td>` : box(r.k, c, r.pct, true)).join("")}</tr>`;
+  };
   return `<div class="perfwrap"><table class="perf">
-    <thead><tr><th>The period</th>${PERF_COLS.map(([,t])=>`<th>${esc(t)}</th>`).join("")}${
-      fc ? `<th class="fcol">${esc(fc.t)}</th>` : ""}</tr></thead>
-    <tbody>${rows.map(r=>`<tr>
-      <td class="pl"><b>${esc(r.l)}</b>${r.s?`<span>${esc(r.s)}</span>`:""}</td>
-      ${PERF_COLS.map(([c])=>{
-        if(r.cells[c].na) return `<td class="nask" title="a budget is not set for this"></td>`;
-        if(r.k === "ret" && r.cells[c].derived)
-          return `<td class="drv" title="income over average balance">${
-            r.cells[c].v.toFixed(2)}%</td>`;
-        const raw = (S.perf[r.k]||{})[c];
-        return `<td><input type="text" inputmode="decimal" data-p="${r.k}" data-pc="${c}"
-          value="${raw == null ? "" : raw}" placeholder="${r.u === "%" ? "—" : "—"}"
-          aria-label="${esc(r.l)} ${c}"></td>`;
-      }).join("")}${!fc ? "" : (x => x)(r.fund
-        ? `<td class="fcol"><input type="text" inputmode="decimal" data-p="${r.k}"
-             data-pc="${fc.k}" value="${(S.perf[r.k]||{})[fc.k] == null ? ""
-             : (S.perf[r.k]||{})[fc.k]}" placeholder="—"
-             aria-label="${esc(r.l)} HRA share"></td>`
-        : `<td class="fcol nask" title="the investments are one pot — a return cannot be
-             split between funds without an apportionment nothing published supports"></td>`)
-      }</tr>`).join("")}</tbody></table></div>
-    <p class="hintline">Leave a line blank and it does not appear in the report. The rate of
-      return fills itself from investment income over average investments held; type over it
-      to use your own.${fc ? ` ${esc(fc.s.charAt(0).toUpperCase() + fc.s.slice(1))}. The
-      investment lines are whole-authority: the cash is one portfolio, so a return cannot be
-      split by fund.` : ""}</p>`;
+    <thead><tr><th>The period</th>${PERF_COLS.map(([,t])=>`<th>${esc(t)}</th>`)
+      .join("")}</tr></thead>
+    <tbody>${rows.map(r => r.grp
+      ? `<tr class="grprow"><td colspan="${PERF_COLS.length+1}">${esc(r.grp)}</td></tr>`
+      : line(r)).join("")}</tbody></table></div>
+    ${fc ? `<p class="hintline"><b>${esc(fc.t)}</b> — ${esc(fc.s)}. It is offered on the
+      borrowing lines only: treasury cash is one portfolio managed against one benchmark, so
+      a return cannot be apportioned between funds.</p>` : ""}
+    <p class="hintline">Every box takes the unit shown in it — £m, or per cent. Leave a line
+      blank and it does not appear in the report. The rate of return fills itself from
+      investment income over average investments held; type over it to state your own. A
+      shaded box is one no budget is set against.</p>`;
 }
 
 /* The table the report carries. Variance is stated with its direction named,
    because "£0.4m" against a budget is meaningless without knowing which way
    is good news. */
 function perfTable(){
-  const rows = perfRows().filter(r => r.any);
-  if(!rows.length)
+  const all = perfRows();
+  const shown = all.filter(r => r.grp || r.any);
+  // A group heading with nothing under it is noise.
+  const rows = shown.filter((r,ix) => !r.grp || (shown[ix+1] && !shown[ix+1].grp));
+  if(!rows.filter(r=>!r.grp).length)
     return `<p class="gap">To be completed: enter what the period actually cost and earned,
       and the comparison against budget and against last year is made here.</p>`;
-  const f = (r, c) => {
-    const x = r.cells[c];
-    if(x.na || x.v == null) return "–";
-    return r.pct ? `${x.v.toFixed(2)}%` : `£${m1(x.v)}m`;
+  const fc = perfFundCol();
+  const f = (cell, r) => {
+    if(!cell || cell.na || cell.v == null) return "–";
+    return r.pct ? `${cell.v.toFixed(2)}%` : `£${m1(cell.v)}m`;
   };
-  const varc = r => {
-    const b = r.cells.budget, a = r.cells.actual;
-    if(b.na || b.v == null || a.v == null) return "–";
+  const varc = (r, cells) => {
+    const b = cells.budget, a = cells.actual;
+    if(!b || b.na || b.v == null || !a || a.v == null) return "–";
     const d = a.v - b.v;
     if(Math.abs(d) < 0.005) return "on budget";
     // Spending more than budgeted on interest is adverse; earning more than
@@ -6094,28 +6198,25 @@ function perfTable(){
      actual. The report table used to name its four columns by hand while the
      input grid derived its three -- two lists to keep in step, which is how
      the chart legend came to describe lines it was not drawing. */
-  const fc = perfFundCol();
-  // Only carried where an authority actually gave a figure for it: a column
-  // of dashes tells a reader nothing except that we asked.
-  const showFund = fc && rows.some(r => r.cells[fc.k] && r.cells[fc.k].v != null);
   const cells = fn => PERF_COLS.map(([c]) =>
-    fn(c) + (c === "actual" ? fn("__var") : "")).join("") + (showFund ? fn("__fund") : "");
+    fn(c) + (c === "actual" ? fn("__var") : "")).join("");
+  const bodyRow = (r, cs, label, cls) => `<tr${cls?` class="${cls}"`:""}><td class="w">${
+    esc(label)}</td>${cells(c => c === "__var"
+      ? `<td>${varc(r, cs)}</td>` : `<td>${f(cs[c], r)}</td>`)}</tr>`;
   return `<div style="overflow-x:auto"><table class="otable">
     <thead><tr><th>The period</th>${cells(c => `<th>${
-      c === "__var"  ? "Variance"
-    : c === "__fund" ? esc(fc.t)
+      c === "__var" ? "Variance"
     : esc(PERF_COLS.find(x=>x[0]===c)[1])}</th>`)}</tr></thead>
-    <tbody>${rows.map(r=>`<tr><td class="w">${esc(r.l)}</td>${
-      cells(c => c === "__var"  ? `<td>${varc(r)}</td>`
-               : c === "__fund" ? `<td>${r.cells[fc.k] && r.cells[fc.k].v != null
-                                    ? "£"+m1(r.cells[fc.k].v)+"m" : "–"}</td>`
-               : `<td>${f(r, c)}</td>`)}</tr>`).join("")}</tbody>
+    <tbody>${rows.map(r => r.grp
+      ? `<tr class="pihead"><td colspan="${PERF_COLS.length+2}">${esc(r.grp)}</td></tr>`
+      : bodyRow(r, r.cells, r.l) + (r.splits && r.anyHra
+          ? bodyRow(r, r.hra, fc.t, "hrasub") : "")).join("")}</tbody>
     </table></div>
-    ${showFund ? `<p class="note">The investment lines are whole-authority. Treasury cash is
-      one portfolio managed against one benchmark, so a return cannot be apportioned between
-      funds${S.hra === "one" ? `; the debt is pooled too, and the HRA figures above are the
-      authority's own apportionment` : ""}.</p>` : ""}
-    ${perfNote(rows)}`;
+    ${all.some(r=>r.anyHra) ? `<p class="note">The investment lines are whole-authority.
+      Treasury cash is one portfolio managed against one benchmark, so a return cannot be
+      apportioned between funds${S.hra === "one" ? `; the debt is pooled too, and the HRA
+      lines above are the authority's own apportionment` : ""}.</p>` : ""}
+    ${perfNote(rows.filter(r=>!r.grp))}`;
 }
 
 function perfNote(rows){
@@ -6373,6 +6474,21 @@ function draftFor(q){
   const byRep = DRAFT_BY_REPORT[q.k];
   const raw = (byRep && byRep[S.report]) || q.d || null;
   return raw ? natText(raw) : null;
+}
+
+/* Re-expand our own wording when the regime changes, and only our own.
+   Called wherever the nation can move — the council picker and the regime
+   override. */
+function renationaliseText(){
+  SECTIONS.forEach(sec => (sec.qs || []).forEach(q => {
+    const cur = S.text[q.k];
+    if(!cur) return;
+    const byRep = DRAFT_BY_REPORT[q.k] || {};
+    // Every drafting this question has: the default and one per report type.
+    const raws = [q.d].concat(Object.keys(byRep).map(r => byRep[r]));
+    const was = natWhich(raws, cur);
+    if(was) S.text[q.k] = natText(was);
+  }));
 }
 
 function secStatus(k){
@@ -10512,7 +10628,7 @@ function saveVersion(quiet){
       actual:S.actual, group:S.group,
       portfolio:S.portfolio, portfolioText:S.portfolioText, portfolioNote:S.portfolioNote,
       mat:S.mat, demoStamp:S.demoStamp,
-      logo:S.logo, asAt:S.asAt, minliq:S.minliq, cp:S.cp, prior:S.prior,
+      logo:S.logo, logoDemo:S.logoDemo, asAt:S.asAt, minliq:S.minliq, cp:S.cp, prior:S.prior,
       otherName:S.otherName, natOverride:S.natOverride,
       at:new Date().toISOString()}));
     // Saving again does not un-issue what was already issued.
@@ -10528,6 +10644,22 @@ function saveVersion(quiet){
    crash, stamped "Restored", and left a broken page behind: the worst shape a
    failure can take, because nothing tells anyone. Filling from COLS makes the
    restore survive this column addition and every future one. */
+/* THE HRA SPLIT USED TO BE ONE FIGURE, AND IT WAS THE ACTUAL.
+ *
+ * It is now budget, actual and prior year, so an HRA line has something to be
+ * compared against. A report saved before that carries the old scalar; read
+ * unmigrated it would simply vanish from the table, which is the quiet kind
+ * of loss — the file still opens and a number the author typed is gone. */
+function migratePerf(p){
+  Object.keys(p || {}).forEach(k => {
+    const r = p[k];
+    if(r && typeof r === "object" && r.hra != null && r.hra_actual == null)
+      r.hra_actual = r.hra;
+    if(r && typeof r === "object") delete r.hra;
+  });
+  return p || {};
+}
+
 function migrateGrid(g, years){
   const out = {gf:{}, hra:{}};
   ["gf","hra"].forEach(f => {
@@ -10549,19 +10681,19 @@ function restoreVersion(quiet){
     const d = JSON.parse(raw);
     S.fy0=d.fy0; S.hra=d.hra; S.years=d.years||51; S.loans=d.loans||[];
     S.g=migrateGrid(d.g, d.years||51);
-    S.text=d.text||{}; S.limits=d.limits||{}; S.perf=d.perf||{}; S.mon=d.mon||{};
+    S.text=d.text||{}; S.limits=d.limits||{}; S.perf=migratePerf(d.perf||{}); S.mon=d.mon||{};
     if(d.choices) S.choices=d.choices;
     S.portfolio=d.portfolio||[]; S.portfolioText=d.portfolioText||"";
     S.portfolioNote=d.portfolioNote||"";
     S.mat=d.mat||{d:{},i:{}};
     S.demoStamp=d.demoStamp||null;
-    S.logo=d.logo||null;
+    S.logo=d.logo||null; S.logoDemo=!!d.logoDemo;
     // The as-at date is the whole point of dating a report: restoring one and
     // silently moving it to today's data would change the market figures under
     // a document somebody already took to committee.
     S.asAt=d.asAt||null; S.minliq=d.minliq||null;
     S.otherName=d.otherName||""; S.natOverride=d.natOverride||null;
-    S.perf=d.perf||{}; S.mon=d.mon||{}; S.prior=d.prior||null;
+    S.perf=migratePerf(d.perf||{}); S.mon=d.mon||{}; S.prior=d.prior||null;
     S.actual=d.actual||{}; S.group=d.group||{};
     if(S.gss === "other" && LB.other) LB.other.n = S.otherName;
     // The counterparty policy is a whole section of the report. It was left
@@ -10653,12 +10785,13 @@ function stampSaved(word){
     seedHoldings();
     if(S.gss === "other") S.natOverride = $("otherreg").value;
     else S.natOverride = null;
-    otherShown(); loanRows(); applyLoans(); renderSections(); libFill();
+    if(S.logoDemo) S.logo = demoLogo(LB[S.gss] ? LB[S.gss].n : "");
+    otherShown(); renationaliseText(); loanRows(); applyLoans(); renderSections(); libFill();
     $("issued").checked = libIsIssued(); });
   $("othername").addEventListener("input", e=>{
     LB.other.n = e.target.value.trim(); S.otherName = LB.other.n; render(); });
   $("otherreg").addEventListener("change", e=>{
-    S.natOverride = e.target.value; renderSections(); render(); });
+    S.natOverride = e.target.value; renationaliseText(); renderSections(); render(); });
   $("rtype").addEventListener("change", e=>{ S.report=e.target.value;
     $("saved").textContent=""; renderSections(); render(); libFill(); });
   // The report's as-at date. Defaults to the data we hold, and is free to be
@@ -10693,7 +10826,7 @@ function stampSaved(word){
       $("saved").textContent="That logo is over 512KB — use a smaller one so the export stays portable.";
       return; }
     const rd=new FileReader();
-    rd.onload=()=>{ S.logo=rd.result; render();
+    rd.onload=()=>{ S.logo=rd.result; S.logoDemo=false; render();
       $("saved").textContent="Logo added. It travels inside the exported file."; };
     rd.readAsDataURL(f);
   });
@@ -10998,12 +11131,17 @@ function stampSaved(word){
       newrate: {actual: 4.48},
       repaid:  {actual: r1(dbt * 0.04)}
     };
-    // The HRA's share of the debt lines, where there is an HRA to have one.
+    /* The HRA's share of the debt lines, where there is an HRA to have one —
+       and of the budget and the prior year too, not the actual alone. The
+       split used to be a single figure against the actual, so the
+       demonstration could show an HRA number with nothing to compare it
+       against, which is the one thing the section exists to do. */
     if(S.hra !== "no"){
       const sh = S.hra === "two" ? 0.34 : 0.29;
       ["intpay","avgdebt","newborr","repaid"].forEach(k => {
-        if(S.perf[k] && S.perf[k].actual != null)
-          S.perf[k].hra = r1(S.perf[k].actual * sh);
+        ["budget","actual","prior"].forEach(c => {
+          if(S.perf[k] && S.perf[k][c] != null) S.perf[k]["hra_"+c] = r1(S.perf[k][c] * sh);
+        });
       });
     }
     /* THE ACTUAL YEAR-END, WHICH THE CHARTS NOW COMMENCE FROM.
@@ -11097,7 +11235,11 @@ function stampSaved(word){
       const dr = draftFor(q); if(dr) S.text[q.k] = dr;
     }));
 
-    S.logo = demoLogo(LB[S.gss] ? LB[S.gss].n : "");
+    /* Flagged as OURS, so it follows the authority. The crest has the
+       council's name drawn into it, and switching council left a Cardiff
+       report carrying an Aberdeen City wordmark — captioned "example crest",
+       which excuses the coat of arms and not the wrong name on it. */
+    S.logo = demoLogo(LB[S.gss] ? LB[S.gss].n : ""); S.logoDemo = true;
     S.asAt = MKT.as_at; if($("asat")) $("asat").value = MKT.as_at || "";
     $("hra").value = S.hra;
     fundTabs(); buildLedger(); loanRows(); renderChoices(); renderSections();
