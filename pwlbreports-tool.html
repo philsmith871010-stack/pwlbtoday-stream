@@ -1251,6 +1251,7 @@ svg.ctip .hits rect{cursor:crosshair}
 .hintline:empty{display:none}
 .ladh{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ink);
   margin:22px 0 4px}
+.cpix-row{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
 /* Step zero. Prose, not a form — the only step with nothing to fill in, so it
    is set wider and quieter than the panels that follow it. */
 .s0lede{font-family:var(--sans);font-size:15px;line-height:1.62;color:var(--ink2);
@@ -1286,6 +1287,8 @@ svg.ctip .hits rect{cursor:crosshair}
 .offer{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--ink2);
   background:var(--sunken);border:1px solid var(--line);border-left:3px solid var(--accent);
   border-radius:var(--r);padding:10px 13px;margin:0 0 12px}
+.offer{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.offer > div{flex:1;min-width:280px}
 .offer b{color:var(--ink)}
 .offer i{font-style:normal;font-family:var(--mono);font-size:11.5px;
   background:var(--card);border:1px solid var(--line);border-radius:3px;padding:1px 5px}
@@ -1615,7 +1618,7 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
         </div>
         <div class="s0btns">
           <label class="filebtn" for="libopen0">Open a file</label>
-          <input type="file" id="libopen0" accept=".json,application/json" hidden>
+          <input type="file" id="libopen0" data-libopen accept=".json,application/json" hidden>
         </div>
       </div>
 
@@ -1675,7 +1678,7 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
     <div class="ltools" style="margin-top:12px">
       <button type="button" id="libfile">Save to a file</button>
       <label class="filebtn" for="libopen">Open a file</label>
-      <input type="file" id="libopen" accept=".json,application/json" hidden>
+      <input type="file" id="libopen" data-libopen accept=".json,application/json" hidden>
       <label class="cpmini issuedbox"><input type="checkbox" id="issued">
         Issued to members</label>
       <span class="sp"></span>
@@ -1827,9 +1830,8 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
        see what they are writing about. -->
   <section class="panel" data-step="7">
     <div class="phead"><span class="n">7</span><h2>The period's figures</h2>
-      <span class="why">The numbers a report on a period that has happened needs, which the
-        ledger cannot produce: what members approved, what actually happened, and what the
-        year is now expected to close at.</span></div>
+      <span class="why">What members approved, and what actually happened. The ledger
+        projects; only you can say how the year turned out.</span></div>
     <div class="pbody" id="figbody"></div>
   </section>
 
@@ -5954,7 +5956,7 @@ const LIMITS = [
   {k:"al_approved",  l:"Authorised limit, as approved",
    s:"the statutory maximum members set"},
   {k:"ob_approved",  l:"Operational boundary, as approved",
-   s:"legacy — no longer a formal indicator under the 2026 proposals"},
+   s:"no longer a formal indicator under the 2026 proposals"},
   {k:"debt_max",     l:"Maximum external debt reached",
    s:"the highest point in the period"},
   {k:"debt_close",   l:"External debt at the period end"},
@@ -6242,11 +6244,11 @@ function monPanel(){
      once a strategy has been loaded, the invitation is noise. */
   const offer = seeded ? `<p class="hintline">The approved column came from the
       ${esc(fy((S.prior||{}).fy0 || S.fy0))} strategy you opened. Type over any of it.</p>`
-    : `<p class="offer"><b>Open your approved strategy and this fills itself.</b>
-       If you have the file this report is monitoring — a version saved from this tool —
-       use <i>Open a file</i> on the first step and the approved column is taken from it.
-       Otherwise type the figures members agreed; they are in the strategy you are
-       reporting against.</p>`;
+    : `<div class="offer"><div><b>Open your approved strategy and this fills itself.</b>
+       If you saved the strategy this report monitors from this tool, the approved column is
+       taken from it. Otherwise type what members agreed.</div>
+       <label class="filebtn" for="libopen2">Open a file</label>
+       <input type="file" id="libopen2" data-libopen accept=".json,application/json" hidden></div>`;
   const cell = (r, c) => {
     const raw = (S.mon[r.k] || {})[c];
     /* The placeholder is the derived figure where there is one, and the UNIT
@@ -6265,10 +6267,9 @@ function monPanel(){
       <td class="pl"><b>${esc(r.l)}</b><span>${r.u === "%" ? "per cent" : "£m"}</span></td>
       ${MON_COLS.map(([c])=>cell(r,c)).join("")}
       <td class="drv">${monVar(r)}</td></tr>`).join("")}</tbody></table></div>
-    <p class="hintline">The latest expectation is what the year is now forecast to close at —
-      what has been realised plus the forecast to the year end. It fills itself from the
-      current year of your ledger; type over it where your latest view differs. A row left
-      blank does not appear in the report.</p>`;
+    <p class="hintline">Latest expected is what has been realised plus the forecast to the
+      year end. It fills itself from your ledger; type over it where your view differs.
+      A row left blank does not appear in the report.</p>`;
 }
 
 /* Stated, never judged. Bracketed where the latest expectation is below the
@@ -6341,21 +6342,51 @@ function figFilled(){
   return n;
 }
 
+/* WHAT IS ANSWERED, AND A WAY STRAIGHT TO IT.
+ *
+ * Four sections and about fifty-five boxes, which is what the counterparty
+ * step weighed when it was given a block index — and this one had none, so
+ * the only way to find the group question was to scroll past the whole
+ * performance grid. Same control, same behaviour: it reports what is IN THE
+ * STATE, never what has been visited. */
+function figBlocks(){
+  const parts = figApplies();
+  const L = S.limits || {}, P = S.perf || {}, M = S.mon || {};
+  const some = o => Object.keys(o || {}).some(k =>
+    Object.keys(o[k] || {}).some(c => o[k][c] != null && o[k][c] !== ""));
+  const all = [
+    {k:"limits", t:"Limits and actuals",
+     on: LIMITS.some(x => L[x.k] != null && L[x.k] !== "")},
+    {k:"indmon", t:"Against the strategy", on: some(M)},
+    {k:"perf",   t:"Cost and earnings",   on: some(P)},
+    {k:"group",  t:"Group undertakings",  on: !!(S.group && S.group.on)}
+  ];
+  return all.filter(x => parts.indexOf(x.k) >= 0);
+}
+
+function figIndexHTML(){
+  const b = figBlocks();
+  if(b.length < 2) return "";
+  return `<div class="cpix-row">${b.map((x,i) => `<button type="button"
+      class="cpix${x.on?" on":""}" data-figix="${i+1}"><i>${x.on ? "✓" : i+1}</i>${
+      esc(x.t)}</button>`).join("")}</div>`;
+}
+
 function renderFigures(){
   const host = $("figbody");
   if(!host) return;
   const parts = figApplies();
   const sec = (t, why, body) => `<section class="figsec"><h3>${esc(t)}</h3>${
     why ? `<p class="figwhy">${esc(why)}</p>` : ""}${body}</section>`;
-  let html = "";
+  let html = figIndexHTML();
   if(parts.indexOf("limits") >= 0)
     html += sec("Limits as approved, and what actually happened",
-      "A strategy sets these; a report on a period says whether the authority stayed inside "
-      + "them. The ledger holds projections and cannot answer it.", limitsPanel());
+      "A strategy sets these. A report on a period says whether the authority stayed inside "
+      + "them.", limitsPanel());
   if(parts.indexOf("indmon") >= 0)
     html += sec("The year against the approved strategy",
-      "What members approved for " + fy(S.fy0) + ", against what the year is now expected to "
-      + "close at.", monPanel());
+      "The indicators members approved for " + fy(S.fy0) + ", against where the year is "
+      + "heading.", monPanel());
   if(parts.indexOf("perf") >= 0)
     html += sec("What the period cost and earned",
       "Against the budget set for it, and against the year before.", perfPanel());
@@ -6415,10 +6446,9 @@ function perfPanel(){
     ${fc ? `<p class="hintline"><b>${esc(fc.t)}</b> — ${esc(fc.s)}. It is offered on the
       borrowing lines only: treasury cash is one portfolio managed against one benchmark, so
       a return cannot be apportioned between funds.</p>` : ""}
-    <p class="hintline">Every box takes the unit shown in it — £m, or per cent. Leave a line
-      blank and it does not appear in the report. The rate of return fills itself from
-      investment income over average investments held; type over it to state your own. A
-      shaded box is one no budget is set against.</p>`;
+    <p class="hintline">A shaded box is one no budget is set against. The rate of return
+      fills itself from income over average balance; type over it to state your own. A line
+      left blank does not appear in the report.</p>`;
 }
 
 /* The table the report carries. Variance is stated with its direction named,
@@ -7945,24 +7975,31 @@ function reportTitle(){
 function execSummary(d, hra){
   const a = d[0], z = d[d.length-1];
   const peak = d.reduce((x,y)=> y.need > x.need ? y : x, d[0]);
-  return `<p>This strategy covers ${fy(S.fy0)} to ${fy(z.fy)}. The authority's capital
+  /* "THIS STRATEGY COVERS 2026/27 TO 2076/77" ON AN ANNUAL OUTTURN. Only one
+     of the four report types is a strategy, and only a strategy projects to
+     the far end of the horizon — a report on a year that has closed covers
+     that year. The opener now says which report it is and, for the three
+     that look backwards, which year it covers. */
+  const fwd = S.report === "tmss";
+  return `<p>${fwd
+      ? `This strategy covers ${fy(S.fy0)} to ${fy(z.fy)}.`
+      : `This report covers ${fy(S.fy0)}, against the strategy members approved for it.`} The authority's capital
     financing requirement is <b>£${m1(a.cfr)}m</b>, against external loans of
     <b>£${m1(a.el)}m</b>, so it is
-    <b>${a.el < a.ntp ? "internally borrowed" : "externally financed"}</b> at the start of
-    the period.</p>
+    <b>${a.el < a.ntp ? "internally borrowed" : "externally financed"}</b> at
+    ${fwd ? "the start of the period" : "the balance sheet date"}.</p>
     <p>The liability benchmark ${peak.need > a.el
       ? `rises to <b>£${m1(peak.need)}m</b> in ${fy(peak.fy)}, which is
          <b>£${m1(peak.need - a.el)}m</b> above loans currently held`
       : `remains below the loans currently held throughout the period`}.
     ${z.over > 0.05 ? `By ${fy(z.fy)} loans exceed the benchmark by
       <b>£${m1(z.over)}m</b>.` : ""}</p>
-    ${/* "the counterparty policy, the prudential indicators and the loans fund
-          and the repayment of advances" put three "and"s in one clause and
-          left the reader parsing where the list ended. Naming the policy
-          rather than the thing it governs also matches the recommendation
-          above it, which asks members to approve a policy. */""}
-    <p>Members are asked to approve the counterparty policy, the prudential indicators and
-    the policy on the ${esc(natText("[[mrp]]"))} together; all three are set out below.</p>`;
+    ${/* AND NOT A THIRD "MEMBERS ARE ASKED TO APPROVE". The Recommendations
+          block at the head of the paper is the formal ask, numbered, and the
+          introduction restates it in prose. An executive summary that asks
+          again is the same sentence three times before the reader reaches
+          section 1. A summary says where the authority stands; the
+          recommendation asks for something. */""}`;
 }
 
 function docSections(){
@@ -11822,9 +11859,14 @@ function stampSaved(word){
     rd.readAsText(f);
     e.target.value = "";
   }
-  ["libopen", "libopen0"].forEach(id => {
-    const el = $(id);
-    if(el) el.addEventListener("change", openLibraryFile);
+  /* DELEGATED, because one of the three does not exist yet. The pickers on
+     step 0 and step 1 are in the markup; the one inside the approved-column
+     offer is rendered when step 7 is first opened, so binding by id at boot
+     would have attached to two of the three and left the third looking
+     identical and doing nothing. */
+  document.addEventListener("change", e => {
+    if(e.target && e.target.matches && e.target.matches("input[data-libopen]"))
+      openLibraryFile(e);
   });
   $("issued").addEventListener("change", e=>{
     const k = KEY();
@@ -11859,12 +11901,40 @@ function stampSaved(word){
     if(b.dataset.pf) S.pv.fund = b.dataset.pf;
     render();
   });
+  /* JUMPING TO A PART OF A STEP, WHICH scrollIntoView COULD NOT DO.
+   *
+   * section.panel is overflow-y:hidden. scrollIntoView walks up to the
+   * nearest scroll container, finds the panel, finds it cannot scroll, and
+   * stops — it never reaches the document. So the counterparty step's block
+   * index has never moved the page: four buttons that look like navigation
+   * and do nothing, silently, since the day they were added. Found while
+   * giving the period's figures the same control.
+   *
+   * The offset is computed against the document instead, which no ancestor
+   * can intercept. */
+  function jumpTo(h){
+    if(!h) return;
+    const y = Math.max(0, h.getBoundingClientRect().top + window.scrollY - 90);
+    /* The two-argument form, with smooth scrolling suspended for the length of
+       the jump. html{scroll-behavior:smooth} applies to programmatic scrolls
+       too, and an animated jump that a re-render interrupts halfway lands
+       nowhere and looks like a button that does nothing. */
+    const root = document.documentElement, was = root.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
+    window.scrollTo(0, y);
+    setTimeout(() => { root.style.scrollBehavior = was; }, 0);
+  }
+
   /* The counterparty step: jump to a part, and the survey modal. */
   document.addEventListener("click", e => {
     const j = e.target.closest("[data-cpix]");
     if(j){
-      const h = $("cpbody").querySelectorAll(".cph")[+j.dataset.cpix - 1];
-      if(h){ h.scrollIntoView({block:"start"}); window.scrollBy(0, -90); }
+      jumpTo($("cpbody").querySelectorAll(".cph")[+j.dataset.cpix - 1]);
+      return;
+    }
+    const fj = e.target.closest("[data-figix]");
+    if(fj){
+      jumpTo($("figbody").querySelectorAll(".figsec > h3")[+fj.dataset.figix - 1]);
       return;
     }
     if(e.target.closest("#cpsurvopen")) cpSurvey(true);
