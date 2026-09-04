@@ -2067,7 +2067,16 @@ const COLS = [
   // produced no figure for at all: it computed six debt and investment limits
   // and left the question members actually ask — what does this cost us as a
   // share of what we raise — to prose.
-  {k:"intpay",  l:"Interest<br>payable",  s:"on borrowing and leases", mtfp:true},
+  {k:"intpay",  l:"Interest<br>payable",  s:"external, on borrowing and leases", mtfp:true},
+  /* WHAT ONE FUND CHARGES THE OTHER, WHICH IS NOT A COST OF THE AUTHORITY.
+   *
+   * A cost to the fund that pays it, income to the fund that receives it, and
+   * nothing at all to the authority — the money does not leave. Entered as a
+   * positive on the grid of the fund that PAYS, and struck out of the
+   * combined balance sheet, because summing it there charged the authority
+   * interest to itself. See combinedGrid. */
+  {k:"intfund", l:"Interest paid to<br>the other fund", s:"item 8 or an internal loan",
+   cross:true, mtfp:true},
   {k:"intinc",  l:"Investment<br>income", s:"not netted off", gf:true, mtfp:true},
   {k:"nrs",     l:"Net revenue<br>stream", s:"grants and local taxpayers", mtfp:true},
   {k:"comminc", l:"Non-treasury<br>investment income", s:"net, if any", gf:true, mtfp:true}
@@ -2152,8 +2161,11 @@ const GF_ONLY = COLS.filter(c => c.gf).map(c => c.k);
    Under two pools the HRA has a debt portfolio of its own and the column is
    its own question, which is why this is conditional and not another `gf`. */
 const POOLED = COLS.filter(c => c.pooled).map(c => c.k);
+/* Columns that exist only where there are two funds to charge each other. */
+const CROSS = COLS.filter(c => c.cross).map(c => c.k);
 const hiddenFor = (fund, pool) =>
-  fund === "hra" ? GF_ONLY.concat(pool === "one" ? POOLED : []) : [];
+  (pool === "no" ? CROSS : []).concat(
+    fund === "hra" ? GF_ONLY.concat(pool === "one" ? POOLED : []) : []);
 /* Which columns the grid shows. A scalar is asked for once, above the grid,
    rather than fifty-one times inside it. */
 /* The funds the REPORT has — which is not the fund the figures grid happens to
@@ -3270,7 +3282,23 @@ function combinedGrid(S){
   const a = S.g.gf, b = S.g.hra, out = {};
   COLS.forEach(c => {
     out[c.k] = new Array(S.years);
-    for(let i=0;i<S.years;i++) out[c.k][i] = (a[c.k][i]||0) + (b[c.k][i]||0);
+    /* AN INTERNAL CHARGE IS NOT A COST OF THE AUTHORITY, so it is struck out
+       of the combined sheet rather than added into it.
+     *
+     * One fund pays it and the other receives it; the money never leaves. Add
+     * it here and the authority is charged interest to itself: a General Fund
+     * paying £17m to lenders and an HRA paying £4m to lenders and £4m to the
+     * General Fund summed to £25m of financing cost where £21m had left the
+     * building, and the affordability indicator read 9.62% against a true
+     * 8.08%.
+     *
+     * It does not cancel on its own, because the 2026 consultation forbids
+     * netting interest receivable off financing costs — so the paying side is
+     * counted and the receiving side is deliberately excluded. The netting
+     * rule is right; this is what it costs if the internal leg is left in. */
+    const cross = !!c.cross;
+    for(let i=0;i<S.years;i++)
+      out[c.k][i] = cross ? 0 : (a[c.k][i]||0) + (b[c.k][i]||0);
   });
   return out;
 }
@@ -3314,7 +3342,10 @@ function buildModel(S, fund){
      * carry — it simply no longer reduces the cost of financing.
      */
     const intpay = g.intpay[i] || 0, intinc = g.intinc[i] || 0, nrs = g.nrs[i] || 0;
-    const fincost = intpay + (g.mrp[i]||0);
+    // What this fund pays: its own external interest, plus anything it is
+    // charged by the other fund. Nil on the combined sheet, by construction.
+    const intfund = g.intfund ? (g.intfund[i] || 0) : 0;
+    const fincost = intpay + intfund + (g.mrp[i]||0);
     const afford  = nrs > 0 ? (fincost / nrs) * 100 : null;
     // Proportionality: how much of what the authority raises depends on income
     // from investments it did not have to make. The Code asks whether services
@@ -3322,7 +3353,7 @@ function buildModel(S, fund){
     const comminc = g.comminc[i] || 0;
     const commratio = nrs > 0 ? (comminc / nrs) * 100 : null;
     rows.push({fy:S.fy0+i, i, cfr, obs, liq, el, ei, ntp, tib, lb,
-               intpay, intinc, nrs, fincost, afford, comminc, commratio,
+               intpay, intinc, intfund, nrs, fincost, afford, comminc, commratio,
                mrp:g.mrp[i]||0, capex:g.capex[i]||0, rec:g.rec[i]||0,
                br:0, need:0, over:0, inv:0, strategic:0, excess:0, al:0});
   }
@@ -3431,12 +3462,19 @@ function loanProfile(S, LB){
  * for the actual explicitly.
  * ======================================================================== */
 const ACTUAL_COLS = ["cfr","obs","loans","inv","liq","capex","mrp","rec",
-                     "intpay","intinc","nrs","comminc"];
+                     "intpay","intinc","intfund","nrs","comminc"];
 
 function actualRow(S, fund){
   const A = S.actual || {};
+  /* The same rule as combinedGrid: an internal charge is struck out of the
+     whole authority rather than summed into it. Adding it to ACTUAL_COLS and
+     forgetting this would have put the prior year's recharge back into the
+     combined financing cost, in the one row a reader trusts without
+     qualification. */
+  const CROSS_K = COLS.filter(c => c.cross).map(c => c.k);
   const f = (fund === "hra") ? (A.hra || {}) : (fund === "all")
-    ? ACTUAL_COLS.reduce((o,k) => (o[k] = (+(A.gf||{})[k] || 0) + (+(A.hra||{})[k] || 0), o), {})
+    ? ACTUAL_COLS.reduce((o,k) => (o[k] = CROSS_K.indexOf(k) >= 0 ? 0
+        : (+(A.gf||{})[k] || 0) + (+(A.hra||{})[k] || 0), o), {})
     : (A.gf || {});
   if(!ACTUAL_COLS.some(k => +f[k])) return null;      // nothing entered: no row
   const n = k => +f[k] || 0;
@@ -3468,12 +3506,12 @@ function actualRow(S, fund){
   const hraTwoPool = fund === "hra" && S.hra === "two";
   const tib = hraTwoPool ? 0 : Math.max(liq, -ntp);
   const lb  = hraTwoPool ? ntp : ntp + tib;
-  const fincost = n("intpay") + n("mrp");
+  const fincost = n("intpay") + n("intfund") + n("mrp");
   const nrs = n("nrs");
   const need = Math.max(0, lb - el), over = Math.max(0, el - lb);
   return {fy: S.fy0 - 1, i: -1, actual: true,
     cfr, obs, liq, el, ei, ntp, tib, lb,
-    intpay:n("intpay"), intinc:n("intinc"), nrs, fincost,
+    intpay:n("intpay"), intinc:n("intinc"), intfund:n("intfund"), nrs, fincost,
     afford: nrs > 0 ? (fincost / nrs) * 100 : null,
     comminc:n("comminc"), commratio: nrs > 0 ? (n("comminc") / nrs) * 100 : null,
     mrp:n("mrp"), capex:n("capex"), rec:n("rec"),
@@ -5961,6 +5999,8 @@ const LIMITS = [
    s:"the statutory maximum members set"},
   {k:"ob_approved",  l:"Operational boundary, as approved",
    s:"no longer a formal indicator under the 2026 proposals"},
+  {k:"al_revised",   l:"Authorised limit, revised",
+   s:"only if you are asking members to change it"},
   {k:"debt_max",     l:"Maximum external debt reached",
    s:"the highest point in the period"},
   {k:"debt_close",   l:"External debt at the period end"},
@@ -5980,6 +6020,11 @@ function complianceRows(){
   };
   test("Authorised limit for external debt", L.al_approved, L.debt_max,
        "Statutory. A breach must be reported to members.");
+  /* STAYING INSIDE A LIMIT AND ASKING TO CHANGE IT ARE DIFFERENT QUESTIONS.
+     An authority can be comfortably within the limit all year and still need
+     a higher one approved for what is coming — 56% of the corpus carries a
+     revised or forecast column beside the approved one. It is a row here
+     rather than a test, because there is nothing to breach. */
   test("Operational boundary for external debt", L.ob_approved, L.debt_max,
        "A management limit — a breach is reportable but not statutory.");
   return rows;
@@ -6003,7 +6048,10 @@ function complianceTable(){
          this to be reported to members with an explanation and the action taken.`
       : `All limits tested were observed throughout the period.`}
       ${L.inv_close!=null?` Treasury investments stood at <b>£${m1(L.inv_close)}m</b> at the
-      period end, against a maximum of <b>£${m1(L.inv_max)}m</b>.`:""}</p>`;
+      period end, against a maximum of <b>£${m1(L.inv_max)}m</b>.`:""}
+      ${L.al_revised!=null && L.al_revised !== "" ? ` Members are asked to approve a revised
+      authorised limit of <b>£${m1(+L.al_revised)}m</b>${L.al_approved!=null
+        ? `, against the <b>£${m1(L.al_approved)}m</b> currently approved` : ""}.`:""}</p>`;
 }
 
 /* ===========================================================================
@@ -6078,6 +6126,13 @@ const PERF = [
    pct:true, noBudget:true},
   {k:"repaid",  l:"Debt repaid or matured",     u:"£m", s:"principal, in the period",
    noBudget:true, fund:"two"},
+  /* A MIRROR, NOT A FORECAST. Interest payable over average debt assumes
+     nothing and adds no input — it just puts the two figures already entered
+     against each other, which is what catches a transposed digit before
+     members see it. The same pattern as the rate of return below. */
+  {k:"ratepaid", l:"Average rate paid on debt", u:"%",
+   s:"interest payable over average debt, unless you type your own",
+   pct:true, noBudget:true},
   {grp:"Investments"},
   {k:"intinc",  l:"Investment income",          u:"£m", s:"earned in the period"},
   {k:"avginv",  l:"Average investments held",   u:"£m", s:"the denominator of a return",
@@ -6129,13 +6184,15 @@ const perfHraKey = c => "hra_" + c;
 
 /* A return we can compute: income over the average balance held. Only when
    both are there, and never overwriting a figure the authority entered. */
-function perfDerive(col){
+function perfDerive(col, which){
   const P = (S.perf || {});
   const g = k => { const v = P[k] && P[k][col]; return (v == null || v === "") ? null : +v; };
-  const inc = g("intinc"), bal = g("avginv");
-  if(g("ret") != null) return {v: g("ret"), derived:false};
-  if(inc == null || !bal) return {v: null, derived:false};
-  return {v: inc / bal * 100, derived:true};
+  const k = which || "ret";
+  if(g(k) != null) return {v: g(k), derived:false};
+  const top = g(k === "ret" ? "intinc" : "intpay");
+  const bot = g(k === "ret" ? "avginv" : "avgdebt");
+  if(top == null || !bot) return {v: null, derived:false};
+  return {v: top / bot * 100, derived:true};
 }
 
 function perfRows(){
@@ -6154,7 +6211,8 @@ function perfRows(){
       else {
         const raw = P[x.k] && P[x.k][c];
         let v = (raw == null || raw === "") ? null : +raw, derived = false;
-        if(x.k === "ret"){ const d = perfDerive(c); v = d.v; derived = d.derived; }
+        if(x.k === "ret" || x.k === "ratepaid"){
+          const d = perfDerive(c, x.k); v = d.v; derived = d.derived; }
         cells[c] = {v, derived};
       }
       if(!perfSplits(x)){ hra[c] = {v:null, na:true}; return; }
@@ -6425,7 +6483,7 @@ function perfPanel(){
   const line = r => {
     const cells = PERF_COLS.map(([c]) => {
       if(r.cells[c].na) return `<td class="nask" title="a budget is not set for this"></td>`;
-      if(r.k === "ret" && r.cells[c].derived)
+      if((r.k === "ret" || r.k === "ratepaid") && r.cells[c].derived)
         return `<td class="drv" title="income over average balance">${
           r.cells[c].v.toFixed(2)}%</td>`;
       return box(r.k, c, r.pct, false);
@@ -6575,6 +6633,7 @@ const DRAFT = {
   deals: '{{Some authorities list every transaction and others summarise. If you list them, one line each: date, counterparty, amount, rate, and maturity. If you summarise, give the number of deals, the total value and the weighted average rate, by instrument type. Delete this section if your practice is not to publish deal-level detail.}}',
   corefunds_body: "The authority's core cash comes from reserves, provisions, balances held on behalf of others, and the working capital arising from the timing of receipts and payments. Core funds are distinguished from cash that is merely passing through: only the former can prudently be invested for a term.\n\nReserves and balances are projected at {{£m}} at the start of the year, {{rising / falling}} to {{£m}} by {{year}} as approved reserve movements take effect. The cash flow through the year has a predictable seasonal shape, with balances at their lowest in {{month}} and their highest in {{month}}; the minimum liquidity balance of {{£m}} is set with reference to that low point rather than to the average.\n\nExpected investment balances over the forecast are shown in section 3. Where the projection shows a balance above the liquidity requirement it is available for longer-dated investment; where it falls to the liquidity requirement, the authority holds it in instant access.",
   compliance_body: 'All treasury management activity in the period was undertaken within the limits and indicators approved by members. {{Amend if it was not.}}\n\n{{Where a limit was exceeded, state which, when, the amount by which it was exceeded and for how long, why it happened, what action was taken at the time, and what has changed to prevent a recurrence. A breach of the authorised limit is a breach of a statutory limit and must be reported to members explicitly rather than noted in a table.}}',
+  assumptions: "The interest and income figures in this report assume {{£m}} of new borrowing drawn in {{period}} at {{%}}, with short-term debt rolling at {{%}}. No LOBO is assumed to be called. Investment returns are assumed at {{%}}, on balances falling from {{£m}} to {{£m}} across the year.\n\nThe rate view behind those assumptions is {{your adviser\u2019s / the market-implied path shown in section 2}}. {{State anything else a reader would need to reproduce the figures — and say what would change them most.}}",
   training_body: "Officers involved in treasury management hold {{qualifications}} and undertook {{hours / courses}} of continuing professional development in the year. The record is kept by the [[officer]] and covers members of the {{committee}} as well as officers.\n\nTraining delivered in the period comprised {{list: sessions, dates, and who delivered them}}. Members receiving treasury reports were offered {{session}} in advance of the strategy being presented.\n\n{{Say how the assessment was made and what it concluded, not only that training took place — the Code asks for the assessment.}}",
   nontreasury_body: '{{Delete this section if the authority holds no non-treasury investments.}}\n\nThe authority holds investments that are not treasury investments: {{property held for rental return, loans to subsidiaries and joint ventures, loans to third parties in pursuit of service objectives, and equity in companies}}. These are held for {{service / regeneration / financial}} purposes and are not made in pursuit of a treasury return.\n\nThe total held is {{£m}} at {{date}}, against which the authority has set aside {{£m}}. The income they generate is {{£m}} a year, representing {{%}} of the net revenue budget; the authority is satisfied that this dependence is {{proportionate / being reduced}}, and the plan for reducing it is {{set out at ...}}.\n\nEach is reviewed at least annually for its contribution to the objective it was made for and for any indication of impairment. The authority does not borrow in order to make investments primarily for financial return. {{If any part of the portfolio was acquired with borrowing, say so and set out the plan required by the Prudential Code.}}',
   gov_body: "Responsibility for treasury management rests with the [[officer]], who exercises it under the scheme of delegation approved by members and within the treasury management practices adopted by the authority.\n\n{{Committee}} scrutinises treasury management activity and reports to {{full council / cabinet}}. The authority's treasury management practices and the schedules beneath them are reviewed {{annually}} and are available to members on request.\n\nDay-to-day dealing is undertaken by {{officers}}, with each transaction authorised and recorded separately from the officer who arranged it. {{State the separation of duties you operate, and the limits above which a second authorisation is required.}}",
@@ -6631,8 +6690,23 @@ const SECTIONS = [
         d:DRAFT.rateview, ph:"Your working assumption for Bank Rate and PWLB rates across the forecast, and the "
            +"source. State it as an assumption, not a forecast of your own."}]},
 
-  {k:"balance", n:"3", t:"Balance sheet summary and forecast", kind:"auto", in:ALL,
-   lead:"Produced from your ledger — CFR, other balance sheet items, net treasury position."},
+  {k:"balance", n:"3", t:"Balance sheet summary and forecast", kind:"both", in:ALL,
+   lead:"Produced from your ledger — CFR, other balance sheet items, net treasury position.",
+   /* THE TOOL WILL NOT WORK OUT YOUR INTEREST, SO IT ASKS WHAT YOU ASSUMED.
+      Drawdown timing, the rate on money not yet borrowed, whether a LOBO is
+      exercised — every one a judgement only the authority can make, which is
+      why they are entered rather than computed. What the sector does NOT do
+      is say what was assumed: of 661 monitoring reports, 62% name their
+      adviser's forecast and 6% state a budget assumption. A member reading
+      "interest payable £16.2m" has no way to know it rests on £40m drawn in
+      Q3 at 4.6%. Free text, because it is prose, and prompted, because
+      almost nobody writes it unprompted. */
+   qs:[{k:"assumptions", l:"Assumptions behind the budget figures",
+        d:DRAFT.assumptions,
+        ph:"What the interest and income lines assume: when you expect to draw and how "
+          +"much, the rate assumed on it, how short-term debt rolls, whether any LOBO is "
+          +"taken as called, and the path assumed for investment returns. Name the source "
+          +"of the rate view."}]},
 
   {k:"portfolio", n:"3b", t:"Current portfolio position", kind:"auto", in:ALL,
    lead:"Where the authority stands today, from the loan book and your ledger."},
@@ -8086,7 +8160,14 @@ function docSections(){
                   {l:"Net treasury position",k:"ntp",cls:"key"}])
       // Only where a previous report was actually loaded. It never invents a
       // movement, and it says which report it is moving from.
-      + (typeof priorLine === "function" ? priorLine(d) : "")},
+      + (typeof priorLine === "function" ? priorLine(d) : "")
+      /* What the budget lines assume. The tool will not compute them, so the
+         one thing it can do is make sure the reader is told what they rest
+         on — a figure whose assumptions are stated can be challenged, and one
+         whose assumptions are not can only be believed. */
+      + (t("assumptions") ? para(t("assumptions"))
+                          : gap("what the interest and income figures assume — drawdown, "
+                              + "rate, and the view behind them", "balance"))},
 
    {k:"portfolio", n:"3b", t:"Current portfolio position",
     b: `<p>Existing loan commitments are <b>£${m1(d[0].el)}m</b> at ${fy(S.fy0)}, against a
