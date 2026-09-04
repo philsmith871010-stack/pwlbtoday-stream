@@ -23,7 +23,7 @@
      reader learns where they are from the colour before reading the number.
      Assigning seven unrelated colours would look busier and say less. */
   --s0:#3f4a57; --s1:#1b4f8a; --s2:#1a6b8f; --s3:#177f86; --s4:#1a8a72;
-  --s5:#2a8f5c; --s6:#4a9247; --s7:#5f8f3a; --s8:#1a7f4b;
+  --s5:#2a8f5c; --s6:#4a9247; --s7:#6f8f36; --s8:#5f8f3a; --s9:#1a7f4b;
 
   /* Series colours are fixed by MEANING, not by chart. Net treasury position
      is the same navy in LB1, LB2 and LB3; the benchmark is the same red
@@ -81,10 +81,10 @@
     --accent:#8fb6de; --accent-soft:#1c2b3a; --on-accent:#0e151d;
     --orange:#e8974a; --good:#4cb583; --alert:#e0776a;
   --s0:#8a97a5; --s1:#6ea8dd; --s2:#5cb3d1; --s3:#4fc0bd; --s4:#4fc4a2;
-  --s5:#5ec98a; --s6:#7fcb72; --s7:#9ccb6a; --s8:#4cb583;
+  --s5:#5ec98a; --s6:#7fcb72; --s7:#a8c96b; --s8:#9ccb6a; --s9:#4cb583;
 
     --s0:#8a97a5; --s1:#6ea8dd; --s2:#5cb3d1; --s3:#4fc0bd; --s4:#4fc4a2;
-    --s5:#5ec98a; --s6:#7fcb72; --s7:#9ccb6a; --s8:#4cb583;
+    --s5:#5ec98a; --s6:#7fcb72; --s7:#a8c96b; --s8:#9ccb6a; --s9:#4cb583;
 
     --l-debt:#6fb5e0; --l-cfr:#5b9ec9; --l-obs:#f0955a; --l-ntp:#6fae5c;
     --fill-bg:rgba(240,149,90,.16); --fill-line:rgba(240,149,90,.6);
@@ -1817,8 +1817,22 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
     </div></div>
   </section>
 
+  <!-- FIGURES ARE NOT WORDING. The limits, the indicators against the approved
+       strategy and the period's performance were grids of numbers sitting in
+       the middle of a step whose whole job is prose — three of them, the
+       largest twenty-eight boxes. They are entered here; the sections that
+       discuss them keep their commentary, and keep the table so the author can
+       see what they are writing about. -->
   <section class="panel" data-step="7">
-    <div class="phead"><span class="n">7</span><h2>The draft</h2>
+    <div class="phead"><span class="n">7</span><h2>The period's figures</h2>
+      <span class="why">The numbers a report on a period that has happened needs, which the
+        ledger cannot produce: what members approved, what actually happened, and what the
+        year is now expected to close at.</span></div>
+    <div class="pbody" id="figbody"></div>
+  </section>
+
+  <section class="panel" data-step="8">
+    <div class="phead"><span class="n">8</span><h2>The draft</h2>
       <span class="why">Your commentary and our figures, assembled. Sections not yet written
         appear as gaps.</span></div>
     <div class="pbody"><div class="ltools" style="margin-top:0">
@@ -1827,10 +1841,10 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
       <span class="sp"></span><span class="hintline" id="dhint"></span>
     </div></div>
   </section>
-  <section class="panel doc" id="doc" data-step="7" aria-live="polite"></section>
+  <section class="panel doc" id="doc" data-step="8" aria-live="polite"></section>
 
-  <section class="panel" data-step="8">
-    <div class="phead"><span class="n">8</span><h2>The check</h2>
+  <section class="panel" data-step="9">
+    <div class="phead"><span class="n">9</span><h2>The check</h2>
       <span class="why">A read-only pass over the draft you have built, against what the Codes
         ask of the report you have chosen. It reports; it changes nothing, and it certifies
         nothing.</span></div>
@@ -2750,6 +2764,11 @@ function render(){
   const ck = $("checkbody");
   if(ck && typeof CHECK_STEP !== "undefined" && STEP === CHECK_STEP)
     ck.innerHTML = checkHTML();
+  /* The period's figures, built on arrival like the draft and the check. It is
+     in LIVE_STEPS, so showStep calls render() on the way in; without this gate
+     the step would open empty and stay empty until something else re-rendered. */
+  if(typeof FIG_STEP !== "undefined" && STEP === FIG_STEP
+     && typeof renderFigures === "function") renderFigures();
   const pv = $("pvbody"), pvw = $("pv");
   if(pv && pvw && !pvw.classList.contains("shut")
      && (pvw.classList.contains("full") || (typeof STEP === "undefined") || STEP === 3))
@@ -6141,6 +6160,74 @@ function monTable(){
         : `Every indicator is at the figure approved.`}</p>`;
 }
 
+/* ===========================================================================
+ * THE PERIOD'S FIGURES — step 7.
+ *
+ * These grids used to sit inside the wording step, which exists to collect
+ * prose: three of them, the largest twenty-eight boxes, in the middle of a
+ * page of textareas. They are figures, so they are entered here.
+ *
+ * The sections that discuss them keep their commentary AND keep the rendered
+ * table, because a note on a variance written without the variance in front
+ * of you is a note written blind. Inputs here, prose and result there.
+ * ======================================================================== */
+const FIG_BACK = ["mid","out","quart"];
+
+function figApplies(){
+  const out = [];
+  if(FIG_BACK.indexOf(S.report) >= 0) out.push("limits","indmon","perf");
+  out.push("group");
+  return out;
+}
+
+/* How much of it is answered — the rail says this, so it counts what is in
+   the state rather than whether anybody has opened the step. */
+function figFilled(){
+  let n = 0;
+  const L = S.limits || {};
+  if(FIG_BACK.indexOf(S.report) >= 0){
+    LIMITS.forEach(x => { if(L[x.k] != null && L[x.k] !== "") n++; });
+    const P = S.perf || {}, M = S.mon || {};
+    Object.keys(P).forEach(k => Object.keys(P[k] || {}).forEach(c => {
+      if(P[k][c] != null && P[k][c] !== "") n++; }));
+    Object.keys(M).forEach(k => Object.keys(M[k] || {}).forEach(c => {
+      if(M[k][c] != null && M[k][c] !== "") n++; }));
+  }
+  if(typeof groupCos === "function" && groupOn()) n += groupCos().length;
+  return n;
+}
+
+function renderFigures(){
+  const host = $("figbody");
+  if(!host) return;
+  const parts = figApplies();
+  const sec = (t, why, body) => `<section class="figsec"><h3>${esc(t)}</h3>${
+    why ? `<p class="figwhy">${esc(why)}</p>` : ""}${body}</section>`;
+  let html = "";
+  if(parts.indexOf("limits") >= 0)
+    html += sec("Limits as approved, and what actually happened",
+      "A strategy sets these; a report on a period says whether the authority stayed inside "
+      + "them. The ledger holds projections and cannot answer it.", limitsPanel());
+  if(parts.indexOf("indmon") >= 0)
+    html += sec("The year against the approved strategy",
+      "What members approved for " + fy(S.fy0) + ", against what the year is now expected to "
+      + "close at.", monPanel());
+  if(parts.indexOf("perf") >= 0)
+    html += sec("What the period cost and earned",
+      "Against the budget set for it, and against the year before.", perfPanel());
+  if(parts.indexOf("group") >= 0)
+    html += sec("Group undertakings",
+      "Only where there are significant ones. A subsidiary that stops performing disappears "
+      + "from single-entity reporting.", groupPanel());
+  if(!html)
+    html = `<p class="hintline">Nothing to enter here for ${esc(reportTitle().toLowerCase())}.
+      Limits, budget and outturn are asked of a report on a period that has happened; this one
+      looks forward. The group question below applies either way.</p>` + groupPanel();
+  host.innerHTML = html;
+  if(typeof wirePanelInputs === "function") wirePanelInputs(host);
+  if(typeof arrowNav === "function") arrowNav(host);
+}
+
 function perfPanel(){
   S.perf = S.perf || {};
   const rows = perfRows();
@@ -6532,6 +6619,57 @@ function secStatus(k){
 function visibleSections(){
   return SECTIONS.filter(s => !s.in || s.in.indexOf(S.report) >= 0);
 }
+/* THE PANEL INPUTS, WIRED AGAINST WHATEVER CONTAINER HOLDS THEM.
+ *
+ * These were thirteen $("secbody") lookups inline in renderSections. The
+ * moment the limits, the indicator comparison and the performance grid moved
+ * to their own step they were in #figbody instead, and every one of those
+ * handlers would have attached to nothing — the boxes would have rendered,
+ * accepted typing, and thrown it away on the next render. Passing the root
+ * in is what lets the same panel live in two places. */
+function wirePanelInputs(root){
+  if(!root) return;
+  const gon = root.querySelector("#groupon");
+  if(gon) gon.addEventListener("change", e=>{
+    S.group = S.group || {}; S.group.on = e.target.checked;
+    if(S.group.on && !(S.group.cos||[]).length)
+      S.group.cos = [{n:"",intra:null,income:null,debtcost:null}];
+    renderSections(); render(); });
+  const gadd = root.querySelector("#groupadd");
+  if(gadd) gadd.addEventListener("click", ()=>{
+    S.group.cos = (S.group.cos||[]).concat([{n:"",intra:null,income:null,debtcost:null}]);
+    renderSections(); render(); });
+  root.querySelectorAll("[data-grm]").forEach(b=>
+    b.addEventListener("click", e=>{
+      S.group.cos.splice(+e.target.dataset.grm, 1); renderSections(); render(); }));
+  root.querySelectorAll("[data-gc]").forEach(el=>
+    el.addEventListener("input", e=>{
+      const k=e.target.dataset.gc, i=+e.target.dataset.gi, v=e.target.value;
+      S.group.cos[i][k] = (k === "n") ? v : (v.trim()==="" ? null : num(v));
+      clearTimeout(S._g); S._g=setTimeout(()=>{ renderSections(); render(); }, 600);
+    }));
+  root.querySelectorAll("[data-p]").forEach(el=>
+    el.addEventListener("input", e=>{
+      const k=e.target.dataset.p, c=e.target.dataset.pc, v=e.target.value.trim();
+      S.perf = S.perf || {}; S.perf[k] = S.perf[k] || {};
+      S.perf[k][c] = (v==="") ? null : num(v);
+      clearTimeout(S._p); S._p=setTimeout(()=>{ renderSections(); render(); }, 600);
+    }));
+  root.querySelectorAll("[data-m]").forEach(el=>
+    el.addEventListener("input", e=>{
+      const k=e.target.dataset.m, c=e.target.dataset.mc, v=e.target.value.trim();
+      S.mon = S.mon || {}; S.mon[k] = S.mon[k] || {};
+      S.mon[k][c] = (v==="") ? null : num(v);
+      clearTimeout(S._m); S._m=setTimeout(()=>{ renderSections(); render(); }, 600);
+    }));
+  root.querySelectorAll("[data-L]").forEach(el=>
+    el.addEventListener("input", e=>{
+      const v=e.target.value.trim();
+      S.limits[e.target.dataset.L] = (v==="") ? null : num(v);
+      clearTimeout(S._l); S._l=setTimeout(()=>{ renderSections(); render(); }, 600);
+    }));
+}
+
 function renderSections(){
   const VIS = visibleSections();
   if(!VIS.some(x=>x.k===S.sec)) S.sec = VIS[0].k;
@@ -6593,45 +6731,7 @@ function renderSections(){
       S.actual[f][k] = (v==="") ? null : num(v);
       clearTimeout(S._a); S._a=setTimeout(()=>{ renderSections(); render(); }, 600);
     }));
-  const gon = $("secbody").querySelector("#groupon");
-  if(gon) gon.addEventListener("change", e=>{
-    S.group = S.group || {}; S.group.on = e.target.checked;
-    if(S.group.on && !(S.group.cos||[]).length)
-      S.group.cos = [{n:"",intra:null,income:null,debtcost:null}];
-    renderSections(); render(); });
-  const gadd = $("secbody").querySelector("#groupadd");
-  if(gadd) gadd.addEventListener("click", ()=>{
-    S.group.cos = (S.group.cos||[]).concat([{n:"",intra:null,income:null,debtcost:null}]);
-    renderSections(); render(); });
-  $("secbody").querySelectorAll("[data-grm]").forEach(b=>
-    b.addEventListener("click", e=>{
-      S.group.cos.splice(+e.target.dataset.grm, 1); renderSections(); render(); }));
-  $("secbody").querySelectorAll("[data-gc]").forEach(el=>
-    el.addEventListener("input", e=>{
-      const k=e.target.dataset.gc, i=+e.target.dataset.gi, v=e.target.value;
-      S.group.cos[i][k] = (k === "n") ? v : (v.trim()==="" ? null : num(v));
-      clearTimeout(S._g); S._g=setTimeout(()=>{ renderSections(); render(); }, 600);
-    }));
-  $("secbody").querySelectorAll("[data-p]").forEach(el=>
-    el.addEventListener("input", e=>{
-      const k=e.target.dataset.p, c=e.target.dataset.pc, v=e.target.value.trim();
-      S.perf = S.perf || {}; S.perf[k] = S.perf[k] || {};
-      S.perf[k][c] = (v==="") ? null : num(v);
-      clearTimeout(S._p); S._p=setTimeout(()=>{ renderSections(); render(); }, 600);
-    }));
-  $("secbody").querySelectorAll("[data-m]").forEach(el=>
-    el.addEventListener("input", e=>{
-      const k=e.target.dataset.m, c=e.target.dataset.mc, v=e.target.value.trim();
-      S.mon = S.mon || {}; S.mon[k] = S.mon[k] || {};
-      S.mon[k][c] = (v==="") ? null : num(v);
-      clearTimeout(S._m); S._m=setTimeout(()=>{ renderSections(); render(); }, 600);
-    }));
-  $("secbody").querySelectorAll("[data-L]").forEach(el=>
-    el.addEventListener("input", e=>{
-      const v=e.target.value.trim();
-      S.limits[e.target.dataset.L] = (v==="") ? null : num(v);
-      clearTimeout(S._l); S._l=setTimeout(()=>{ renderSections(); render(); }, 600);
-    }));
+  wirePanelInputs($("secbody"));
   $("secbody").querySelectorAll("textarea").forEach(t=>
     t.addEventListener("input", e=>{ S.text[e.target.dataset.t]=e.target.value;
       clearTimeout(S._t); S._t=setTimeout(renderSections, 400); }));
@@ -6701,18 +6801,16 @@ function autoNote(k){
       set against the capital financing requirement, which is the extent of internal borrowing.
       Your liquidity allowance of <b>£${m1(d[0].liq)}m</b> sets the treasury investment
       benchmark in LB5 wherever the authority is net indebted.`);
-  if(k==="compliance")
-    return box("Limits and actuals", limitsPanel()) + complianceTable();
+  /* The panel moved to step 7; the table stays, because a note on a breach
+     written without the breach in front of you is written blind. */
+  if(k==="compliance") return complianceTable();
   if(k==="priorpi")
     // The actual year-end is the first row of the ledger now, where the
     // question it answers is asked. This section shows what it produces.
     return piTable();
-  if(k==="group")
-    return box("Group undertakings", groupPanel()) + groupTable(d);
-  if(k==="indmon")
-    return box("This year against the strategy", monPanel()) + monTable();
-  if(k==="performance")
-    return box("What the period actually did", perfPanel()) + perfTable();
+  if(k==="group") return groupTable(d);
+  if(k==="indmon") return monTable();
+  if(k==="performance") return perfTable();
   if(k==="training")
     return box("Why this is here", `The Treasury Management Code requires the authority to
       address the knowledge and skills of the officers who carry out treasury management and
@@ -10036,8 +10134,12 @@ const STEPS = [
   {n:4, k:"choices",   t:"Choices",      s:"which clauses apply"},
   {n:5, k:"counterparty", t:"Counterparty policy", s:"who you will lend to"},
   {n:6, k:"wording",   t:"Wording",      s:"the commentary"},
-  {n:7, k:"draft",     t:"The draft",    s:"read and export"},
-  {n:8, k:"check",     t:"The check",    s:"what is outstanding"}
+  /* NOT k:"figures" — step 3 already is, and STEPS.find(k === "figures")
+     would have returned that one, so the new step's colour, live-render and
+     status line would all have been read off the projection grid. */
+  {n:7, k:"period",    t:"The period's figures", s:"limits, budget and outturn"},
+  {n:8, k:"draft",     t:"The draft",    s:"read and export"},
+  {n:9, k:"check",     t:"The check",    s:"what is outstanding"}
 ];
 let STEP = 1;
 /* The draft used to be the last step, so "the last step" was used to mean
@@ -10063,7 +10165,8 @@ const CHECK_STEP = STEPS.find(s => s.k === "check").n;
  * later keystroke, which is the shape of bug that gets called intermittent.
  * Add a step here when you gate anything on it in render(); test_coverage
  * checks the two agree. */
-const LIVE_STEPS = new Set([2, 3, DRAFT_STEP, CHECK_STEP]);
+const FIG_STEP = STEPS.find(s => s.k === "period").n;
+const LIVE_STEPS = new Set([2, 3, FIG_STEP, DRAFT_STEP, CHECK_STEP]);
 
 /* What each step can honestly say about itself.
  *   state: "done" | "part" | "" — drives the mark on the rail
@@ -10185,6 +10288,13 @@ function stepStatus(k){
     return {state: words > 400 ? "done" : "part",
             note: `${words.toLocaleString("en-GB")} words · ${gaps} figure${gaps===1?"":"s"} still to supply`,
             need: null};
+  }
+  if(k === "period"){
+    if(!(typeof figApplies === "function" ? figApplies() : []).length)
+      return {state:"", note:"nothing to enter for this report", need:null};
+    const n = (typeof figFilled === "function") ? figFilled() : 0;
+    return n ? {state: "done", note: `${n} figure${n===1?"":"s"} entered`, need:null}
+             : {state: "", note: "limits, budget and outturn", need:"the period's figures"};
   }
   if(k === "start") return {state:"", note:"read me first", need:null};
   return {state:"", note:"", need:null};
