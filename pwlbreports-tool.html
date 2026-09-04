@@ -2771,7 +2771,7 @@ function render(){
          investments. Both are limits the authority sets; the actual beside
          them is summed from the bands above and never typed twice. */
       host.innerHTML = matGrid(w)
-        + (w === "d" ? mstructPanel() : inv364Panel());
+        + (w === "d" ? mstructPanel() + expoPanel() : inv364Panel());
       wireMatGrid();
       if(typeof wirePanelInputs === "function") wirePanelInputs(host);
       host.querySelectorAll("[data-ms]").forEach(el =>
@@ -4881,6 +4881,105 @@ function inv364Table(){
         <td>£${m1(x.limit)}m</td><td>£${m1(x.amt)}m</td>
         <td>${over ? `EXCEEDED by £${m1(x.amt - x.limit)}m` : "Within"}</td></tr></tbody>
     </table></div>`;
+}
+
+/* INTEREST RATE EXPOSURE — the 2021 Treasury Management Code's fixed and
+ * variable limits, which the 2026 consultation does not remove.
+ *
+ * The ladder cannot answer this one: how much of the book reprices with the
+ * market is a property of the loans, not of when they mature, and the debt
+ * table was deliberately stripped to source, amount and rate. So the variable
+ * portion is asked for once, and fixed is the rest — an authority knows which
+ * of its loans float, and typing one number beats a column on every row.
+ *
+ * LOBOs sit on the line. Until the option is exercised the rate is fixed, and
+ * a council that treats them as variable is making a defensible call about
+ * what could reprice at short notice. Which is why it is entered rather than
+ * inferred from the source names.
+ */
+function expoRows(){
+  const L = S.limits || {};
+  const m = (S.mat || {}).d || {};
+  const tot = DEBT_BANDS.reduce((a,b) => a + (+m[b[2]] || 0), 0)
+    || debtLoans().reduce((a,x) => a + (+x.amt || 0), 0);
+  const n = v => (v == null || v === "") ? null : +v;
+  const varb = n(L.exp_var);
+  return {tot, varb, fixed: varb == null ? null : Math.max(0, tot - varb),
+          fixMax: n(L.exp_fix_max), varMax: n(L.exp_var_max)};
+}
+
+function expoPanel(){
+  const x = expoRows();
+  const box = (k, lab, hint) => `<div><label for="L_${k}">${esc(lab)}<span class="hint">£m — ${
+    esc(hint)}</span></label><input type="text" inputmode="decimal" id="L_${k}"
+    data-lim="${k}" value="${(S.limits||{})[k] == null ? "" : (S.limits||{})[k]}"></div>`;
+  return `<h4 class="ladh">Interest rate exposure</h4>
+    <p class="hintline">How much of the debt reprices with the market, against the upper
+      limits members set on each. Fixed is the rest of the book, so it is not asked for twice.
+      Leave the limits blank and the indicator is not reported.</p>
+    <div class="setup">
+      ${box("exp_var", "Debt at variable rates", "of £" + m1(x.tot) + "m held")}
+      ${box("exp_var_max", "Upper limit, variable", "the most that may float")}
+      ${box("exp_fix_max", "Upper limit, fixed", "the most that may be fixed")}
+      <div><label>At fixed rates<span class="hint">£m — the rest of the book</span></label>
+        <input type="text" value="${x.fixed == null ? "" : m1(x.fixed)}" disabled
+          aria-label="debt at fixed rates"></div>
+    </div>`;
+}
+
+function expoTable(){
+  const x = expoRows();
+  if(x.fixMax == null && x.varMax == null) return "";
+  const row = (l, act, lim) => {
+    const over = act != null && lim != null && act > lim + 1e-9;
+    return `<tr${over ? ' class="breach"' : ""}><td class="w">${esc(l)}</td>
+      <td>${lim == null ? "–" : "£" + m1(lim) + "m"}</td>
+      <td>${act == null ? "–" : "£" + m1(act) + "m"}</td>
+      <td>${act == null || lim == null ? "–"
+        : over ? `EXCEEDED by £${m1(act - lim)}m` : "Within"}</td></tr>`;
+  };
+  return `<h4 style="margin-top:22px">Interest rate exposure</h4>
+    <p>The proportion of borrowing that reprices with the market, against the upper limits
+      approved. Debt held at variable rates exposes the authority to a rise in rates within
+      the year; debt held at fixed rates exposes it to paying above the market if rates
+      fall.</p>
+    <div style="overflow-x:auto"><table class="otable">
+      <thead><tr><th>Exposure</th><th>Upper limit</th><th>Held</th><th>Position</th></tr></thead>
+      <tbody>${row("Debt at fixed rates", x.fixed, x.fixMax)}
+        ${row("Debt at variable rates", x.varb, x.varMax)}</tbody></table></div>`;
+}
+
+/* GROSS DEBT AGAINST THE CAPITAL FINANCING REQUIREMENT.
+ *
+ * The Prudential Code's own test: gross external debt should not exceed the
+ * capital financing requirement for the current year and the two following,
+ * because borrowing beyond the requirement is borrowing for something other
+ * than the capital programme. Nothing is entered for it — both figures are
+ * already in the ledger — so it is drawn wherever there is a projection. */
+function grossDebtTable(d){
+  const yrs = d.slice(0, 3);
+  if(!yrs.length || !yrs.some(r => r.cfr || r.el)) return "";
+  const over = yrs.filter(r => r.el > r.cfr + 0.05);
+  return `<h4 style="margin-top:22px">Gross debt and the capital financing requirement</h4>
+    <p>The Prudential Code asks that gross external debt does not exceed the capital
+      financing requirement for the current year and the two following, save for a temporary
+      or clearly explained reason: borrowing above the requirement is borrowing for something
+      other than the capital programme.</p>
+    <div style="overflow-x:auto"><table class="otable">
+      <thead><tr><th>&nbsp;</th>${yrs.map(r=>`<th>${fy(r.fy)}</th>`).join("")}</tr></thead>
+      <tbody>
+        <tr><td class="w">Capital financing requirement</td>${
+          yrs.map(r=>`<td>£${m1(r.cfr)}m</td>`).join("")}</tr>
+        <tr><td class="w">Gross external debt</td>${
+          yrs.map(r=>`<td>£${m1(r.el)}m</td>`).join("")}</tr>
+        <tr class="${over.length ? "breach" : "key"}"><td class="w">Headroom</td>${
+          yrs.map(r=>`<td>${r.cfr - r.el < 0 ? `(£${m1(r.el - r.cfr)}m)`
+            : `£${m1(r.cfr - r.el)}m`}</td>`).join("")}</tr>
+      </tbody></table></div>
+    <p class="note">${over.length
+      ? `Gross debt exceeds the requirement in <b>${over.length}</b> of the three years. The
+         Code expects that to be temporary, and explained.`
+      : `Gross debt is within the requirement in all three years.`}</p>`;
 }
 
 function matGrid(which){
@@ -8264,7 +8363,7 @@ function docSections(){
           : "the peak of the projected liability benchmark"}. Under
         those proposals the operational boundary and the maturity structure of borrowing are no
         longer formal indicators.</p>`
-      + mstructTable() + inv364Table()},
+      + mstructTable() + expoTable() + inv364Table() + grossDebtTable(d)},
 
    {k:"under", n:"7b", t:"The data underpinning the indicators",
     b: `<p>The figures behind the charts above, as the Code recommends they be provided.
