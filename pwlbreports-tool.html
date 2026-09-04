@@ -5110,8 +5110,7 @@ gov_body:
 under the scheme of delegation approved by members and within the treasury management practices \
 adopted by the authority.
 
-Members receive this strategy before the start of the year, a mid-year review and an outturn \
-report after the year end. The Audit and Governance Committee scrutinises treasury management \
+The Audit and Governance Committee scrutinises treasury management \
 activity and reports to full Council. The authority's treasury management practices and the \
 schedules beneath them are reviewed annually and are available to members on request.
 
@@ -5122,14 +5121,15 @@ transaction above £10m, or with a counterparty added to the list since the stra
 approved, requires a second authorisation from the Chief Accountant or the Section 151 Officer.`,
 
 training_body:
-`The authority recognises that the effective management of treasury risk depends on officers and \
-members having the knowledge and skills to exercise it, and on those responsible for scrutiny \
-being able to challenge what is put to them.
-
-The Section 151 Officer maintains a record of the training undertaken by treasury officers and by \
-members of the Audit and Governance Committee, and assesses annually whether it remains adequate \
-to the authority's treasury activity. Officers involved in treasury management hold CIPFA and \
-AAT qualifications and undertook 42 hours of continuing professional development in the year.
+/* The Code clauses above already say the authority recognises the need for
+   the knowledge and skills, and that the responsible officer keeps a record
+   of the training and assesses it. Both were restated here almost word for
+   word — the same clause-against-body duplication the introduction, the
+   borrowing strategy and the investment strategy each carried. What is left
+   is what the clauses cannot know: who holds what, and how much. */
+`Officers involved in treasury management hold CIPFA and AAT qualifications and undertook \
+42 hours of continuing professional development in the year. The record is kept by the Section \
+151 Officer and covers members of the Audit and Governance Committee as well as officers.
 
 Training delivered in the period comprised a members' session on the liability benchmark and the \
 2026 Code changes in October 2025, delivered by the authority's treasury adviser; a workshop on \
@@ -5360,8 +5360,12 @@ function readout(tag, d, fundLabel){
     const pk = R.peakOf(d,"inv");
     bits.push(`Treasury investments implied by these figures are ${R.m(a.inv)} at `
       + `${R.fyOf(a)}, peaking at ${R.m(pk.inv)} in ${R.fyOf(pk)}.`);
-    bits.push(`The liquidity allowance of ${R.m(a.liq)} is the floor: the minimum the `
-      + `authority intends to hold to manage cash flow.`);
+    /* The investment strategy already defines the allowance — "the minimum
+       balance the authority intends to keep in treasury investments to manage
+       the peaks and troughs of operational cash flow". Defining it again here
+       was the same sentence twice in one paper. What this chart needs is the
+       figure and what it does to the chart. */
+    bits.push(`The liquidity allowance of ${R.m(a.liq)} is the floor beneath the projection.`);
     /* WHAT THE SERIES ARE, WHETHER OR NOT THEY ARISE.
      *
      * These were explained only when they had a figure, so on the common case
@@ -6571,9 +6575,9 @@ const DRAFT = {
   deals: '{{Some authorities list every transaction and others summarise. If you list them, one line each: date, counterparty, amount, rate, and maturity. If you summarise, give the number of deals, the total value and the weighted average rate, by instrument type. Delete this section if your practice is not to publish deal-level detail.}}',
   corefunds_body: "The authority's core cash comes from reserves, provisions, balances held on behalf of others, and the working capital arising from the timing of receipts and payments. Core funds are distinguished from cash that is merely passing through: only the former can prudently be invested for a term.\n\nReserves and balances are projected at {{£m}} at the start of the year, {{rising / falling}} to {{£m}} by {{year}} as approved reserve movements take effect. The cash flow through the year has a predictable seasonal shape, with balances at their lowest in {{month}} and their highest in {{month}}; the minimum liquidity balance of {{£m}} is set with reference to that low point rather than to the average.\n\nExpected investment balances over the forecast are shown in section 3. Where the projection shows a balance above the liquidity requirement it is available for longer-dated investment; where it falls to the liquidity requirement, the authority holds it in instant access.",
   compliance_body: 'All treasury management activity in the period was undertaken within the limits and indicators approved by members. {{Amend if it was not.}}\n\n{{Where a limit was exceeded, state which, when, the amount by which it was exceeded and for how long, why it happened, what action was taken at the time, and what has changed to prevent a recurrence. A breach of the authorised limit is a breach of a statutory limit and must be reported to members explicitly rather than noted in a table.}}',
-  training_body: "The authority recognises that the effective management of treasury risk depends on officers and members having the knowledge and skills to exercise it, and on those responsible for scrutiny being able to challenge what is put to them.\n\nThe [[officer]] maintains a record of the training undertaken by treasury officers and by members of the {{committee}}, and assesses annually whether it remains adequate to the authority's treasury activity. Officers involved in treasury management hold {{qualifications}} and undertook {{hours / courses}} of continuing professional development in the year.\n\nTraining delivered in the period comprised {{list: sessions, dates, and who delivered them}}. Members receiving treasury reports were offered {{session}} in advance of the strategy being presented.\n\n{{Say how the assessment was made and what it concluded, not only that training took place — the Code asks for the assessment.}}",
+  training_body: "Officers involved in treasury management hold {{qualifications}} and undertook {{hours / courses}} of continuing professional development in the year. The record is kept by the [[officer]] and covers members of the {{committee}} as well as officers.\n\nTraining delivered in the period comprised {{list: sessions, dates, and who delivered them}}. Members receiving treasury reports were offered {{session}} in advance of the strategy being presented.\n\n{{Say how the assessment was made and what it concluded, not only that training took place — the Code asks for the assessment.}}",
   nontreasury_body: '{{Delete this section if the authority holds no non-treasury investments.}}\n\nThe authority holds investments that are not treasury investments: {{property held for rental return, loans to subsidiaries and joint ventures, loans to third parties in pursuit of service objectives, and equity in companies}}. These are held for {{service / regeneration / financial}} purposes and are not made in pursuit of a treasury return.\n\nThe total held is {{£m}} at {{date}}, against which the authority has set aside {{£m}}. The income they generate is {{£m}} a year, representing {{%}} of the net revenue budget; the authority is satisfied that this dependence is {{proportionate / being reduced}}, and the plan for reducing it is {{set out at ...}}.\n\nEach is reviewed at least annually for its contribution to the objective it was made for and for any indication of impairment. The authority does not borrow in order to make investments primarily for financial return. {{If any part of the portfolio was acquired with borrowing, say so and set out the plan required by the Prudential Code.}}',
-  gov_body: "Responsibility for treasury management rests with the [[officer]], who exercises it under the scheme of delegation approved by members and within the treasury management practices adopted by the authority.\n\nMembers receive this strategy before the start of the year, {{a mid-year review and an outturn report after the year end / quarterly monitoring reports}}. {{Committee}} scrutinises treasury management activity and reports to {{full council / cabinet}}. The authority's treasury management practices and the schedules beneath them are reviewed {{annually}} and are available to members on request.\n\nDay-to-day dealing is undertaken by {{officers}}, with each transaction authorised and recorded separately from the officer who arranged it. {{State the separation of duties you operate, and the limits above which a second authorisation is required.}}",
+  gov_body: "Responsibility for treasury management rests with the [[officer]], who exercises it under the scheme of delegation approved by members and within the treasury management practices adopted by the authority.\n\n{{Committee}} scrutinises treasury management activity and reports to {{full council / cabinet}}. The authority's treasury management practices and the schedules beneath them are reviewed {{annually}} and are available to members on request.\n\nDay-to-day dealing is undertaken by {{officers}}, with each transaction authorised and recorded separately from the officer who arranged it. {{State the separation of duties you operate, and the limits above which a second authorisation is required.}}",
   /* THE ONE SECTION THAT HAD NO STARTING TEXT. Every other commentary field
      carries draft wording; this one carried none, so an authority that turned
      group indicators on met an empty box, and the wording step could never
