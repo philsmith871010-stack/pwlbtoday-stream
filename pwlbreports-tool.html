@@ -1249,6 +1249,8 @@ svg.ctip .hits rect{cursor:crosshair}
 .xb.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .xb.on:hover{color:var(--on-accent);opacity:.92}
 .hintline:empty{display:none}
+.ladh{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--ink);
+  margin:22px 0 4px}
 /* Step zero. Prose, not a form — the only step with nothing to fill in, so it
    is set wider and quieter than the panels that follow it. */
 .s0lede{font-family:var(--sans);font-size:15px;line-height:1.62;color:var(--ink2);
@@ -2750,8 +2752,21 @@ function render(){
     // Only the pane on screen. Rebuilding the hidden one replaces inputs
     // nobody can see, and would drop the caret out of the one they are in.
     if(host){
-      host.innerHTML = matGrid(w);
+      /* The indicator the ladder answers, entered under the ladder that
+         answers it: the maturity structure for debt, the 364-day limit for
+         investments. Both are limits the authority sets; the actual beside
+         them is summed from the bands above and never typed twice. */
+      host.innerHTML = matGrid(w)
+        + (w === "d" ? mstructPanel() : inv364Panel());
       wireMatGrid();
+      if(typeof wirePanelInputs === "function") wirePanelInputs(host);
+      host.querySelectorAll("[data-ms]").forEach(el =>
+        el.addEventListener("input", e => {
+          const k = e.target.dataset.ms, f = e.target.dataset.msf, v = e.target.value.trim();
+          S.mstruct = S.mstruct || {}; S.mstruct[k] = S.mstruct[k] || {};
+          S.mstruct[k][f] = (v === "") ? null : num(v);
+          clearTimeout(S._ms); S._ms = setTimeout(render, 600);
+        }));
     }
     const mw = $(w === "d" ? "matdwarn" : "matiwarn");
     if(mw) mw.innerHTML = matWarn(w);
@@ -4699,6 +4714,135 @@ function matWarn(which){
  * thirty-five boxes to fill where seven will do — and the composition of the
  * book by type is already asked for, and charted, on the holdings above.
  * ------------------------------------------------------------------------ */
+/* ===========================================================================
+ * THE TWO TREASURY INDICATORS THE LADDER CAN ANSWER.
+ *
+ * MATURITY STRUCTURE OF BORROWING. The Treasury Management Code states it in
+ * five bands, and 49% of the monitoring reports in the corpus restate it. The
+ * 2026 consultation proposes to remove it as a formal indicator — which is
+ * why the tool did not draw it — but that edition is expected to apply from
+ * April 2027, so a report written today still carries it. It is drawn, and
+ * the note says which edition asks for it.
+ *
+ * The ACTUALS need no new data: the debt ladder already holds seven bands,
+ * and the Code's five are those seven summed. Only the limits are asked for,
+ * and they are asked on the Code's own bands rather than ours, because an
+ * upper limit on a group is not the sum of upper limits on its parts.
+ *
+ * PRINCIPAL SUMS INVESTED FOR MORE THAN 364 DAYS is a different case: the
+ * consultation does NOT remove it, 27% of the corpus reports it, and it was
+ * simply absent. Its actual is the investment ladder beyond a year.
+ * ======================================================================== */
+const MSTRUCT_BANDS = [
+  {k:"u12",  l:"Under 12 months",           from:["Within a year"]},
+  {k:"m24",  l:"12 months to 24 months",    from:["1 to 2 years"]},
+  {k:"y5",   l:"24 months to 5 years",      from:["2 to 5 years"]},
+  {k:"y10",  l:"5 years to 10 years",       from:["5 to 10 years"]},
+  {k:"y10p", l:"10 years and above",
+   from:["10 to 20 years","20 to 30 years","Over 30 years"]}
+];
+
+function mstructRows(){
+  const m = (S.mat || {}).d || {};
+  const tot = DEBT_BANDS.reduce((a,b) => a + (+m[b[2]] || 0), 0);
+  const L = S.mstruct || {};
+  return MSTRUCT_BANDS.map(b => {
+    const amt = b.from.reduce((a,k) => a + (+m[k] || 0), 0);
+    const lim = L[b.k] || {};
+    const n = v => (v == null || v === "") ? null : +v;
+    return {k:b.k, l:b.l, amt, tot,
+            pct: tot ? amt / tot * 100 : null,
+            lo: n(lim.lo), hi: n(lim.hi)};
+  });
+}
+
+/* Beyond a year, from the investment ladder. */
+function inv364(){
+  const m = (S.mat || {}).i || {};
+  const beyond = INV_BANDS.filter(b => b[0] >= 1).map(b => b[2]);
+  const amt = beyond.reduce((a,k) => a + (+m[k] || 0), 0);
+  const raw = (S.limits || {}).inv364;
+  return {amt, limit:(raw == null || raw === "") ? null : +raw};
+}
+
+/* The limits, entered under the ladder they constrain. */
+function mstructPanel(){
+  S.mstruct = S.mstruct || {};
+  const rows = mstructRows();
+  const box = (k, f) => `<input type="text" inputmode="decimal" data-ms="${k}" data-msf="${f}"
+    value="${((S.mstruct[k]||{})[f] ?? "")}" placeholder="%" aria-label="${esc(k)} ${f}">`;
+  return `<h4 class="ladh">Maturity structure of borrowing</h4>
+    <p class="hintline">The share of debt that may fall due in each period, as the Treasury
+      Management Code states it. The actual comes from the ladder above. Leave the limits blank
+      and the indicator is not reported.</p>
+    <div style="overflow-x:auto"><table class="otable mgrid">
+      <thead><tr><th>Maturing in</th><th class="num">Lower %</th><th class="num">Upper %</th>
+        <th class="num">Actual %</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td>${esc(r.l)}</td>
+        <td class="num">${box(r.k,"lo")}</td><td class="num">${box(r.k,"hi")}</td>
+        <td class="num">${r.pct == null ? "–" : r.pct.toFixed(1) + "%"}</td></tr>`).join("")}
+      </tbody></table></div>`;
+}
+
+function inv364Panel(){
+  const x = inv364();
+  return `<h4 class="ladh">Principal sums invested for more than 364 days</h4>
+    <p class="hintline">The Code asks for an upper limit on the sum that may be committed
+      beyond a year. The actual comes from the ladder above.</p>
+    <div class="setup"><div>
+      <label for="L_inv364">Upper limit<span class="hint">£m — the most that may be
+        committed beyond 364 days</span></label>
+      <input type="text" inputmode="decimal" id="L_inv364" data-lim="inv364"
+        value="${(S.limits||{}).inv364 == null ? "" : m1(S.limits.inv364)}">
+    </div><div>
+      <label>Committed beyond a year<span class="hint">£m — from the ladder above</span></label>
+      <input type="text" value="${m1(x.amt)}" disabled aria-label="committed beyond a year">
+    </div></div>`;
+}
+
+/* The two, as the report states them. Neither is drawn unless a limit has
+   been set: an indicator with no limit is a row of dashes, and the authority
+   that has not set one has not set one. */
+function mstructTable(){
+  const rows = mstructRows();
+  if(!rows.some(r => r.lo != null || r.hi != null)) return "";
+  const breach = rows.filter(r => r.pct != null
+    && ((r.lo != null && r.pct < r.lo - 1e-9) || (r.hi != null && r.pct > r.hi + 1e-9)));
+  const pc = v => v == null ? "–" : (Math.round(v*10)/10) + "%";
+  return `<h4 style="margin-top:22px">Maturity structure of borrowing</h4>
+    <p>The proportion of borrowing that falls due in each period, against the limits members
+      approved. It is an indicator of the 2021 Treasury Management Code; the 2026 consultation
+      proposes to remove it, and until that edition applies it is reported here.</p>
+    <div style="overflow-x:auto"><table class="otable">
+      <thead><tr><th>Maturing in</th><th>Lower limit</th><th>Upper limit</th>
+        <th>Actual</th></tr></thead>
+      <tbody>${rows.map(r => {
+        const out = r.pct != null
+          && ((r.lo != null && r.pct < r.lo - 1e-9) || (r.hi != null && r.pct > r.hi + 1e-9));
+        return `<tr${out ? ' class="breach"' : ""}><td class="w">${esc(r.l)}</td>
+          <td>${pc(r.lo)}</td><td>${pc(r.hi)}</td><td>${pc(r.pct)}</td></tr>`;
+      }).join("")}</tbody></table></div>
+    <p class="note">${breach.length
+      ? `<b>${breach.length}</b> band${breach.length===1?" is":"s are"} outside the approved
+         range. The Code requires a breach to be reported to members with an explanation.`
+      : `Every band is within the range approved.`}</p>`;
+}
+
+function inv364Table(){
+  const x = inv364();
+  if(x.limit == null) return "";
+  const over = x.amt > x.limit + 1e-9;
+  return `<h4 style="margin-top:22px">Principal sums invested for more than 364 days</h4>
+    <div style="overflow-x:auto"><table class="otable">
+      <thead><tr><th>Indicator</th><th>Upper limit</th><th>Committed</th>
+        <th>Position</th></tr></thead>
+      <tbody><tr${over ? ' class="breach"' : ""}>
+        <td class="w">Principal sums invested beyond 364 days</td>
+        <td>£${m1(x.limit)}m</td><td>£${m1(x.amt)}m</td>
+        <td>${over ? `EXCEEDED by £${m1(x.amt - x.limit)}m` : "Within"}</td></tr></tbody>
+    </table></div>`;
+}
+
 function matGrid(which){
   if(S.mat) S.mat[which] = matMigrate(S.mat[which]);
   const debt = which === "d";
@@ -6364,7 +6508,7 @@ function limitsPanel(){
   return `<div class="setup">${LIMITS.map(x=>
     `<div><label for="L_${x.k}">${esc(x.l)}<span class="hint">£m${
       x.s?` — ${esc(x.s)}`:""}</span></label>
-     <input type="text" inputmode="decimal" id="L_${x.k}" data-L="${x.k}"
+     <input type="text" inputmode="decimal" id="L_${x.k}" data-lim="${x.k}"
        value="${L[x.k]==null?"":m1(L[x.k])}"></div>`).join("")}</div>`;
 }
 
@@ -6662,10 +6806,16 @@ function wirePanelInputs(root){
       S.mon[k][c] = (v==="") ? null : num(v);
       clearTimeout(S._m); S._m=setTimeout(()=>{ renderSections(); render(); }, 600);
     }));
-  root.querySelectorAll("[data-L]").forEach(el=>
+  /* data-lim, NOT data-L. HTML lower-cases attribute names, so data-L became
+     data-l and dataset.L read undefined — every limit typed by hand was
+     written to S.limits["undefined"], overwriting the last one, saved to the
+     file and never read back. The compliance table went on showing whatever
+     the demonstration or a loaded prior report had put there, so the symptom
+     was a box that accepted a number and a table that ignored it. */
+  root.querySelectorAll("[data-lim]").forEach(el=>
     el.addEventListener("input", e=>{
       const v=e.target.value.trim();
-      S.limits[e.target.dataset.L] = (v==="") ? null : num(v);
+      S.limits[e.target.dataset.lim] = (v==="") ? null : num(v);
       clearTimeout(S._l); S._l=setTimeout(()=>{ renderSections(); render(); }, 600);
     }));
 }
@@ -7991,7 +8141,8 @@ function docSections(){
             + "benchmark and so sets the limit"
           : "the peak of the projected liability benchmark"}. Under
         those proposals the operational boundary and the maturity structure of borrowing are no
-        longer formal indicators.</p>`},
+        longer formal indicators.</p>`
+      + mstructTable() + inv364Table()},
 
    {k:"under", n:"7b", t:"The data underpinning the indicators",
     b: `<p>The figures behind the charts above, as the Code recommends they be provided.
@@ -10766,7 +10917,7 @@ function saveVersion(quiet){
       actual:S.actual, group:S.group,
       portfolio:S.portfolio, portfolioText:S.portfolioText, portfolioNote:S.portfolioNote,
       mat:S.mat, demoStamp:S.demoStamp,
-      logo:S.logo, logoDemo:S.logoDemo, asAt:S.asAt, minliq:S.minliq, cp:S.cp, prior:S.prior,
+      logo:S.logo, logoDemo:S.logoDemo, mstruct:S.mstruct, asAt:S.asAt, minliq:S.minliq, cp:S.cp, prior:S.prior,
       otherName:S.otherName, natOverride:S.natOverride,
       at:new Date().toISOString()}));
     // Saving again does not un-issue what was already issued.
@@ -10788,6 +10939,10 @@ function saveVersion(quiet){
  * compared against. A report saved before that carries the old scalar; read
  * unmigrated it would simply vanish from the table, which is the quiet kind
  * of loss — the file still opens and a number the author typed is gone. */
+/* Saved files written while data-L was unreadable carry a limit under the
+   literal key "undefined". It was never read; it is not carried forward. */
+function migrateLimits(L){ if(L) delete L["undefined"]; return L || {}; }
+
 function migratePerf(p){
   Object.keys(p || {}).forEach(k => {
     const r = p[k];
@@ -10819,13 +10974,13 @@ function restoreVersion(quiet){
     const d = JSON.parse(raw);
     S.fy0=d.fy0; S.hra=d.hra; S.years=d.years||51; S.loans=d.loans||[];
     S.g=migrateGrid(d.g, d.years||51);
-    S.text=d.text||{}; S.limits=d.limits||{}; S.perf=migratePerf(d.perf||{}); S.mon=d.mon||{};
+    S.text=d.text||{}; S.limits=migrateLimits(d.limits); S.perf=migratePerf(d.perf||{}); S.mon=d.mon||{};
     if(d.choices) S.choices=d.choices;
     S.portfolio=d.portfolio||[]; S.portfolioText=d.portfolioText||"";
     S.portfolioNote=d.portfolioNote||"";
     S.mat=d.mat||{d:{},i:{}};
     S.demoStamp=d.demoStamp||null;
-    S.logo=d.logo||null; S.logoDemo=!!d.logoDemo;
+    S.logo=d.logo||null; S.logoDemo=!!d.logoDemo; S.mstruct=d.mstruct||{};
     // The as-at date is the whole point of dating a report: restoring one and
     // silently moving it to today's data would change the market figures under
     // a document somebody already took to committee.
