@@ -8259,7 +8259,7 @@ function docSections(){
                   {l:"Net treasury position",k:"ntp",cls:"key"}])
       // Only where a previous report was actually loaded. It never invents a
       // movement, and it says which report it is moving from.
-      + (typeof priorLine === "function" ? priorLine(d) : "")
+      + (typeof priorLine === "function" ? priorLine() : "")
       /* What the budget lines assume. The tool will not compute them, so the
          one thing it can do is make sure the reader is told what they rest
          on — a figure whose assumptions are stated can be challenged, and one
@@ -9789,6 +9789,24 @@ function libRollGrid(g, shift){
   return out;
 }
 
+/* A LIMIT IS POLICY; A MAXIMUM REACHED IS A PERIOD FACT.
+ *
+ * Both live in S.limits, and the difference decides what survives a load.
+ * The limits members approved — the authorised limit, the interest rate
+ * exposure ceilings, the most that may be committed beyond 364 days — are the
+ * thing a monitoring report reports AGAINST, and the thing next year's
+ * strategy starts from. The maxima and closing balances belong to the period
+ * that has ended and must not follow it.
+ *
+ * Both branches used to drop the lot: the roll cleared S.limits outright and
+ * the monitor kept only the authorised limit. So a strategy that set a
+ * maturity structure and an exposure ceiling produced a mid-year review with
+ * nothing to test them against — the tables simply did not draw, which reads
+ * as "this authority set no limits" rather than as data lost in transit. */
+const LIMIT_POLICY = ["al_approved","ob_approved","exp_fix_max","exp_var_max","inv364"];
+const libPolicy = L => LIMIT_POLICY.reduce((o,k) =>
+  ((L||{})[k] == null || (L||{})[k] === "" ? o : (o[k] = L[k], o)), {});
+
 function libSeed(k){
   const d = libLoad(k);
   if(!d) return {ok:false, note:"That saved report could not be read."};
@@ -9809,6 +9827,9 @@ function libSeed(k){
   S.logo = d.logo || S.logo;
   S.hra = d.hra || S.hra;
   S.group = d.group ? JSON.parse(JSON.stringify(d.group)) : (S.group || {});
+  // The maturity-structure bands are limits members set, not figures from a
+  // period, so they carry whichever way this load is going.
+  S.mstruct = d.mstruct ? JSON.parse(JSON.stringify(d.mstruct)) : {};
   /* The actual year-end does NOT roll forward. Last year's report opened on
      the year before it; this one opens on a year that has since closed, and
      its figures come from a set of accounts we have not seen. Carrying the
@@ -9822,7 +9843,8 @@ function libSeed(k){
     /* A report that looks forward carries no actuals. Rolling last year's
        outturn figures into this year's report would put a period that has
        happened under a heading that has not. */
-    S.perf = {}; S.limits = {}; S.mon = {};
+    // The policy survives; the period does not.
+    S.perf = {}; S.mon = {}; S.limits = libPolicy(d.limits);
     note = shift
       ? `Rolled forward ${shift} year${shift===1?"":"s"} from ${fy(d.fy0)}. The grid moved with `
         + `the years; wording, choices, counterparty policy and debt came as they were. `
@@ -9839,7 +9861,7 @@ function libSeed(k){
        message named the derived figure while quietly using the other. */
     const fromSaved = d.limits && d.limits.al_approved != null;
     const al = fromSaved ? d.limits.al_approved : lib1(y0.al);
-    S.limits = Object.assign({}, S.limits, {al_approved: al});
+    S.limits = Object.assign(libPolicy(d.limits), {al_approved: al});
     S.perf = S.perf || {};
     const put = (k, v) => { if(v == null) return;
       S.perf[k] = Object.assign({}, S.perf[k], {budget: lib1(v)}); };
@@ -9884,9 +9906,22 @@ function libSeed(k){
 /* One line in the draft, where a comparative belongs: beside the figure it
    is a comparative for. Only where a prior report was actually loaded — this
    never invents a movement. */
-function priorLine(d){
+function priorLine(){
   const p = S.prior;
-  if(!p || !d || !d.length) return "";
+  if(!p) return "";
+  /* THE COMPARISON HAS TO BE LIKE FOR LIKE, AND IT WAS NOT.
+   *
+   * S.prior is recorded on the WHOLE AUTHORITY wherever there is an HRA —
+   * libSeed builds it with buildModel(d, "all"). This was handed the General
+   * Fund model by its caller, so a two-pool authority rolled forward read
+   * "the capital financing requirement has moved down £453.3m to £763.9m"
+   * when it had in fact moved UP £20.4m to £1,237.6m: £763.9m is the General
+   * Fund alone, set against a whole-authority figure from last year.
+   *
+   * It takes no model now. It builds the one it needs, on the same basis
+   * libSeed recorded, so there is no argument for a caller to get wrong. */
+  const d = buildModel(S, S.hra === "no" ? "gf" : "all");
+  if(!d || !d.length) return "";
   const mv = (now, was, what) => {
     if(was == null || now == null) return "";
     const dd = now - was;
