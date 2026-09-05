@@ -353,7 +353,13 @@ html.reel .pick,html.reel .picker,html.reel .pickhint{display:none !important}
    the paragraph goes with it: it says nothing a reader of a finished report
    was meant to see. :has is the whole point here, and where it is not
    supported the prompt simply shows as it does in the tool. */
-html.reel p:has(.ph-inline){display:none !important}
+/* A clause that is wholly a prompt asks the author a question. The reel has
+   always hidden those; a demonstration authority is the same finished report
+   seen from the tool rather than from the landing page, so it hides them too.
+   This is the orange: .ph-inline is the marker, and three clauses are nothing
+   BUT one — "Set out new borrowing taken: amount, rate, maturity...". */
+html.reel p:has(.ph-inline),
+html.demo p:has(.ph-inline){display:none !important}
 /* .lbtag stays: "LB2" names the Code indicator the chart is, which is the
    report saying what it is showing, not the tool saying anything. */
 
@@ -2737,6 +2743,10 @@ function buildDraftNow(){
 
 function render(){
   const c = LB[S.gss];
+  /* Marks the document as a demonstration, so the stylesheet can hide the
+     clauses that are purely questions for an author. Set from state rather
+     than at load, so it survives a saved demonstration being reopened. */
+  document.documentElement.classList.toggle("demo", !!S.demo);
   const docVisible = (typeof STEP === "undefined")
     || (typeof DRAFT_STEP !== "undefined" && STEP === DRAFT_STEP);
   if(docVisible){
@@ -5145,7 +5155,7 @@ they are needed.
 New external borrowing of up to £45m is planned in 2026/27, against a requirement identified by \
 the benchmark from 2027/28 onwards; the authority expects to take it from the Public Works Loan \
 Board unless the market offers better terms on a like-for-like basis. Any loan is authorised by \
-the Section 151 Officer, or in their absence by the Deputy Section 151 Officer, and every loan \
+the [[officer]], or in their absence by the deputy [[officer]], and every loan \
 taken is reported to the Audit and Governance Committee at its next meeting.`,
 
 resched:
@@ -5174,7 +5184,7 @@ intends to hold not less than half of its portfolio in instruments repayable wit
 and expects the balance to sit in terms of three to twelve months.`,
 
 credit:
-`The approved counterparty list is maintained by the Section 151 Officer, who authorises any \
+`The approved counterparty list is maintained by the [[officer]], who authorises any \
 addition to it.
 
 The minimum long-term rating for a bank or building society counterparty is A-, taken from Fitch \
@@ -5186,7 +5196,7 @@ minimum criteria is withdrawn from use immediately and no new investment is plac
 Limits by counterparty type are set out in the table below. A group of related counterparties \
 counts as one for the purposes of the monetary limit.
 
-An exception to these criteria may be approved only by the Section 151 Officer, and only where \
+An exception to these criteria may be approved only by the [[officer]], and only where \
 the security of the sum invested is not reduced. Any exception used is reported to the Audit and \
 Governance Committee at its next meeting, with the reason for it and the period for which it \
 applied.`,
@@ -5243,7 +5253,7 @@ primarily for financial return, and no part of this portfolio was acquired with 
 for that purpose.`,
 
 gov_body:
-`Responsibility for treasury management rests with the Section 151 Officer, who exercises it \
+`Responsibility for treasury management rests with the [[officer]], who exercises it \
 under the scheme of delegation approved by members and within the treasury management practices \
 adopted by the authority.
 
@@ -5255,7 +5265,7 @@ Day-to-day dealing is undertaken by the Treasury and Investments team, with each
 authorised and recorded separately from the officer who arranged it. Dealers may place \
 transactions within the approved counterparty list and limits without further authority; any \
 transaction above £10m, or with a counterparty added to the list since the strategy was \
-approved, requires a second authorisation from the Chief Accountant or the Section 151 Officer.`,
+approved, requires a second authorisation from the Chief Accountant or the [[officer]].`,
 
 training_body:
 /* The Code clauses above already say the authority recognises the need for
@@ -5265,8 +5275,7 @@ training_body:
    borrowing strategy and the investment strategy each carried. What is left
    is what the clauses cannot know: who holds what, and how much. */
 `Officers involved in treasury management hold CIPFA and AAT qualifications and undertook \
-42 hours of continuing professional development in the year. The record is kept by the Section \
-151 Officer and covers members of the Audit and Governance Committee as well as officers.
+42 hours of continuing professional development in the year. The record is kept by the [[officer]] and covers members of the Audit and Governance Committee as well as officers.
 
 Training delivered in the period comprised a members' session on the liability benchmark and the \
 2026 Code changes in October 2025, delivered by the authority's treasury adviser; a workshop on \
@@ -5296,14 +5305,82 @@ technical guidance on the Codes, and training for officers and members.
 The authority recognises that responsibility for its treasury management decisions remains with \
 it at all times and that undue reliance must not be placed on external advice. Decisions are \
 taken having regard to all available information, of which the adviser's view is one source \
-among several. The value obtained from the contract is assessed annually by the Section 151 \
-Officer against the scope above and reported to the Audit and Governance Committee, and the \
-appointment was made following a competitive tender in 2024.`
+among several. The value obtained from the contract is assessed annually by the [[officer]] against the scope above and reported to the Audit and Governance Committee, and the \
+appointment was made following a competitive tender in 2024.`,
 
+/* The six that were left to the generic draft wording, which carries fill-in markers
+   by design — so a demonstration authority produced a report with
+   orange placeholder spans through it and "To be written" blocks under the
+   monitoring sections. A demonstration has to read as a finished report;
+   these are written out, in the same voice as the rest. */
+
+assumptions:
+`The interest and income figures in this report assume £45m of new borrowing drawn in the third \
+quarter at 4.6%, with short-term debt rolling at 4.1%. No LOBO is assumed to be called. \
+Investment returns are assumed at 3.9%, on balances falling from £47m to £41m across the year.
+
+The rate view behind those assumptions is the market-implied path shown in section 2, taken on \
+the report date and not updated since. The figures are most sensitive to the timing of the \
+drawdown rather than to the rate on it: a quarter's delay is worth more to the outturn than \
+twenty-five basis points on the loan.`,
+
+compliance_body:
+`All treasury management activity in the period was undertaken within the limits and indicators \
+approved by members. No limit was exceeded at any point, and no counterparty fell below the \
+minimum criteria while funds were placed with it.
+
+The maximum external debt reached in the period was £847.8m, against an authorised limit of \
+£1,167.1m. The maximum invested with a single counterparty was £15.0m, within the £20m limit \
+for a bank of that rating.`,
+
+indmon_body:
+`The capital financing requirement is £13.1m above the figure approved, and external debt £13.0m \
+below it: the capital programme has run slightly ahead while the borrowing to fund it has not \
+yet been taken. The two move together and the position closes as the drawdown is made in the \
+third quarter.
+
+Treasury investments are £4.4m above the approved figure because receipts arrived earlier in the \
+year than assumed. The liability benchmark and the financing costs ratio are within a point of \
+the approved position and require no revision to the strategy.`,
+
+performance_body:
+`Interest payable is £1.4m above budget. The budget assumed the year's borrowing would be drawn \
+evenly; it was taken in a single tranche in the second quarter, when the certainty rate was \
+favourable against the range seen since, and the additional cost in this year buys a lower rate \
+over the life of the loan.
+
+Investment income is £0.1m below budget on a balance that ran slightly lower than assumed. The \
+return of 3.40% is 32 basis points below the benchmark, which reflects the shorter average \
+duration held through the first half while the borrowing decision was open.`,
+
+activity_body:
+`New borrowing of £50.4m was taken in the second quarter at an average rate of 4.48%, against a \
+plan of £45.0m. The additional £5.4m was drawn to meet capital expenditure brought forward from \
+the following year. All of it was taken from the Public Works Loan Board at the certainty rate, \
+which was better than the quotations obtained from other local authorities on the day.
+
+Repayments of £33.6m fell due and were met from maturing investments. External debt at the \
+period end stood at £839.4m, against an authorised limit of £1,167.1m and a capital financing \
+requirement of £1,091.2m.
+
+Investment balances averaged £47.0m over the period and stood at £42.0m at the period end, \
+earning an average of 3.40% against a benchmark of 3.72%. No counterparty failed to repay in \
+full and on time, and no institution on the approved list was downgraded below the minimum \
+criteria while funds were placed with it.`,
+
+deals:
+`The authority summarises rather than lists. Twenty-three deposits were placed in the period, \
+with a total value of £186.4m and a weighted average rate of 3.41%: fourteen with money market \
+funds, six with other local authorities, and three with the Debt Management Account Deposit \
+Facility. Two loans were taken, both from the Public Works Loan Board, totalling £50.4m at a \
+weighted average of 4.48%.
+
+Deal-level detail is held by the treasury team and is available to members on request.`,
 };
 
 /* The passages the document asks for directly, rather than through a text
    field. Keyed, so the draft can look one up instead of matching on wording. */
+
 const REEL_GAPS = {
 
 options:
@@ -7968,7 +8045,7 @@ function cpSectionHTML(){
   if(anyRating)
     controls.push(["A counterparty falling below criteria",
       "Where a counterparty ceases to meet the criteria, no new investment is made with " +
-      "it and existing investments are held to maturity unless the Section 151 Officer " +
+      "it and existing investments are held to maturity unless the " + natText("[[officer]]") + " " +
       "determines that earlier recovery is in the authority's interest."]);
   if(country)
     controls.push(["Counterparties outside the UK",
@@ -7989,7 +8066,7 @@ function cpSectionHTML(){
     controls.push(["Approved instruments",
       `The instruments approved for use are ${list(instr)}.`]);
   controls.push(["Operating within the limits",
-    "These limits are maxima. The Section 151 Officer may operate within tighter limits " +
+    "These limits are maxima. The " + natText("[[officer]]") + " may operate within tighter limits " +
     "at any time, and will do so where market conditions or a counterparty's standing " +
     "warrant it. Any breach is reported to members at the next available opportunity."]);
 
@@ -8200,8 +8277,13 @@ function docSections(){
   /* A gap, unless the reel has prose for it. Keyed rather than matched on its
      wording, so rephrasing the prompt cannot silently detach the example from
      the gap it fills. */
-  const gap = (what, key) => (typeof REEL_GAPS !== "undefined"
-      && document.documentElement.classList.contains("reel") && key && REEL_GAPS[key])
+  /* The worked example fills these too — in the reel, and now in a
+     demonstration authority, which is the same report seen from the tool
+     rather than from the landing page. There is nothing for an author to
+     write in a demonstration, so a red "To be written" block in one was
+     telling the reader the example was unfinished. */
+  const gap = (what, key) => (typeof REEL_GAPS !== "undefined" && key && REEL_GAPS[key]
+      && (S.demo || document.documentElement.classList.contains("reel")))
     ? para(REEL_GAPS[key])
     : `<p class="gap">To be written: ${esc(what)}</p>`;
   const peakNeed = d.reduce((a,b)=>b.need>a.need?b:a,d[0]);
@@ -11172,7 +11254,7 @@ function saveVersion(quiet){
       choices:S.choices,
       actual:S.actual, group:S.group,
       portfolio:S.portfolio, portfolioText:S.portfolioText, portfolioNote:S.portfolioNote,
-      mat:S.mat, demoStamp:S.demoStamp,
+      mat:S.mat, demoStamp:S.demoStamp, demo:S.demo,
       logo:S.logo, logoDemo:S.logoDemo, mstruct:S.mstruct, asAt:S.asAt, minliq:S.minliq, cp:S.cp, prior:S.prior,
       otherName:S.otherName, natOverride:S.natOverride,
       at:new Date().toISOString()}));
@@ -11235,7 +11317,7 @@ function restoreVersion(quiet){
     S.portfolio=d.portfolio||[]; S.portfolioText=d.portfolioText||"";
     S.portfolioNote=d.portfolioNote||"";
     S.mat=d.mat||{d:{},i:{}};
-    S.demoStamp=d.demoStamp||null;
+    S.demoStamp=d.demoStamp||null; S.demo=!!d.demo;
     S.logo=d.logo||null; S.logoDemo=!!d.logoDemo; S.mstruct=d.mstruct||{};
     // The as-at date is the whole point of dating a report: restoring one and
     // silently moving it to today's data would change the market figures under
@@ -11782,11 +11864,28 @@ function stampSaved(word){
       split:true, nonspec:"20", ltrating:"A-", mmfrating:"AAA"
     };
 
-    // Every section of commentary, from the draft wording, so the demo is a
-    // finished report rather than a form with the answers left out.
+    /* Every section of commentary — from the WORKED EXAMPLE, not the generic
+       draft wording, so the demonstration is a finished report.
+     *
+     * The generic drafting carries fill-in markers by design: they are the
+     * questions being asked of an author. Seeded into a demonstration they
+     * rendered as orange spans through every section, and the front matter
+     * came up as "To be written" blocks, so the one thing a demonstration
+     * exists to show — what a finished report looks like — was the one thing
+     * it did not show. The example prose covers all twenty sections and has
+     * no markers in it; the generic drafting is the fallback for any section
+     * the example does not reach. */
+    S.demo = true;
     S.text = {};
-    visibleSections().forEach(sec => (sec.qs||[]).forEach(q => {
-      const dr = draftFor(q); if(dr) S.text[q.k] = dr;
+    /* EVERY section, not the visible ones. A demonstration is loaded under
+       one report type and then read under all four, and seeding only what was
+       visible at load left the monitoring sections empty — so switching to an
+       outturn produced "To be written" under the two sections that outturn
+       exists for. Text for a section this report does not have is never
+       rendered; text missing from one it does have is a hole in the example. */
+    SECTIONS.forEach(sec => (sec.qs||[]).forEach(q => {
+      const dr = (typeof REEL_TEXT !== "undefined" && REEL_TEXT[q.k]) || draftFor(q);
+      if(dr) S.text[q.k] = dr;
     }));
 
     /* Flagged as OURS, so it follows the authority. The crest has the
