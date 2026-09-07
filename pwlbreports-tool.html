@@ -1118,6 +1118,14 @@ svg.ctip .hits rect{cursor:crosshair}
   padding:3px 8px;border:1px solid var(--line2);border-radius:var(--r-sm);
   background:var(--card);color:var(--ink);font-variant-numeric:tabular-nums}
 .perf input:focus{outline:none;border-color:var(--accent)}
+/* A COMPANY IS NOT A FIGURE. Every other cell in a .perf table is money, so
+   the shared input rule is 80px wide, right-aligned and monospaced — which
+   is right for £m and wrong for "Sandwell Regeneration Ltd", which arrived
+   in a box too narrow to read, ranged right, set in the figures face. The
+   name column takes the width the row has to spare. */
+.perf td.gname{text-align:left;width:40%}
+.perf td.gname input{width:100%;min-width:150px;text-align:left;
+  font-family:var(--sans);font-size:12.5px}
 /* Borrowing, then investments. The heading is a row of the table rather than
    a paragraph above it, so it stays with its lines when the table scrolls. */
 .perf tr.grprow td{text-align:left;font-family:var(--sans);font-size:10.5px;font-weight:600;
@@ -3198,6 +3206,62 @@ function excelGrid(root, o){
  * text, the same rule the ledger uses — otherwise editing a figure becomes
  * impossible, which is the trap every hand-rolled grid falls into.
  * ======================================================================== */
+/* ===========================================================================
+ * REBUILD A PANEL WITHOUT THROWING AWAY THE BOX SOMEBODY IS TYPING IN.
+ *
+ * Every panel input debounces to render() 600ms after the last keystroke, and
+ * render() rebuilds its host with innerHTML. So the sequence on a step with
+ * sixty boxes was: type a figure, tab to the next box, and 600ms later every
+ * input in the step was destroyed and replaced. Focus fell to <body>, so the
+ * next Tab started again from the top of the page — reported as "tabbing not
+ * working" on the period's figures, and it is the same defect the ladder had.
+ *
+ * The second symptom is quieter and worse. The rebuilt box takes its value
+ * from the state, and the state holds num("0.") — which is 0. So pausing
+ * halfway through typing "0.5" turned the box into "0" under the caret, and
+ * the next keystroke made 05. A figure that changes while you type it is the
+ * kind that reaches a committee wrong.
+ *
+ * Both are fixed by putting the same box back: the RAW STRING the person had
+ * typed, not what the state formatted it back to, and the caret where they
+ * left it. The panel is still rebuilt, so everything derived from the figure
+ * — implied rates, variances, the block index ticks — updates as it should.
+ *
+ * The ladder solves this the other way, by refreshing its derived cells in
+ * place. That works there because there are four of them. Here there are
+ * sixty boxes across four panels, and a list of what to refresh would be a
+ * list somebody has to keep up to date.
+ * ======================================================================== */
+function keepFocus(host, rebuild){
+  const a = document.activeElement;
+  const live = host && a && host.contains(a)
+    && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && !a.disabled;
+  let key = "", val = null, sel = null, tag = "";
+  if(live){
+    /* Identified by what it is FOR — its id or its data attributes — because
+       the element itself does not survive the rebuild and its position can
+       move when a row is added above it. */
+    key = [...a.attributes]
+      .filter(x => x.name === "id" || x.name.indexOf("data-") === 0)
+      .map(x => `[${x.name}="${String(x.value).replace(/"/g, '\\"')}"]`).join("");
+    tag = a.tagName.toLowerCase();
+    val = a.value;
+    try{ sel = [a.selectionStart, a.selectionEnd]; }catch(_){}
+  }
+
+  rebuild();
+
+  if(!key) return;                       // nothing identifiable to go back to
+  let back = null;
+  try{ back = host.querySelector(tag + key); }catch(_){ return; }
+  if(!back) return;                      // the box is genuinely gone, e.g. removed
+  if(back.value !== val) back.value = val;
+  try{
+    back.focus({preventScroll:true});
+    if(sel) back.setSelectionRange(sel[0], sel[1]);
+  }catch(_){}
+}
+
 function arrowNav(root){
   if(!root || root.dataset.anav) return;
   root.dataset.anav = "1";
@@ -6833,9 +6897,14 @@ function renderFigures(){
     html = `<p class="hintline">Nothing to enter here for ${esc(reportTitle().toLowerCase())}.
       Limits, budget and outturn are asked of a report on a period that has happened; this one
       looks forward. The group question below applies either way.</p>` + groupPanel();
-  host.innerHTML = html;
-  if(typeof wirePanelInputs === "function") wirePanelInputs(host);
-  if(typeof arrowNav === "function") arrowNav(host);
+  /* Sixty boxes, all of which debounce to render() and land back here. Keep
+     the one being typed in — see keepFocus in ui.js. */
+  const draw = () => {
+    host.innerHTML = html;
+    if(typeof wirePanelInputs === "function") wirePanelInputs(host);
+    if(typeof arrowNav === "function") arrowNav(host);
+  };
+  if(typeof keepFocus === "function") keepFocus(host, draw); else draw();
 }
 
 function perfPanel(){
@@ -7331,41 +7400,50 @@ function renderSections(){
     });
     if(s.kind==="both") body += autoNote(s.k);
   }
-  $("secbody").innerHTML = body;
-  $("secbody").querySelectorAll(".usedraft").forEach(b =>
-    b.addEventListener("click", e=>{
-      const k = e.target.dataset.d;
-      const q = (SECTIONS.find(x=>x.k===S.sec).qs||[]).find(x=>x.k===k);
-      const draft = q && draftFor(q);
-      if(!draft) return;
-      if((S.text[k]||"").trim() &&
-         !confirm("Replace what you have written with our draft wording?")) return;
-      S.text[k] = draft;
-      renderSections(); render();
-      const t = $("t_"+k); if(t){ t.focus(); t.setSelectionRange(0,0); t.scrollTop=0; }
-    }));
+  /* AND NOT OUT FROM UNDER THE CARET. The textarea handler below calls this
+     400ms after the last keystroke, and this rebuild replaces every textarea
+     and every box in the step — so pausing to think mid-paragraph destroyed
+     the box being written in and dropped focus to <body>, and the words that
+     followed went nowhere. keepFocus (ui.js) puts the same one back, with the
+     text as typed and the caret where it was. */
+  const draw = () => {
+    $("secbody").innerHTML = body;
+    $("secbody").querySelectorAll(".usedraft").forEach(b =>
+      b.addEventListener("click", e=>{
+        const k = e.target.dataset.d;
+        const q = (SECTIONS.find(x=>x.k===S.sec).qs||[]).find(x=>x.k===k);
+        const draft = q && draftFor(q);
+        if(!draft) return;
+        if((S.text[k]||"").trim() &&
+           !confirm("Replace what you have written with our draft wording?")) return;
+        S.text[k] = draft;
+        renderSections(); render();
+        const t = $("t_"+k); if(t){ t.focus(); t.setSelectionRange(0,0); t.scrollTop=0; }
+      }));
 
-  const rp=$("secbody").querySelector('[data-pick="rates"]');
-  if(rp) rp.addEventListener("click", e=>{
-    const b=e.target.closest("button[data-r]"); if(!b) return;
-    const k=b.dataset.r, i=RATE_ON.indexOf(k);
-    if(i>=0){ if(RATE_ON.length>1) RATE_ON.splice(i,1); } else RATE_ON.push(k);
-    renderSections(); render();
-  });
-  // The period-performance grid and the limits panel: same arrows as the
-  // ledger, so a figure is never more than a keypress away.
-  if(typeof arrowNav === "function") arrowNav($("secbody"));
-  $("secbody").querySelectorAll("[data-ac]").forEach(el=>
-    el.addEventListener("input", e=>{
-      const k=e.target.dataset.ac, f=e.target.dataset.af, v=e.target.value.trim();
-      S.actual = S.actual || {}; S.actual[f] = S.actual[f] || {};
-      S.actual[f][k] = (v==="") ? null : num(v);
-      clearTimeout(S._a); S._a=setTimeout(()=>{ renderSections(); render(); }, 600);
-    }));
-  wirePanelInputs($("secbody"));
-  $("secbody").querySelectorAll("textarea").forEach(t=>
-    t.addEventListener("input", e=>{ S.text[e.target.dataset.t]=e.target.value;
-      clearTimeout(S._t); S._t=setTimeout(renderSections, 400); }));
+    const rp=$("secbody").querySelector('[data-pick="rates"]');
+    if(rp) rp.addEventListener("click", e=>{
+      const b=e.target.closest("button[data-r]"); if(!b) return;
+      const k=b.dataset.r, i=RATE_ON.indexOf(k);
+      if(i>=0){ if(RATE_ON.length>1) RATE_ON.splice(i,1); } else RATE_ON.push(k);
+      renderSections(); render();
+    });
+    // The period-performance grid and the limits panel: same arrows as the
+    // ledger, so a figure is never more than a keypress away.
+    if(typeof arrowNav === "function") arrowNav($("secbody"));
+    $("secbody").querySelectorAll("[data-ac]").forEach(el=>
+      el.addEventListener("input", e=>{
+        const k=e.target.dataset.ac, f=e.target.dataset.af, v=e.target.value.trim();
+        S.actual = S.actual || {}; S.actual[f] = S.actual[f] || {};
+        S.actual[f][k] = (v==="") ? null : num(v);
+        clearTimeout(S._a); S._a=setTimeout(()=>{ renderSections(); render(); }, 600);
+      }));
+    wirePanelInputs($("secbody"));
+    $("secbody").querySelectorAll("textarea").forEach(t=>
+      t.addEventListener("input", e=>{ S.text[e.target.dataset.t]=e.target.value;
+        clearTimeout(S._t); S._t=setTimeout(renderSections, 400); }));
+  };
+  if(typeof keepFocus === "function") keepFocus($("secbody"), draw); else draw();
 }
 
 /* What we can produce for a section, stated plainly so nobody mistakes it for
@@ -9849,8 +9927,9 @@ function groupPanel(){
       <thead><tr><th>Company</th><th>Paid to the authority</th>
         <th>Income from third parties</th><th>Third-party debt cost</th><th></th></tr></thead>
       <tbody>${G.cos.map((c, i) => `<tr>
-        <td><input type="text" data-gc="n" data-gi="${i}" value="${esc(c.n || "")}"
-          placeholder="name" aria-label="Company name"></td>
+        <td class="gname"><input type="text" data-gc="n" data-gi="${i}"
+          value="${esc(c.n || "")}" placeholder="name of the company"
+          aria-label="Company name"></td>
         ${["intra","income","debtcost"].map(k => `<td><input type="text" inputmode="decimal"
           data-gc="${k}" data-gi="${i}" value="${c[k] == null ? "" : c[k]}"
           placeholder="£m" aria-label="${k}"></td>`).join("")}
