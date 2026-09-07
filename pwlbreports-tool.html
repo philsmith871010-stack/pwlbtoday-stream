@@ -11563,6 +11563,7 @@ function saveVersion(quiet){
       mat:S.mat, demoStamp:S.demoStamp, demo:S.demo,
       logo:S.logo, logoDemo:S.logoDemo, mstruct:S.mstruct, asAt:S.asAt, minliq:S.minliq, cp:S.cp, prior:S.prior,
       otherName:S.otherName, natOverride:S.natOverride,
+      demoSrc:S.demoSrc, demoName:S.demoName, demoKind:S.demoKind,
       at:new Date().toISOString()}));
     // Saving again does not un-issue what was already issued.
     libNote(S.gss, S.report, S.fy0, {hra:S.hra, issued: libIsIssued()});
@@ -11610,6 +11611,17 @@ function migrateGrid(g, years){
   return out;
 }
 
+/* The demonstration's authority key. One for all three, because only one is
+   ever filled at a time.
+
+   AT MODULE SCOPE, and that is the whole point. It lived inside init() beside
+   the list that uses it, and restoreVersion — a top-level function — reads it
+   too. A const in another scope is not a syntax error, so node --check passed;
+   it is a ReferenceError at run time, and restoreVersion's try/catch swallowed
+   it. The visible symptom was a restored demonstration with half its state
+   applied and no message at all. */
+const DEMO_GSS = "demo";
+
 function restoreVersion(quiet){
   try{
     // Anything saved before the key carried a year lives under the old one.
@@ -11633,6 +11645,13 @@ function restoreVersion(quiet){
     S.perf=migratePerf(d.perf||{}); S.mon=d.mon||{}; S.prior=d.prior||null;
     S.actual=d.actual||{}; S.group=d.group||{};
     if(S.gss === "other" && LB.other) LB.other.n = S.otherName;
+    /* A DEMONSTRATION SAVED TO A FILE MUST COME BACK AS ITSELF. LB.demo is
+       built at runtime by fillDemo, so a restored demonstration had no entry
+       at all: the name fell back to "Your authority" and the PWLB run-off —
+       which the whole liability benchmark is drawn from — was gone. */
+    S.demoSrc=d.demoSrc||null; S.demoName=d.demoName||""; S.demoKind=d.demoKind||null;
+    if(S.gss === DEMO_GSS && S.demoSrc && LB[S.demoSrc])
+      LB[DEMO_GSS] = Object.assign({}, LB[S.demoSrc], {n: S.demoName});
     // The counterparty policy is a whole section of the report. It was left
     // out of the saved payload when the step was added, so saving and
     // restoring silently discarded it.
@@ -11678,6 +11697,13 @@ function stampSaved(word){
      hoisted: declared beside DEMOS, 250 lines further down, the list built
      here threw "Cannot access 'DEMO_ORDER' before initialization" and the
      whole page came up empty. */
+  /* The demonstration is not in the authority list — it is one of the three
+     entries above it — so its selected value is the demo option, not the GSS.
+     Three places set this control back to whatever the state is, and each
+     one of them turned the select blank on a demonstration when it did the
+     obvious thing and assigned S.gss. */
+  const councilValue = () =>
+    S.gss === DEMO_GSS ? "demo:" + (S.demoKind || "nohra") : (S.gss || "");
   const DEMO_ORDER = [["nohra", "Demonstration · a council with no HRA"],
                       ["one",   "Demonstration · an HRA, one pool"],
                       ["two",   "Demonstration · an HRA, two pools"]];
@@ -11690,7 +11716,13 @@ function stampSaved(word){
     + `<optgroup label="See a finished report first">`
     + DEMO_ORDER.map(([k,t])=>`<option value="demo:${k}">${esc(t)}</option>`).join("")
     + `</optgroup><optgroup label="Your authority">`
-    + keys.map(k=>`<option value="${k}">${esc(LB[k].n)} — £${m1(LB[k].o)}m</option>`).join("")
+    /* THE NAME, AND NOTHING ELSE. Each line carried "— £412.8m", which is the
+       authority's PWLB balance. In a list somebody is scanning for their own
+       council it is noise at best; at worst a reader takes the figure for
+       something the tool is asserting about them before they have chosen
+       anything, and it is only ONE of their debts. The balance is stated
+       where it belongs, on the loan row it becomes. */
+    + keys.map(k=>`<option value="${k}">${esc(LB[k].n)}</option>`).join("")
     + `<option value="other">Another body — not on the PWLB list</option>`
     + `</optgroup>`;
   $("rtype").innerHTML=REPORTS.map(r=>`<option value="${r.k}">${esc(r.t)}</option>`).join("");
@@ -11762,6 +11794,27 @@ function stampSaved(word){
     if(S.logoDemo) S.logo = demoLogo(LB[S.gss] ? LB[S.gss].n : "");
     otherShown(); renationaliseText(); loanRows(); applyLoans(); renderSections(); libFill();
     $("issued").checked = libIsIssued(); });
+  /* RE-PICKING THE DEMONSTRATION YOU ARE ALREADY ON.
+  
+     The control shows the demonstration that is loaded, which is the truth.
+     It used to show the authority the figures were built on — re-pickable,
+     but that authority's name is no longer the one on the report, so the
+     selector said "Aberdeen City" over a document headed "Example Non-Housing
+     Authority".
+  
+     A <select> fires no change event when you choose the option already
+     selected, so simply leaving it there would make "load this demonstration
+     again" dead — the failure this control had four times before it was one
+     control. The value is cleared as the menu opens and put back if nothing
+     is chosen, so every entry stays pickable and the control still says what
+     is loaded. Keyboard users never reach this: arrowing a closed select
+     changes the value and fires change on its own. */
+  $("council").addEventListener("mousedown", e => {
+    if(String(e.target.value).startsWith("demo:")) e.target.value = "";
+  });
+  $("council").addEventListener("blur", e => {
+    if(e.target.value === "") e.target.value = councilValue();
+  });
   $("othername").addEventListener("input", e=>{
     LB.other.n = e.target.value.trim(); S.otherName = LB.other.n; render(); });
   $("otherreg").addEventListener("change", e=>{
@@ -11958,10 +12011,10 @@ function stampSaved(word){
   }
 
   const DEMOS = {
-    nohra: {mode:"no", label:"no HRA",
+    nohra: {mode:"no", label:"no HRA", name:"Example Non-Housing Authority",
       gf:{cfr0:1.30, capex:0.07, mrp:0.04, rec:0.005, obs:0.38, liq:0.04, inv:0.05,
           share:1.00, nrs:0.55, comminc:0}},
-    one:  {mode:"one", label:"one pool",
+    one:  {mode:"one", label:"one pool", name:"Example One-Pool Housing Authority",
       gf:{cfr0:0.90, capex:0.05, mrp:0.04, rec:0.004, obs:0.30, liq:0.04, inv:0.05,
           share:0.65, nrs:0.55, comminc:0},
       // The HRA carries its own CFR and its own debt. Under one pool it still
@@ -11972,7 +12025,7 @@ function stampSaved(word){
       // authority. Filling them here would double-count in the combined sheet.
       hraK:{cfr0:0.55, capex:0.03, mrp:0.025, rec:0.002, obs:0.06,
             share:0.35, nrs:0.18}},
-    two:  {mode:"two", label:"two pool",
+    two:  {mode:"two", label:"two pool", name:"Example Two-Pool Housing Authority",
       gf:{cfr0:0.90, capex:0.05, mrp:0.04, rec:0.004, obs:0.30, liq:0.05, inv:0.06,
           share:0.65, nrs:0.55, comminc:0},
       hraK:{cfr0:0.55, capex:0.03, mrp:0.025, rec:0.002, obs:0.06,
@@ -12047,11 +12100,41 @@ function stampSaved(word){
     if(held && !confirm("This replaces everything with a demonstration authority, "
       + "including work already saved in this browser. Save to a file first if you "
       + "want to keep it.\n\nFill the demonstration?")){
-      $("council").value = S.gss || ""; return;
+      $("council").value = councilValue(); return;
     }
     const D = DEMOS[which];
-    if(!S.gss){ S.gss = keys.find(k=>LB[k].o>100) || keys[0]; $("council").value = S.gss; }
-    const base = LB[S.gss].o;
+    /* THE FIGURES ARE A REAL AUTHORITY'S. THE NAME IS NOT.
+    
+       The demonstration needs a real PWLB book — the run-off it draws is
+       actual published data, and a benchmark against invented maturities
+       would teach the wrong shape. But the report came out headed "Aberdeen
+       City", with Aberdeen's name drawn into the crest, over figures nobody
+       at Aberdeen wrote. That reads as a mistake rather than as an example,
+       and the head of the document is the first thing anyone looks at.
+    
+       So the demonstration is its own entry in LB: the source authority's
+       run-off and balance under a name that says exactly what it is. The
+       nation follows the source, because the figures are that nation's and
+       the terminology should match them. */
+    /* An authority already chosen wins, so a Welsh reader's demonstration is
+       worded for Wales. With nothing chosen the fallback used to be the first
+       authority in the list with a book worth showing — alphabetically that
+       is Aberdeen City, so a first-time visitor met "Example Non-Housing
+       Authority" written in Scottish statutory language, with nothing in the
+       name to explain why. The cold start is England, which is the regime
+       most readers are in and the one the generic name implies. */
+    const big = k => LB[k].o > 100;
+    const src = (S.gss && S.gss !== DEMO_GSS && LB[S.gss] && LB[S.gss].o) ? S.gss
+      : (S.demoSrc
+         || keys.find(k => big(k) && nationOf(k) === "england")
+         || keys.find(big) || keys[0]);
+    S.demoSrc = src;
+    S.demoName = D.name;
+    S.demoKind = which;
+    LB[DEMO_GSS] = Object.assign({}, LB[src], {n: D.name});
+    S.gss = DEMO_GSS;
+    S.natOverride = nationOf(src);
+    const base = LB[DEMO_GSS].o;
 
     S.hra = D.mode; $("hra").value = D.mode;
     S.loans = [{pwlb:true, name:"PWLB", amt:base, profile:"actual"},
@@ -12311,7 +12394,7 @@ function stampSaved(word){
      * loaded is said in the line below rather than held in the control. */
     /* The control shows the authority the demonstration is built on, which is
        true, and leaves the demonstration entry free to be chosen again. */
-    $("council").value = S.gss;
+    $("council").value = councilValue();
     $("saved").textContent = `Demonstration filled — ${D.label}, every section written. `
       + `Every step is filled, including the counterparty policy. `
       + `Change anything; nothing here is fixed.`;
@@ -12709,7 +12792,7 @@ function stampSaved(word){
   const last = lastKey ? libRead().find(e => e.k === lastKey) : null;
   if(last && LB[last.gss]){
     S.gss = last.gss; S.report = last.report; S.fy0 = last.fy0;
-    $("council").value = S.gss; $("rtype").value = S.report; $("fy0").value = S.fy0;
+    $("council").value = councilValue(); $("rtype").value = S.report; $("fy0").value = S.fy0;
     restoreVersion(true);
   }
   // Seeded here rather than in the state declaration: it needs the council to
