@@ -975,6 +975,20 @@ table.dtab td.wrap{white-space:normal;line-height:1.5}
    accident — and it survives into the Word export, highlighted. */
 .fillin{background:var(--fill-bg);border-bottom:1px dotted var(--fill-line);
   padding:0 2px;border-radius:2px}
+/* A BOX THAT IS STILL WANTED, IN THE SAME AMBER AS .fillin ABOVE.
+   The two mean the same thing in the two places a reader meets it: a
+   decision the authority has still to make. It is deliberately NOT the alert
+   red — nothing is wrong, and an indicator nobody has chosen to report is a
+   valid answer. The panels only raise it once an authority has started, or
+   once the ladder shows a commitment the Code asks for a limit on, so it
+   never nags somebody who is not reporting the indicator at all. */
+.wantfill{background:var(--fill-bg);border-color:var(--fill-line) !important}
+.wantfill::placeholder{color:var(--fill-line);opacity:1}
+/* And the same thing said in words, because a colour alone is not an answer
+   for a reader who cannot see it, or one wondering what the box is for. */
+.wantnote{font-size:11.5px;margin:8px 0 0;color:var(--muted)}
+.wantnote b{color:var(--orange);font-weight:600}
+.wantnote.done b{color:var(--good)}
 /* ROW HEIGHT IS WHAT MAKES A FINANCIAL TABLE LOOK PROFESSIONAL OR NOT.
    Seven pixels above and below a 12.5px figure gives a 27px row, so a
    five-year indicator table ran the depth of a chart and a fifty-year run-off
@@ -1260,8 +1274,12 @@ svg.ctip .hits rect{cursor:crosshair}
 .cpix-row{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
 /* Step zero. Prose, not a form — the only step with nothing to fill in, so it
    is set wider and quieter than the panels that follow it. */
+/* Full width. A 74ch measure is right for a column of running prose and wrong
+   here: this is one paragraph across the top of a panel whose cards below it
+   already run the full width, so capping it left a ragged step down the right
+   edge rather than a tidy column. */
 .s0lede{font-family:var(--sans);font-size:15px;line-height:1.62;color:var(--ink2);
-  max-width:74ch;margin:0 0 22px}
+  margin:0 0 22px}
 /* TWO BY TWO, STATED. auto-fit put three on the first row and orphaned the
    fourth — the same shape of bug as the landing page's "worth" cards, where a
    rule written for five broke the moment there were six. Four equal cards
@@ -1639,7 +1657,8 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
       <div><label for="council">Authority</label>
         <select id="council"></select></div>
       <div class="otherbox" id="otherbox" hidden>
-        <label for="othername">Name of the body</label>
+        <label for="othername">Name of the body<span class="hint">only for a body that is
+          not on the list above</span></label>
         <input type="text" id="othername" placeholder="e.g. North London Waste Authority">
       </div>
       <div class="otherbox" id="otherregbox" hidden>
@@ -1659,15 +1678,7 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
       <div><label for="hra">HRA</label>
         <select id="hra"><option value="no">No HRA</option><option value="one">One pool</option>
         <option value="two">Two pool</option></select></div>
-      <div class="demobox">
-        <label for="demokind">Demonstration authority</label>
-        <select id="demokind">
-          <option value="">— choose your own authority above —</option>
-          <option value="nohra">Demo authority · no HRA</option>
-          <option value="one">Demo authority · HRA, one pool</option>
-          <option value="two">Demo authority · HRA, two pools</option>
-        </select>
-      </div>
+      
       <div><label for="horizon">Horizon</label>
         <select id="horizon"></select></div>
       <div><label for="logo">Council logo</label>
@@ -2073,7 +2084,14 @@ const COLS = [
   // produced no figure for at all: it computed six debt and investment limits
   // and left the question members actually ask — what does this cost us as a
   // share of what we raise — to prose.
-  {k:"intpay",  l:"Interest<br>payable",  s:"external, on borrowing and leases", mtfp:true},
+  /* Pooled, for the same reason `loans` is: under one pool the authority holds
+     one debt portfolio and the General Fund carries it, so the HRA has no
+     external interest of its own — what it bears is the item 8 recharge in
+     the column below. Asking a pooled HRA for interest payable invited the
+     recharge to be entered twice, once as its own cost and once as the
+     charge. */
+  {k:"intpay",  l:"Interest<br>payable",  s:"external, on borrowing and leases",
+   pooled:true, mtfp:true},
   /* WHAT ONE FUND CHARGES THE OTHER, WHICH IS NOT A COST OF THE AUTHORITY.
    *
    * A cost to the fund that pays it, income to the fund that receives it, and
@@ -2081,8 +2099,21 @@ const COLS = [
    * positive on the grid of the fund that PAYS, and struck out of the
    * combined balance sheet, because summing it there charged the authority
    * interest to itself. See combinedGrid. */
-  {k:"intfund", l:"Interest paid to<br>the other fund", s:"item 8 or an internal loan",
-   cross:true, mtfp:true},
+  /* TWO LEGS, AND EACH GRID NAMES THE OTHER FUND. "The other fund" made the
+     reader work out which one they were looking at; on the HRA's grid the
+     other fund is the General Fund, and on the General Fund's it is the HRA,
+     so each says so. `pair` names the column that holds the mirror of this
+     one — what one fund pays, the other receives — and syncCross keeps the
+     two in step so a figure is entered once. */
+  {k:"intfund",  l:"Interest paid to<br>the {{other}}", s:"item 8 or an internal loan",
+   cross:true, mtfp:true, pair:"intfundr"},
+  /* The break sits after "from", deliberately. matchCol takes the text before
+     the <br> as a name the column answers to exactly, and "Interest received"
+     alone is what a treasury sheet calls its EXTERNAL investment income — so
+     with the break one word earlier, pasting a column headed "Interest
+     received" landed it in the inter-fund column instead of intinc. */
+  {k:"intfundr", l:"Interest received from<br>the {{other}}", s:"the other side of it",
+   cross:true, mtfp:true, pair:"intfund"},
   {k:"intinc",  l:"Investment<br>income", s:"not netted off", gf:true, mtfp:true},
   {k:"nrs",     l:"Net revenue<br>stream", s:"grants and local taxpayers", mtfp:true},
   {k:"comminc", l:"Non-treasury<br>investment income", s:"net, if any", gf:true, mtfp:true}
@@ -2138,9 +2169,13 @@ function numeric(v){
   return (neg ? "-" : "") + s;
 }
 
-function colLabel(c){
+function colLabel(c, fund){
   const n = (typeof S !== "undefined") ? (S.natOverride || nationOf(S.gss)) : "england";
-  return (c.natl && c.natl[n]) || c.l;
+  const base = (c.natl && c.natl[n]) || c.l;
+  // "the other fund" is whichever one you are not looking at.
+  const f = fund || ((typeof S !== "undefined") ? S.fund : "gf");
+  return base.replace(/\{\{other\}\}/g,
+    f === "hra" ? "General&nbsp;Fund" : "HRA");
 }
 
 /* WHAT AN HRA DOES NOT HAVE.
@@ -2775,7 +2810,15 @@ function render(){
     const host = $(w === "d" ? "matdebt" : "matinv");
     // Only the pane on screen. Rebuilding the hidden one replaces inputs
     // nobody can see, and would drop the caret out of the one they are in.
-    if(host){
+    /* AND NOT WHILE SOMEBODY IS TYPING IN IT. The limit panels below the
+       ladder schedule a render 600ms after the last keystroke, and this line
+       replaced every input in the pane — including the one the caret had just
+       tabbed into. Focus fell to <body> and the next Tab started from the top
+       of the page. Only the derived figures move while the pane has focus. */
+    if(host && host.contains(document.activeElement)
+       && typeof refreshLadderDerived === "function"){
+      refreshLadderDerived(w);
+    } else if(host){
       /* The indicator the ladder answers, entered under the ladder that
          answers it: the maturity structure for debt, the 364-day limit for
          investments. Both are limits the authority sets; the actual beside
@@ -3352,9 +3395,13 @@ function buildModel(S, fund){
      * carry — it simply no longer reduces the cost of financing.
      */
     const intpay = g.intpay[i] || 0, intinc = g.intinc[i] || 0, nrs = g.nrs[i] || 0;
-    // What this fund pays: its own external interest, plus anything it is
-    // charged by the other fund. Nil on the combined sheet, by construction.
-    const intfund = g.intfund ? (g.intfund[i] || 0) : 0;
+    /* The two legs of the inter-fund charge. What this fund PAYS is a cost to
+       it; what it RECEIVES is not netted off that cost — the same rule that
+       keeps investment income out of financing costs, and for the same
+       reason. Both are struck out of the combined sheet by combinedGrid,
+       because at the level of the authority the money never moved. */
+    const intfund  = g.intfund  ? (g.intfund[i]  || 0) : 0;
+    const intfundr = g.intfundr ? (g.intfundr[i] || 0) : 0;
     const fincost = intpay + intfund + (g.mrp[i]||0);
     const afford  = nrs > 0 ? (fincost / nrs) * 100 : null;
     // Proportionality: how much of what the authority raises depends on income
@@ -3363,7 +3410,7 @@ function buildModel(S, fund){
     const comminc = g.comminc[i] || 0;
     const commratio = nrs > 0 ? (comminc / nrs) * 100 : null;
     rows.push({fy:S.fy0+i, i, cfr, obs, liq, el, ei, ntp, tib, lb,
-               intpay, intinc, intfund, nrs, fincost, afford, comminc, commratio,
+               intpay, intinc, intfund, intfundr, nrs, fincost, afford, comminc, commratio,
                mrp:g.mrp[i]||0, capex:g.capex[i]||0, rec:g.rec[i]||0,
                br:0, need:0, over:0, inv:0, strategic:0, excess:0, al:0});
   }
@@ -3472,7 +3519,7 @@ function loanProfile(S, LB){
  * for the actual explicitly.
  * ======================================================================== */
 const ACTUAL_COLS = ["cfr","obs","loans","inv","liq","capex","mrp","rec",
-                     "intpay","intinc","intfund","nrs","comminc"];
+                     "intpay","intinc","intfund","intfundr","nrs","comminc"];
 
 function actualRow(S, fund){
   const A = S.actual || {};
@@ -3521,7 +3568,8 @@ function actualRow(S, fund){
   const need = Math.max(0, lb - el), over = Math.max(0, el - lb);
   return {fy: S.fy0 - 1, i: -1, actual: true,
     cfr, obs, liq, el, ei, ntp, tib, lb,
-    intpay:n("intpay"), intinc:n("intinc"), intfund:n("intfund"), nrs, fincost,
+    intpay:n("intpay"), intinc:n("intinc"), intfund:n("intfund"),
+    intfundr:n("intfundr"), nrs, fincost,
     afford: nrs > 0 ? (fincost / nrs) * 100 : null,
     comminc:n("comminc"), commratio: nrs > 0 ? (n("comminc") / nrs) * 100 : null,
     mrp:n("mrp"), capex:n("capex"), rec:n("rec"),
@@ -4815,12 +4863,79 @@ function inv364(){
   return {amt, limit:(raw == null || raw === "") ? null : +raw};
 }
 
+/* WHAT IS STILL WANTED, AND WHEN IT IS FAIR TO ASK.
+ *
+ * None of these three indicators is compulsory: an authority that sets no
+ * limit is not reporting it, and that is a valid answer the panels already
+ * respect by drawing nothing. So a box is only marked wanted when leaving it
+ * blank would produce something WORSE than silence:
+ *
+ *   maturity structure   some bands limited and others not — the table would
+ *                        print dashes against real percentages
+ *   interest rate        a limit set with no split typed, so the position
+ *                        column has nothing to put against it (or a split
+ *                        typed with no limit to judge it by)
+ *   beyond 364 days      the ladder shows money committed past a year and no
+ *                        approved limit on it, which is the one case the Code
+ *                        is actually asking about
+ *
+ * Each returns the keys still blank, so the panel can mark the boxes and say
+ * the same thing in words underneath.
+ */
+function mstructSet(k, f){
+  const v = ((S.mstruct || {})[k] || {})[f];
+  return v != null && v !== "";
+}
+function mstructStarted(){
+  return MSTRUCT_BANDS.some(b => mstructSet(b.k, "lo") || mstructSet(b.k, "hi"));
+}
+function mstructWanted(){
+  const set = mstructSet;
+  if(!mstructStarted()) return [];
+  const out = [];
+  MSTRUCT_BANDS.forEach(b => ["lo","hi"].forEach(f => {
+    if(!set(b.k, f)) out.push(b.k + ":" + f);
+  }));
+  return out;
+}
+
+const EXPO_KEYS = ["exp_var","exp_var_max","exp_fix_max"];
+function expoSet(k){
+  const v = (S.limits || {})[k];
+  return v != null && v !== "";
+}
+function expoStarted(){ return EXPO_KEYS.some(expoSet); }
+function expoWanted(){
+  return expoStarted() ? EXPO_KEYS.filter(k => !expoSet(k)) : [];
+}
+
+function inv364Wanted(){
+  const x = inv364();
+  return (x.amt > 0 && x.limit == null) ? ["inv364"] : [];
+}
+
+/* The one sentence under each panel, and it has THREE states, not two.
+   Nothing started and everything finished both leave no box wanted, and they
+   are opposite messages — the first said "nothing entered, so this indicator
+   is not reported" over a panel with every box filled. So `started` is asked
+   for separately rather than inferred from the count. */
+function wantNote(started, n, none, done){
+  if(!started) return `<p class="wantnote">${esc(none)}</p>`;
+  if(!n) return `<p class="wantnote done"><b>&#10003;</b> ${esc(done)}</p>`;
+  return `<p class="wantnote"><b>${n}</b> box${n === 1 ? "" : "es"} still to complete
+    &mdash; until ${n === 1 ? "it is" : "they are"} filled the indicator prints a dash
+    where a figure should be.</p>`;
+}
+
 /* The limits, entered under the ladder they constrain. */
 function mstructPanel(){
   S.mstruct = S.mstruct || {};
   const rows = mstructRows();
-  const box = (k, f) => `<input type="text" inputmode="decimal" data-ms="${k}" data-msf="${f}"
-    value="${((S.mstruct[k]||{})[f] ?? "")}" placeholder="%" aria-label="${esc(k)} ${f}">`;
+  const want = new Set(mstructWanted());
+  const box = (k, f) => { const w = want.has(k + ":" + f);
+    return `<input type="text" inputmode="decimal" data-ms="${k}" data-msf="${f}"
+    class="${w ? "wantfill" : ""}" value="${((S.mstruct[k]||{})[f] ?? "")}" placeholder="%"
+    aria-label="${esc(k)} ${f}"${w ? ' aria-describedby="msnote"' : ""}>`; };
   return `<h4 class="ladh">Maturity structure of borrowing</h4>
     <p class="hintline">The share of debt that may fall due in each period, as the Treasury
       Management Code states it. The actual comes from the ladder above. Leave the limits blank
@@ -4830,12 +4945,16 @@ function mstructPanel(){
         <th class="num">Actual %</th></tr></thead>
       <tbody>${rows.map(r => `<tr><td>${esc(r.l)}</td>
         <td class="num">${box(r.k,"lo")}</td><td class="num">${box(r.k,"hi")}</td>
-        <td class="num">${r.pct == null ? "–" : r.pct.toFixed(1) + "%"}</td></tr>`).join("")}
-      </tbody></table></div>`;
+        <td class="num msact" data-msk="${r.k}">${r.pct == null ? "–" : r.pct.toFixed(1) + "%"}</td></tr>`).join("")}
+      </tbody></table></div>
+    <div id="msnote">${wantNote(mstructStarted(), want.size,
+      "No limits set, so this indicator is not reported.",
+      "Every band has a lower and an upper limit.")}</div>`;
 }
 
 function inv364Panel(){
   const x = inv364();
+  const want = inv364Wanted();
   return `<h4 class="ladh">Principal sums invested for more than 364 days</h4>
     <p class="hintline">The Code asks for an upper limit on the sum that may be committed
       beyond a year. The actual comes from the ladder above.</p>
@@ -4843,11 +4962,21 @@ function inv364Panel(){
       <label for="L_inv364">Upper limit<span class="hint">£m — the most that may be
         committed beyond 364 days</span></label>
       <input type="text" inputmode="decimal" id="L_inv364" data-lim="inv364"
+        class="${want.length ? "wantfill" : ""}"${want.length ? ' aria-describedby="invnote"' : ""}
         value="${(S.limits||{}).inv364 == null ? "" : m1(S.limits.inv364)}">
     </div><div>
       <label>Committed beyond a year<span class="hint">£m — from the ladder above</span></label>
-      <input type="text" value="${m1(x.amt)}" disabled aria-label="committed beyond a year">
-    </div></div>`;
+      <input type="text" id="inv364_amt" value="${m1(x.amt)}" disabled
+        aria-label="committed beyond a year">
+    </div></div>
+    <div id="invnote">${want.length
+      ? `<p class="wantnote"><b>£${m1(x.amt)}m</b> is committed beyond a year on the ladder
+         above and no limit has been approved for it. The Code asks for one.</p>`
+      : x.limit == null
+        ? `<p class="wantnote">Nothing is committed beyond a year, so this indicator is not
+           reported.</p>`
+        : `<p class="wantnote done"><b>&#10003;</b> Limit set, so the indicator is
+           reported.</p>`}</div>`;
 }
 
 /* The two, as the report states them. Neither is drawn unless a limit has
@@ -4920,21 +5049,28 @@ function expoRows(){
 
 function expoPanel(){
   const x = expoRows();
-  const box = (k, lab, hint) => `<div><label for="L_${k}">${esc(lab)}<span class="hint">£m — ${
+  const want = new Set(expoWanted());
+  const box = (k, lab, hint) => { const w = want.has(k);
+    return `<div><label for="L_${k}">${esc(lab)}<span class="hint">£m — ${
     esc(hint)}</span></label><input type="text" inputmode="decimal" id="L_${k}"
-    data-lim="${k}" value="${(S.limits||{})[k] == null ? "" : (S.limits||{})[k]}"></div>`;
+    class="${w ? "wantfill" : ""}"${w ? ' aria-describedby="exponote"' : ""}
+    data-lim="${k}" value="${(S.limits||{})[k] == null ? "" : (S.limits||{})[k]}"></div>`; };
   return `<h4 class="ladh">Interest rate exposure</h4>
     <p class="hintline">How much of the debt reprices with the market, against the upper
       limits members set on each. Fixed is the rest of the book, so it is not asked for twice.
       Leave the limits blank and the indicator is not reported.</p>
     <div class="setup">
-      ${box("exp_var", "Debt at variable rates", "of £" + m1(x.tot) + "m held")}
+      ${box("exp_var", "Debt at variable rates", "of £" + m1(x.tot) + "m held")
+        .replace("<span class=\"hint\">", "<span class=\"hint\" id=\"expo_tot\">")}
       ${box("exp_var_max", "Upper limit, variable", "the most that may float")}
       ${box("exp_fix_max", "Upper limit, fixed", "the most that may be fixed")}
       <div><label>At fixed rates<span class="hint">£m — the rest of the book</span></label>
-        <input type="text" value="${x.fixed == null ? "" : m1(x.fixed)}" disabled
+        <input type="text" id="expo_fixed" value="${x.fixed == null ? "" : m1(x.fixed)}" disabled
           aria-label="debt at fixed rates"></div>
-    </div>`;
+    </div>
+    <div id="exponote">${wantNote(expoStarted(), want.size,
+      "Nothing entered, so this indicator is not reported.",
+      "The split and both limits are set.")}</div>`;
 }
 
 function expoTable(){
@@ -5049,6 +5185,67 @@ function wireMatGrid(){
   // A matrix is navigated with the arrow keys, like every other grid here.
   ["matdebt","matinv"].forEach(id => { const h = $(id);
     if(h && typeof arrowNav === "function") arrowNav(h.querySelector("table") || h); });
+}
+
+/* THE SAME RULE THE LADDER ALREADY FOLLOWS, EXTENDED TO THE PANELS UNDER IT.
+ *
+ * matGrid was deliberately never redrawn on a keystroke (see wireMatGrid) —
+ * but the three limit panels sit inside the same host, and render() replaced
+ * the WHOLE host. Their own handlers schedule a render 600ms after you stop
+ * typing, so the sequence was: type in Lower %, tab to Upper %, and 600ms
+ * later every input in the pane was destroyed and rebuilt. Focus landed on
+ * <body>, so the next Tab started again from the top of the page. That is the
+ * maturity-structure table "not tabbing properly": nothing to do with tab
+ * order, and everything to do with the elements no longer being there.
+ *
+ * So while the caret is inside the pane, only the DERIVED figures are
+ * refreshed — the actual percentages, the fixed remainder, the committed
+ * total, and which boxes are still wanted. Every one of those is a text node
+ * or a class, and none of them replaces an input.
+ */
+function refreshLadderDerived(w){
+  const host = $(w === "d" ? "matdebt" : "matinv");
+  if(!host) return;
+  const cls = (el, on) => el && el.classList.toggle("wantfill", !!on);
+
+  if(w === "d"){
+    const rows = mstructRows(), want = new Set(mstructWanted());
+    rows.forEach(r => {
+      const cell = host.querySelector(`.msact[data-msk="${r.k}"]`);
+      if(cell) cell.textContent = r.pct == null ? "\u2013" : r.pct.toFixed(1) + "%";
+      ["lo","hi"].forEach(f => cls(
+        host.querySelector(`[data-ms="${r.k}"][data-msf="${f}"]`),
+        want.has(r.k + ":" + f)));
+    });
+    const mn = $("msnote");
+    if(mn) mn.innerHTML = wantNote(mstructStarted(), want.size,
+      "No limits set, so this indicator is not reported.",
+      "Every band has a lower and an upper limit.");
+
+    const x = expoRows(), ew = new Set(expoWanted());
+    const fx = $("expo_fixed");
+    if(fx) fx.value = x.fixed == null ? "" : m1(x.fixed);
+    const tt = $("expo_tot");
+    if(tt) tt.textContent = "\u00a3m \u2014 of \u00a3" + m1(x.tot) + "m held";
+    ["exp_var","exp_var_max","exp_fix_max"].forEach(k => cls($("L_" + k), ew.has(k)));
+    const en = $("exponote");
+    if(en) en.innerHTML = wantNote(expoStarted(), ew.size,
+      "Nothing entered, so this indicator is not reported.",
+      "The split and both limits are set.");
+  } else {
+    const x = inv364(), iw = inv364Wanted();
+    const am = $("inv364_amt");
+    if(am) am.value = m1(x.amt);
+    cls($("L_inv364"), iw.length);
+    const inote = $("invnote");
+    if(inote) inote.innerHTML = iw.length
+      ? `<p class="wantnote"><b>\u00a3${m1(x.amt)}m</b> is committed beyond a year on the
+         ladder above and no limit has been approved for it. The Code asks for one.</p>`
+      : x.limit == null
+        ? `<p class="wantnote">Nothing is committed beyond a year, so this indicator is not
+           reported.</p>`
+        : `<p class="wantnote done"><b>\u2713</b> Limit set, so the indicator is reported.</p>`;
+  }
 }
 
 /* Redraw the arithmetic without touching the field being typed into. */
@@ -10915,7 +11112,37 @@ function actualCell(k, v){
   const f = S.actual[S.fund] || (S.actual[S.fund] = {});
   if(v === undefined) return f[k];
   f[k] = v;
+  /* The prior year's closing position obeys the same identity as every
+     projected year: what one fund paid the other received. The projection
+     mirrors through syncCross; this row writes S.actual and would have been
+     the one place the two legs could disagree. */
+  const col = COLS.find(c => c.k === k);
+  if(col && col.pair && S.hra !== "no"){
+    const other = S.fund === "hra" ? "gf" : "hra";
+    (S.actual[other] || (S.actual[other] = {}))[col.pair] = v;
+  }
 }
+/* WHAT ONE FUND PAYS, THE OTHER RECEIVES — SO IT IS ENTERED ONCE.
+ *
+ * The inter-fund charge has two legs and they are the same money: the HRA's
+ * "paid to the General Fund" IS the General Fund's "received from the HRA".
+ * Held as two independent columns they drift, and a reader has no way to tell
+ * which of the two is the one that was meant. Writing either writes both.
+ *
+ * It is still two columns rather than one signed figure because a fund can be
+ * on both sides at once under two pools — lending some and borrowing some —
+ * and a single column would net those into a number neither fund recognises.
+ *
+ * Nothing here touches the whole-authority sheet: combinedGrid strikes both
+ * columns out, because at the level of the authority the money never moved. */
+function syncCross(k, i){
+  const col = COLS.find(c => c.k === k);
+  if(!col || !col.pair || S.hra === "no") return;
+  const other = S.fund === "hra" ? "gf" : "hra";
+  if(!S.g[other] || !S.g[other][col.pair]) return;
+  S.g[other][col.pair][i] = S.g[S.fund][k][i];
+}
+
 function buildLedger(){
   const CS = colsFor(S.fund, S.hra);
   /* UNDER ONE POOL THE HRA HAS NO LOANS OF ITS OWN, so this column is not the
@@ -10972,7 +11199,7 @@ function buildLedger(){
       const k = e.target.dataset.k, i = +e.target.dataset.i;
       const v = e.target.value.trim();
       if(i === A_IDX) actualCell(k, v === "" ? null : num(v));
-      else S.g[S.fund][k][i] = num(e.target.value);
+      else { S.g[S.fund][k][i] = num(e.target.value); syncCross(k, i); }
       refresh(); });
     inp.addEventListener("focus", e=>{ SEL={k:e.target.dataset.k,i:+e.target.dataset.i};
       e.target.select(); });
@@ -11366,9 +11593,27 @@ function stampSaved(word){
    * PWLB debt, because plenty of them do. What is lost is only the
    * pre-filled book; every other part of the report is unchanged. */
   LB.other = {n:"", o:0, l:0, r:new Array(51).fill(0), d:[]};
-  $("council").innerHTML=`<option value="">Choose an authority…</option>`+
-    keys.map(k=>`<option value="${k}">${esc(LB[k].n)} — £${m1(LB[k].o)}m</option>`).join("")
-    + `<option value="other">Another body — not on the PWLB list</option>`;
+  /* The order they are offered in, and what they are called in the list.
+     Named here rather than in the markup so the list cannot drift from the
+     table below it — and ABOVE the list that reads it, because a const is not
+     hoisted: declared beside DEMOS, 250 lines further down, the list built
+     here threw "Cannot access 'DEMO_ORDER' before initialization" and the
+     whole page came up empty. */
+  const DEMO_ORDER = [["nohra", "Demonstration · a council with no HRA"],
+                      ["one",   "Demonstration · an HRA, one pool"],
+                      ["two",   "Demonstration · an HRA, two pools"]];
+  /* THE DEMONSTRATIONS ARE AUTHORITIES, SO THEY LIVE IN THE AUTHORITY LIST.
+     They were a second dropdown further down the step, which asked a reader
+     to understand the difference between "which authority" and "which
+     demonstration" before they had seen anything at all. Three entries at the
+     top of the one list they were already looking at asks nothing. */
+  $("council").innerHTML=`<option value="">Choose an authority…</option>`
+    + `<optgroup label="See a finished report first">`
+    + DEMO_ORDER.map(([k,t])=>`<option value="demo:${k}">${esc(t)}</option>`).join("")
+    + `</optgroup><optgroup label="Your authority">`
+    + keys.map(k=>`<option value="${k}">${esc(LB[k].n)} — £${m1(LB[k].o)}m</option>`).join("")
+    + `<option value="other">Another body — not on the PWLB list</option>`
+    + `</optgroup>`;
   $("rtype").innerHTML=REPORTS.map(r=>`<option value="${r.k}">${esc(r.t)}</option>`).join("");
   let ys=""; for(let y=2024;y<=2028;y++) ys+=`<option value="${y}"${y===2026?" selected":""}>${fy(y)}</option>`;
   $("fy0").innerHTML=ys;
@@ -11399,7 +11644,16 @@ function stampSaved(word){
     S.fund=b.dataset.f;
     [...$("fundtabs").querySelectorAll("button")].forEach(x=>
       x.setAttribute("aria-pressed", String(x.dataset.f===S.fund)));
-    syncLedger(true); render();
+    /* REBUILD, DO NOT JUST REFILL. Which columns a fund HAS is decided by
+       colsFor(S.fund) inside buildLedger; this handler only ever called
+       syncLedger, which fills values into whatever header is already there.
+       So the HRA tab kept the General Fund's columns and asked the HRA for
+       existing investment commitments, investment income and non-treasury
+       income — three things it cannot have, because the General Fund holds
+       the investments for the authority. syncLedger zeroes anything typed
+       into them, so the figures were never wrong; the question was, and it
+       was asked every time anyone opened the tab. */
+    buildLedger(); syncLedger(true); render();
   });
 
   function otherShown(){
@@ -11408,6 +11662,16 @@ function stampSaved(word){
     if(on && !LB.other.n){ LB.other.n = ""; $("othername").focus(); }
   }
   $("council").addEventListener("change", e=>{
+    /* A demonstration is chosen from the same list. fillDemo sets the real
+       authority underneath it and puts that back in the control, which is
+       also what keeps the entry re-pickable: a <select> fires change only
+       when its value CHANGES, so leaving "Demonstration ·  two pools" showing
+       would make choosing it again do nothing — the failure this control had
+       four times before it was one control. */
+    if(String(e.target.value).startsWith("demo:")){
+      fillDemo(e.target.value.slice(5));
+      return;
+    }
     S.gss=e.target.value; const c=LB[S.gss];
     S.loans=S.loans.filter(l=>!l.pwlb);
     // No PWLB row for a body whose book we do not hold: a line saying "PWLB
@@ -11657,9 +11921,19 @@ function stampSaved(word){
    * edit is the point: there is no list of places to keep up to date, so no
    * edit can be forgotten — anything that changes the state changes this. */
   function workFingerprint(){
+    /* IF THE SAVE FILE CARRIES IT, A PERSON CAN HAVE TYPED IT. Anything the
+       payload holds and this list does not is work the warning cannot see:
+       somebody who set maturity-structure limits, or wrote the portfolio
+       commentary, and then picked a demonstration had it replaced without
+       being asked. Machinery is deliberately excluded — demoStamp and demo
+       because this is what stamps them, asAt and prior because they move on
+       their own, and a field that moves on its own makes an untouched
+       demonstration look touched and brings back the warn-every-time bug the
+       comment above describes. test_coverage.js holds the two lists to each
+       other. */
     return JSON.stringify([S.gss, S.report, S.fy0, S.hra, S.years, S.loans, S.portfolio,
       S.g, S.text, S.limits, S.perf, S.mon, S.choices, S.actual, S.group, S.mat, S.cp,
-      S.minliq]);
+      S.minliq, S.mstruct, S.portfolioText, S.portfolioNote, S.otherName, S.natOverride]);
   }
 
   function hasWork(){
@@ -11694,7 +11968,7 @@ function stampSaved(word){
     if(held && !confirm("This replaces everything with a demonstration authority, "
       + "including work already saved in this browser. Save to a file first if you "
       + "want to keep it.\n\nFill the demonstration?")){
-      $("demokind").value = ""; return;
+      $("council").value = S.gss || ""; return;
     }
     const D = DEMOS[which];
     if(!S.gss){ S.gss = keys.find(k=>LB[k].o>100) || keys[0]; $("council").value = S.gss; }
@@ -11745,6 +12019,43 @@ function stampSaved(word){
       inv_close:   r1(pot),
       inv_max:     r1(pot * 1.35)
     };
+    /* THE THREE INDICATORS THE LADDER ANSWERS, WHICH THE DEMONSTRATION HAD
+       BEEN SILENT ON.
+       
+       The maturity structure, the interest rate exposure and the 364-day
+       limit are all reported only when a limit has been set, which is right
+       for a real authority — an indicator nobody has adopted is not reported.
+       But it meant the demonstration, whose whole job is to show a finished
+       report, printed none of the three. Worse, S.mstruct was the ONE piece
+       of state fillDemo never cleared, so whatever maturity limits were on
+       screen followed the reader into the demonstration and out of it again:
+       the demo appeared to have them because the tester had just typed some.
+       
+       The limits below are the shape a treasury strategy usually takes —
+       nothing under a year beyond a quarter of the book, the long end
+       unconstrained — and they are set against the demonstration's OWN ladder
+       so none of them breaches. A demonstration that opens on a breach
+       teaches the reader to expect one. */
+    S.mstruct = {u12:{lo:0, hi:25}, m24:{lo:0, hi:25}, y5:{lo:0, hi:50},
+                 y10:{lo:0, hi:75}, y10p:{lo:0, hi:100}};
+    /* LOBOs are the defensible call to treat as variable — until the option
+       is exercised the rate is fixed, but it is what could reprice at short
+       notice, which is the question the indicator asks. */
+    const lobo = (S.loans || []).find(x => x.type === "LOBO");
+    /* THE LOAN BOOK, NOT `dbt`. The indicator measures the debt ladder, which
+       is drawn from S.loans; `dbt` above is the LEDGER's opening external
+       debt, and the two are not the same number — 982.1 against 839.4 in the
+       demonstration. Setting the fixed-rate ceiling from `dbt` put it below
+       the fixed debt the same demonstration was reporting, so every demo
+       opened on an EXCEEDED row it had invented for itself. */
+    const book = (S.loans || []).reduce((a, x) => a + (+x.amt || 0), 0) || dbt;
+    S.limits.exp_var     = r1(lobo ? lobo.amt : book * 0.12);
+    S.limits.exp_var_max = r1(book * 0.30);
+    S.limits.exp_fix_max = r1(book);
+    /* Against what the ladder actually shows committed beyond a year, so the
+       demonstration's own figure sits inside its own limit. */
+    const beyond = (typeof inv364 === "function") ? inv364().amt : 0;
+    S.limits.inv364 = r1(Math.max(beyond * 1.5, pot * 0.25));
     /* The demonstration has to fill this too, or an outturn opened from the
        demo shows the new section as an empty grid -- which is exactly the
        hole the check found in the old demo. Budget slightly under actual on
@@ -11919,7 +12230,9 @@ function stampSaved(word){
      * anyone who reached for the one already showing. The cancel path has
      * always reset it; the success path did not. Which demonstration is
      * loaded is said in the line below rather than held in the control. */
-    $("demokind").value = "";
+    /* The control shows the authority the demonstration is built on, which is
+       true, and leaves the demonstration entry free to be chosen again. */
+    $("council").value = S.gss;
     $("saved").textContent = `Demonstration filled — ${D.label}, every section written. `
       + `Every step is filled, including the counterparty policy. `
       + `Change anything; nothing here is fixed.`;
@@ -11931,9 +12244,6 @@ function stampSaved(word){
      tool empty, and the thing that would have shown them what it does was two
      steps further in and looked like it only filled that step. It fills every
      step, so it belongs where the report is set up. */
-  if($("demokind")) $("demokind").addEventListener("change", e => {
-    if(e.target.value) fillDemo(e.target.value);
-  });
 
   // Choices. Each one either lets a clause in or keeps it out, so the count
   // moves as they answer and the draft changes underneath.
