@@ -1311,8 +1311,14 @@ svg.ctip .hits rect{cursor:crosshair}
    every other step — a second "Start" inside the load-a-file box read as
    though starting were something that box did. */
 .s0btns{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.s0foot{font-family:var(--sans);font-size:12px;line-height:1.6;color:var(--muted);
-  border-top:1px solid var(--line);padding-top:14px;margin:0}
+/* THE SAME SIZE AS THE LEDE ABOVE IT. This was 12px muted — fine print, for
+   the two sentences that say what the thing is NOT. A reader who takes the
+   output to committee having skipped them is exactly the reader they are
+   written for, so they are set at the weight of the opening paragraph. The
+   rule above stays, so it still reads as a standing statement rather than a
+   fifth card. */
+.s0foot{font-family:var(--sans);font-size:15px;line-height:1.62;color:var(--ink2);
+  border-top:1px solid var(--line);padding-top:16px;margin:0}
 /* The invitation to load a strategy rather than retype it. Quiet, but not so
    quiet it is missed — it is the difference between typing six figures and
    typing none. */
@@ -1612,24 +1618,25 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
           <p>There is no account, no upload and no server that sees them. What you type is held
             in this browser, and in the files you save to your own machine &mdash; which is
             where your report stays. Nobody here can read it, because there is nowhere for it
-            to have gone. The page does fetch published PWLB and SONIA rates, and its typeface;
-            neither request carries anything of yours.</p>
+            to go. The page only fetches published market data (PWLB and SONIA rates) from this
+            site, and its typeface from Google Fonts; neither request carries any of your
+            data.</p>
         </div>
         <div class="s0card">
           <h3>Every figure is yours</h3>
-          <p>Nothing here is forecast, estimated or filled in on your behalf. The tool does the
-            arithmetic the Codes set out &mdash; the same inputs always give the same output
-            &mdash; and assumes nothing you did not type. You enter a figure once and it reaches
-            every chart, table and indicator that needs it, so the report cannot disagree with
-            itself. A year you leave blank is nil, and the charts show what that implies rather
-            than a guess dressed as one.</p>
+          <p>Nothing here is forecast, estimated or assumed on your behalf. The tool translates
+            your data as the Codes require &mdash; the same inputs always give the same output
+            &mdash; and assumes nothing. You enter a figure once and it reaches every chart,
+            table and indicator that needs it, so the report cannot disagree with itself. A year
+            you leave blank is nil, and the charts show what that implies rather than interpolate
+            or extrapolate a substitute.</p>
         </div>
         <div class="s0card">
           <h3>What it will ask for</h3>
           <p>Your capital financing requirement and reserves by year, the loans and investments
             you hold, a liquidity allowance, and the budget lines across your MTFP. All of it
             comes from your ledger, your treasury system or your capital programme &mdash; the
-            figures step takes a block pasted straight out of Excel.</p>
+            figures can be pasted straight out of Excel.</p>
         </div>
         <div class="s0card">
           <h3>What it will not do</h3>
