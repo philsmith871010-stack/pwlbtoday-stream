@@ -313,9 +313,17 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
   border-bottom:1.5px solid var(--line2)}
 .ledger tr.actualrow td.drv{font-family:var(--mono);font-size:12px;color:var(--accent);
   text-align:right;padding-right:9px;font-weight:600}
-.legendkey{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:8px}
+/* A KEY, NOT TWO BROKEN CHECKBOXES. The swatches were 11x11 with a 1px
+   border and a 2px radius, which is a checkbox in every interface anyone has
+   ever used — so a reader arriving under a grid of inputs saw two controls
+   that would not tick, and reported them as broken. They are wide and short
+   now, which is a colour key and cannot be clicked in error, and the row says
+   what it is before the first one. */
+.legendkey{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:11px;
+  color:var(--muted);margin-top:8px}
 .legendkey span{display:flex;align-items:center;gap:5px}
-.legendkey i{width:11px;height:11px;border-radius:2px;border:1px solid var(--line2)}
+.legendkey .kt{text-transform:uppercase;letter-spacing:.06em;font-size:10px;color:var(--faint)}
+.legendkey i{flex:none;width:20px;height:7px;border-radius:1px;border:1px solid var(--line2)}
 
 /* loans */
 .loans{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
@@ -435,6 +443,20 @@ html.demo p:has(.ph-inline){display:none !important}
   color:var(--faint);line-height:1.4;margin-top:3px}
 .cpb b{font-weight:600;color:var(--muted)}
 .cpb.none{color:var(--faint);font-style:italic}
+/* A COUNCIL COUNT, WHEREVER IT APPEARS. The same badge in all three sections,
+   so a reader learns the notation once. It is deliberately not a link and not
+   a control: it is a fact about other authorities, sitting beside a decision
+   that is the reader's alone. */
+.cpb.cpn{display:inline-block;margin-left:6px;padding:0 5px;border-radius:8px;
+  font-variant-numeric:tabular-nums;background:var(--sunken);color:var(--muted);
+  border:1px solid var(--line);line-height:15px;cursor:help}
+.cpkey{margin:-6px 0 12px;color:var(--faint);font-size:11.5px}
+/* The position a quoted passage illustrates, above the passage. Without it
+   five anonymous quotes are a sample somebody chose; with it they are a range
+   the reader can check, and the rarest position is visibly the rarest. */
+.cpwtag{display:block;font-family:var(--sans);font-size:10px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+.cpwtag b{color:var(--muted);font-weight:600}
 
 .cptable{border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden}
 .cprow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);
@@ -1311,6 +1333,13 @@ svg.ctip .hits rect{cursor:crosshair}
    every other step — a second "Start" inside the load-a-file box read as
    though starting were something that box did. */
 .s0btns{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* Quieter than the way in above it, and not red until you are on it: this is
+   a legitimate thing to want, not a warning. */
+.s0reset{margin-top:12px}
+button.danger{font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 16px;
+  border-radius:6px;cursor:pointer;background:transparent;color:var(--muted);
+  border:1px solid var(--line2)}
+button.danger:hover{color:var(--alert);border-color:var(--alert)}
 /* THE SAME SIZE AS THE LEDE ABOVE IT. This was 12px muted — fine print, for
    the two sentences that say what the thing is NOT. A reader who takes the
    output to committee having skipped them is exactly the reader they are
@@ -1661,6 +1690,25 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
         </div>
       </div>
 
+      <!-- START AGAIN. There was no way to. Every figure autosaves under the
+           authority, report and year, so a form filled in to try the thing out
+           stayed filled in — and the only routes back were to pick a different
+           year or to clear the browser's storage by hand. The wording is
+           deliberate: this cannot reach a file already saved, and it says so,
+           because a reader about to press it wants to know what it CANNOT
+           touch as much as what it can. -->
+      <div class="s0start s0reset">
+        <div>
+          <h3>Start again?</h3>
+          <p>Clears every figure, answer and paragraph for this authority, report and year, and
+            returns you to a blank form. Files you have already saved to your own machine are
+            not touched &mdash; open one to bring it back.</p>
+        </div>
+        <div class="s0btns">
+          <button type="button" id="resetall" class="danger">Clear this report</button>
+        </div>
+      </div>
+
       <p class="s0foot">It is a drafting aid, not a compliance statement, and it is not advice.
         Check every figure before it reaches a committee.</p>
     </div>
@@ -1794,7 +1842,8 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
       </div>
       <div class="ledgerwrap"><table class="ledger" id="ledger"></table></div>
       <div class="legendkey">
-        <span><i style="background:var(--cell)"></i>yours</span>
+        <span class="kt">Key</span>
+        <span><i style="background:var(--cell)"></i>yours to fill in</span>
         <span><i style="border-left:3px solid var(--accent);border-radius:0"></i>your MTFP years</span>
       </div>
       <div class="ltools">
@@ -1834,7 +1883,11 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
       <div id="cpbody"></div>
       <div class="cpsurv-modal" id="cpsurv" hidden>
         <div class="cpsurvhead">
-          <h3>How <span id="cpsurvn">143</span> councils do this</h3>
+          <!-- The heading led with a number nobody had been given a reason for.
+               "Why 143?" is answered inside, in the first line of the panel,
+               where a reader who wants it will look; the heading says what the
+               panel is for. -->
+          <h3>How other councils do it</h3>
           <span class="pvsub">Every published policy we could read. Read only, and it
             recommends nothing.</span>
           <button type="button" class="pvbig" id="cpsurvclose">Close</button>
@@ -2250,7 +2303,13 @@ const MTFP = 5;   // years most authorities actually forecast — marked, not en
 let S = {gss:"", report:"tmss", fy0:2026, asAt:null, natOverride:null,
          view:{ind:"all", fund:"all"}, hra:"no", fund:"gf", years:51,
          loans:[], g:{}, text:{}, sec:"intro",
-         choices:{mrpmethod:"asset", cycle:"thrice"}, rates:[], limits:{}, portfolio:[], portfolioText:"", portfolioNote:"", logo:null,
+         /* NOTHING IS ANSWERED ON THEIR BEHALF. This seeded two of the nineteen
+            questions — an MRP method and a reporting cycle — so a council that had
+            answered nothing arrived at step 5 with two answers already given, the
+            group counter reading "1 of 5" for work nobody had done, and the draft
+            carrying an MRP clause for a method they had never chosen. Step 0 says
+            the tool assumes nothing, and it has to be true here first. */
+         choices:{}, rates:[], limits:{}, portfolio:[], portfolioText:"", portfolioNote:"", logo:null,
          mat:{d:{}, i:{}}, hold:"d"};
 const blank = () => { const o={}; COLS.forEach(c=>o[c.k]=Array(S.years).fill(0)); return o; };
 S.g = {gf:blank(), hra:blank()};
@@ -6085,8 +6144,25 @@ const CHOICES = [
    type:"yesno"},
   {k:"commborrow", g:"Investments",l:"Was any of it acquired with borrowing?", type:"yesno"},
   {k:"mifid", g:"Investments",     l:"Elective professional client under MiFID II?", type:"yesno"},
-  {k:"pwlbtoday", g:"Advice and reporting", l:"Use PWLBtoday for market data, training or counterparty monitoring?",
+  /* THREE USES, THREE QUESTIONS. One yes/no covered market data, counterparty
+     monitoring and training, and gated four clauses across four sections from
+     the single answer — so an authority that takes the rate data but trains
+     its own officers had to answer yes and delete a paragraph, or answer no
+     and lose three. They are separate decisions and a strategy states them
+     separately.
+  
+     And "no" needed somewhere to go. The Code asks an authority to say where
+     its market information comes from, so a no with nothing after it leaves
+     the report worse than the question found it. The source is asked for
+     either way, because an authority that uses PWLBtoday alongside its
+     adviser should name both. */
+  {k:"pwlbdata",  g:"Advice and reporting", l:"Use PWLBtoday for market data?", type:"yesno"},
+  {k:"pwlbcp",    g:"Advice and reporting", l:"Use PWLBtoday for counterparty monitoring?",
    type:"yesno"},
+  {k:"pwlbtrain", g:"Advice and reporting", l:"Use PWLBtoday for officer and member training?",
+   type:"yesno"},
+  {k:"datasource", g:"Advice and reporting", l:"Where your market data comes from", type:"text",
+   ph:"e.g. our treasury adviser's daily rate sheet and the PWLB website"},
   {k:"cycle", g:"Advice and reporting",     l:"Reporting cycle", type:"select",
    opts:[["quarterly","Quarterly"],["thrice","Strategy, mid-year, outturn"],["other","Other"]]}
 ];
@@ -6168,19 +6244,28 @@ const CLAUSES = [
   * might not be true, which is a worse failure than leaving the sentence out.
   * Each still carries {{...}} for the detail only the authority can give.
   * -------------------------------------------------------------------- */
- {sec:"2", when:C=>C.pwlbtoday==="yes", req:"TM Code — market information",
+ {sec:"2", when:C=>C.pwlbdata==="yes", req:"TM Code — market information",
   t:`The authority monitors gilt yields, PWLB certainty and standard rates, Bank Rate and
      money market rates through PWLBtoday, which it uses alongside its adviser's commentary
      to inform the timing of borrowing and investment decisions. Rate movements quoted in
      this report are taken from that source as at {{date}}.`},
 
- {sec:"4", when:C=>C.pwlbtoday==="yes", req:"Prudential Code — borrowing at the lowest cost",
+ /* NAMED WHATEVER THE ANSWER WAS. The Code asks an authority to say where its
+    market information comes from, and that is as true of a council that uses
+    its adviser's sheet as of one that uses ours. Drawn from what they typed,
+    with no comparison and no suggestion — it is their sentence about their
+    own arrangements. */
+ {sec:"2", when:C=>String(C.datasource||"").trim() !== "",
+  req:"TM Code — market information",
+  t:`Market information used in preparing this report is taken from {{datasource}}.`},
+
+ {sec:"4", when:C=>C.pwlbdata==="yes", req:"Prudential Code — borrowing at the lowest cost",
   t:`Before any loan is taken the authority compares the PWLB certainty rate against the
      rates available from other local authorities and from the market on the day, using
      PWLBtoday's published rate history to judge whether the level offered is favourable in
      the context of the recent range rather than in isolation.`},
 
- {sec:"5", when:C=>C.pwlbtoday==="yes", req:"TM Code — creditworthiness of local authority counterparties",
+ {sec:"5", when:C=>C.pwlbcp==="yes", req:"TM Code — creditworthiness of local authority counterparties",
   t:`Lending to other local authorities is not covered by the credit rating agencies, so the
      authority does not rely on ratings for it. It monitors the published financial position
      of prospective borrowing authorities using CouncilIntel, which draws on the statutory
@@ -6304,7 +6389,7 @@ const CLAUSES = [
      rather than a saving in a single year.`},
 
  /* ---- 10b Knowledge, skills and training --------------------------------- */
- {sec:"10b", when:C=>C.pwlbtoday==="yes", req:"TM Code — knowledge and skills",
+ {sec:"10b", when:C=>C.pwlbtrain==="yes", req:"TM Code — knowledge and skills",
   t:`Treasury officers and members with a scrutiny role have access to the PWLBtoday Academy,
      which provides structured training on the Prudential and Treasury Management Codes, the
      liability benchmark and the prudential indicators. Completion is recorded and forms part
@@ -7957,12 +8042,23 @@ function cpRender(){
   // Used by the pooled-fund and instrument grids below. It lived in the block
   // that became the merged table, and taking it out with that block left both
   // grids calling a function that no longer existed.
+  /* ONE NOTATION FOR A COUNCIL COUNT, because there were three. Section 2
+     wrote "34 councils", section 3 wrote a bare "51", section 4 wrote another
+     bare number, and section 1's grey figures are not counts at all — they
+     are the median limit. Four greys, three meanings, explained once at the
+     top of the first section. Every count now renders through here, carries
+     the same title for anyone who hovers, and the same words for a screen
+     reader; each section says once what its grey numbers are. */
+  const cpn = n => n == null ? "" :
+    `<i class="cpb cpn" title="${n} of the ${CPB.councils || 0} surveyed councils"
+       aria-label="${n} of ${CPB.councils || 0} surveyed councils">${n}</i>`;
+
   const chk = (attr, k, t, d, n) => `<label class="cpchk ${
       (attr==="cpi"?c.instr:c.pool)[k] ? "on" : ""}">
       <input type="checkbox" data-${attr}="${k}" ${
       (attr==="cpi"?c.instr:c.pool)[k] ? "checked" : ""}>
       <span><b>${esc(t)}</b>${d?`<em>${esc(d)}</em>`:""}${
-        n!=null?`<i class="cpb">${n}</i>`:""}</span></label>`;
+        cpn(n)}</span></label>`;
 
   /* A row goes into the report because it was TICKED, not because a figure
      was typed into it. The grey figures are the common starting point, and
@@ -8018,10 +8114,10 @@ function cpRender(){
     </div>`;
 
   host.innerHTML = `
-    <div class="cpnote">Grey figures are the common starting point from
+    <div class="cpnote">Grey figures in the boxes below are the <b>median</b> of
       <b>${CPB.councils || 0} authorities'</b> ${esc(CPB.basis_note || "current strategies")},
-      surveyed ${esc(cpAsAt())} — type over them. What is common is not what is
-      right for you.</div>
+      surveyed ${esc(cpAsAt())} — the middle value, not an average, and not weighted.
+      Type over them. What is common is not what is right for you.</div>
 
     <h3 class="cph">1 · Limits, duration and credit quality</h3>
     <p class="cpsub">One line per counterparty type. State a limit per counterparty, an
@@ -8057,6 +8153,7 @@ function cpRender(){
     <div class="cppair">
       <section>
         <h3 class="cph">2 · Counterparties outside the UK</h3>
+        <p class="cpsub cpkey">Grey numbers are how many of the ${CPB.councils || 0} surveyed councils take that position.</p>
         <div class="cpopts tight">
           ${CP_COUNTRY.map(o => {
             /* The figure each option needs, inside the option. A sovereign
@@ -8079,23 +8176,24 @@ function cpRender(){
               <label class="cpoptlab">
                 <input type="radio" name="cpcountry" data-cpc="${o.k}" ${
                   c.country===o.k?"checked":""}>
-                <span><b>${esc(o.t)}</b><i class="cpb">${(CPB.geography||{})[
+                <span><b>${esc(o.t)}</b>${cpn((CPB.geography||{})[
                   o.k==="sovereign"?"sovereign rating floor":
                   o.k==="share"?"capped as a share of funds":
-                  o.k==="conditions"?"permitted, other conditions":"excluded outright"] || 0}
-                  councils</i></span></label>${extra}</div>`;
+                  o.k==="conditions"?"permitted, other conditions":"excluded outright"] || 0)
+                  }</span></label>${extra}</div>`;
           }).join("")}
         </div>
       </section>
       <section>
         <h3 class="cph">3 · Pooled funds &amp; structure</h3>
+        <p class="cpsub cpkey">Grey numbers are how many of the ${CPB.councils || 0} surveyed councils name it.</p>
         <div class="cpchecks tight four">
           ${CP_POOL_TYPES.map(([k,t]) => chk("cpp", k, t)).join("")}
         </div>
         <div class="cprowflex">
           <label class="cpmini"><input type="checkbox" data-cps="split" ${c.split?"checked":""}>
             Specified / non-specified split
-            <i class="cpb">${(CPB.structure||{}).specified_split || 0}</i></label>
+            ${cpn((CPB.structure||{}).specified_split || 0)}</label>
           <label>Non-specified cap £m <input type="text" data-cps="nonspec"
             value="${esc(c.nonspec)}" inputmode="decimal" size="5"></label>
         </div>
@@ -8103,6 +8201,7 @@ function cpRender(){
     </div>
 
     <h3 class="cph">4 · Approved instruments</h3>
+        <p class="cpsub cpkey">Grey numbers are how many of the ${CPB.councils || 0} surveyed councils name it as approved.</p>
     <div class="cpchecks tight five">
       ${CP_INSTRUMENTS.map(([k,t]) => {
         /* No survey figure for ETFs: the corpus was catalogued before they
@@ -8451,10 +8550,27 @@ function cpSurveyHTML(){
     ${tally("Structure", CPB.structure)}
     ${tally("Instruments named as approved", CPB.instruments)}
     ${(CPB.wording||[]).length ? `<h4>How authorities word it</h4>
-      <p class="cpsub">${CPB.wording.length} passages, quoted from published strategies. No
-        authority is named — a policy is a decision its members took, not a specimen.</p>
-      <div class="cpwords">${CPB.wording.map(w=>`<blockquote>${esc(w.text)}</blockquote>`)
-        .join("")}</div>` : ""}`;
+      <!-- WHY THESE ONES. Five anonymous passages invite the reader to ask
+           what was left out, and they are right to: a selection is an argument
+           unless it says what it was selecting for. These are one per POSITION
+           — every distinct posture the corpus takes on a question, including
+           the ones that exclude and the ones that permit — so the set is a
+           range rather than a sample. Each carries the position it illustrates,
+           which is also the only way a reader can tell that the set spans them
+           rather than repeating one. -->
+      <p class="cpsub">One passage for each position the surveyed strategies take on lending
+        outside the UK &mdash; all four of them, including the one only two councils take
+        &mdash; quoted as published. The count beside each is how many take that position, so
+        the spread is visible rather than asserted. No authority is named: a policy is a
+        decision its members took, not a specimen.</p>
+      <div class="cpwords">${CPB.wording.map(w => {
+        const n = (CPB.geography || {})[w.posture];
+        return `<blockquote>${(w.topic || w.posture)
+          ? `<span class="cpwtag">${esc(w.topic || "")}${
+              w.topic && w.posture ? " &middot; " : ""}${esc(w.posture || "")}${
+              n != null ? ` &middot; <b>${n}</b> council${n === 1 ? "" : "s"}` : ""}</span>`
+          : ""}${esc(w.text)}</blockquote>`;
+      }).join("")}</div>` : ""}`;
 }
 
 /* The four parts of this step, each with its own state.
@@ -10106,6 +10222,14 @@ function libNote(gss, report, fy0, extra){
   }, extra || {}));
   libWrite(ix);
 }
+/* And the way back out. Clearing a report has to clear its LINE IN THE INDEX
+   too, or the library goes on offering to reopen something that is no longer
+   there — the offer names a date and an author, so it reads as a real saved
+   version right up to the moment it loads nothing. */
+function libForget(gss, report, fy0){
+  libWrite(libRead().filter(e => e.k !== libKey(gss, report, fy0)));
+}
+
 function libFor(gss){
   return libRead().filter(e => e.gss === gss);
 }
@@ -10180,7 +10304,11 @@ function libSeed(k){
 
   // Carried either way: the words, the answers, the policy, what is held.
   S.text = Object.assign({}, d.text || {});
-  if(d.choices) S.choices = Object.assign({}, d.choices);
+  // Through the same migration as restoreVersion: a report opened from a file
+  // and one restored from the browser must answer the same questions.
+  if(d.choices) S.choices = (typeof migrateChoices === "function")
+    ? migrateChoices(Object.assign({}, d.choices))
+    : Object.assign({}, d.choices);
   S.cp = d.cp ? JSON.parse(JSON.stringify(d.cp)) : S.cp;
   S.loans = (d.loans || []).map(x => Object.assign({}, x));
   S.portfolio = (d.portfolio || []).map(x => Object.assign({}, x));
@@ -11595,6 +11723,24 @@ function saveVersion(quiet){
    literal key "undefined". It was never read; it is not carried forward. */
 function migrateLimits(L){ if(L) delete L["undefined"]; return L || {}; }
 
+/* A REPORT SAVED BEFORE THE QUESTION WAS SPLIT STILL ANSWERED IT.
+ *
+ * One yes/no covered market data, counterparty monitoring and training, and
+ * became three. A file written under the old question carries pwlbtoday and
+ * none of the three, so without this an authority that had answered it opens
+ * last year's strategy to three blanks and a draft that has quietly dropped
+ * four clauses it used to carry. The old answer meant all three, so it sets
+ * all three — and only where the reader has not since answered them. */
+function migrateChoices(C){
+  C = C || {};
+  const old = C.pwlbtoday;
+  if(old === "yes" || old === "no"){
+    ["pwlbdata","pwlbcp","pwlbtrain"].forEach(k => { if(C[k] == null || C[k] === "") C[k] = old; });
+    delete C.pwlbtoday;
+  }
+  return C;
+}
+
 function migratePerf(p){
   Object.keys(p || {}).forEach(k => {
     const r = p[k];
@@ -11638,7 +11784,7 @@ function restoreVersion(quiet){
     S.fy0=d.fy0; S.hra=d.hra; S.years=d.years||51; S.loans=d.loans||[];
     S.g=migrateGrid(d.g, d.years||51);
     S.text=d.text||{}; S.limits=migrateLimits(d.limits); S.perf=migratePerf(d.perf||{}); S.mon=d.mon||{};
-    if(d.choices) S.choices=d.choices;
+    if(d.choices) S.choices=migrateChoices(d.choices);
     S.portfolio=d.portfolio||[]; S.portfolioText=d.portfolioText||"";
     S.portfolioNote=d.portfolioNote||"";
     S.mat=d.mat||{d:{},i:{}};
@@ -11822,6 +11968,34 @@ function stampSaved(word){
   $("council").addEventListener("blur", e => {
     if(e.target.value === "") e.target.value = councilValue();
   });
+  /* START AGAIN.
+  
+     RELOADING RATHER THAN RESETTING THE STATE BY HAND. S has some forty keys
+     and the blank value of each is written in one place, in ui.js. Listing
+     them again here would be a second copy that drifts — and the first field
+     somebody adds without remembering this handler is a field that survives a
+     reset, which is worse than no reset at all. Clearing the two storage keys
+     and reloading gets the real initial state, whatever it is that day.
+  
+     NO_SAVE first, because autosave runs on a timer and on the way out: it
+     would otherwise write the state back over the key between the click and
+     the reload, and the report would come back from the dead. */
+  const rst = $("resetall");
+  if(rst) rst.addEventListener("click", () => {
+    const who = (LB[S.gss] || {}).n || S.otherName || "this authority";
+    if(!confirm("Clear everything for " + who + " \u2014 "
+      + ((REPORTS.find(r => r.k === S.report) || {}).t || S.report) + ", " + fy(S.fy0)
+      + "?\n\nEvery figure, answer and paragraph goes, and this cannot be undone here. "
+      + "Files you have saved to your own machine are not touched.")) return;
+    NO_SAVE = true;
+    try{
+      localStorage.removeItem(KEY());
+      localStorage.removeItem(KEY_OLD());
+      if(typeof libForget === "function") libForget(S.gss, S.report, S.fy0);
+    }catch(_){}
+    location.reload();
+  });
+
   $("othername").addEventListener("input", e=>{
     LB.other.n = e.target.value.trim(); S.otherName = LB.other.n; render(); });
   $("otherreg").addEventListener("change", e=>{
@@ -12316,7 +12490,15 @@ function stampSaved(word){
     S.choices = {adviser:"Example Treasury Advisers", mrpmethod:"asset", lfmethod:"annuity",
                  cycle:"thrice", vrp:"no", advance:"no", resched:"no",
                  pooled:"yes", nontreas:"no", mifid:"yes",
-                 commprop:"no", commborrow:"no", pwlbtoday:"yes",
+                 commprop:"no", commborrow:"no",
+                 /* The one question became three, and a demonstration answers
+                    all of them or step 4 drops from a tick to part-done. They
+                    are not all "yes": a preset that takes every one of our own
+                    services is an advertisement rather than an example, and
+                    the three are separate questions precisely so an authority
+                    can answer them separately. */
+                 pwlbdata:"yes", pwlbcp:"yes", pwlbtrain:"no",
+                 datasource:"PWLBtoday and our adviser's daily rate sheet",
                  committee:"Audit and Governance Committee",
                  wrapsummary:"yes", wrapfin:"yes", wraplegal:"yes", wraprisk:"yes",
                  wrapequality:"yes", wrapclimate:"yes",
@@ -12429,8 +12611,13 @@ function stampSaved(word){
         return `<input type="text" id="c_${c.k}" data-c="${c.k}" value="${esc(v)}"
                   placeholder="${esc(c.ph||"")}">`;
       const opts = c.type === "yesno" ? [["yes","Yes"],["no","No"]] : c.opts;
+      /* THE BLANK IS ON EVERY SELECT, not only the yes/no ones. A dropdown of
+         real options with no blank shows its first option, so an MRP method
+         nobody had chosen sat on screen looking chosen — and the only way to
+         answer "asset life" deliberately was to pick something else and come
+         back. A question is answered when somebody answers it. */
       return `<select id="c_${c.k}" data-c="${c.k}">
-        ${c.type==="yesno" ? `<option value=""${v?"":" selected"}>—</option>` : ""}
+        <option value=""${v?"":" selected"}>—</option>
         ${opts.map(([k,t])=>`<option value="${k}"${v===k?" selected":""}>${esc(t)}</option>`).join("")}
       </select>`;
     };
@@ -12740,7 +12927,8 @@ function stampSaved(word){
   function cpSurvey(on){
     const m = $("cpsurv");
     if(on){
-      $("cpsurvn").textContent = CPB.councils || 0;
+      // The count moved out of the heading and into the panel's opening line,
+      // where cpSurveyHTML writes it with the sentence that explains it.
       $("cpsurvbody").innerHTML = cpSurveyHTML();
     }
     m.hidden = !on;
