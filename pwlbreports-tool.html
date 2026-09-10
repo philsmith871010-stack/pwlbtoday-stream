@@ -35,7 +35,14 @@
      published images pixel by pixel, not matched by eye. */
   --l-cfr:#1f5879;    /* capital financing requirement   blue   */
   --l-obs:#ed7d31;    /* other balance sheet items       orange */
-  --l-ntp:#316826;    /* net treasury position           green  */
+  /* LIGHTENED, AND THE ONE PLACE WE DEPART FROM THE SAMPLED PALETTE. CIPFA
+     draws the net position #316826, and against their own liability benchmark
+     blue #1f5879 the two lines differ in lightness by a ratio of 1.15 — which
+     on a 2.2px line is no difference at all, and readers said so. This is the
+     same green a step lighter, 2.29 against the blue, so the two can be told
+     apart at a glance. Every other line here is still theirs, pixel for
+     pixel. Revert to #316826 to match the consultation exactly. */
+  --l-ntp:#4a9e3a;    /* net treasury position           green  */
   --l-lb:#1f5879;     /* liability benchmark             blue   */
   --l-al:#e4341d;     /* authorised limit                red, dashed */
   --l-inv:#ed7d31;    /* treasury investment benchmark   orange */
@@ -438,6 +445,14 @@ html.demo p:has(.ph-inline){display:none !important}
   font-variant-numeric:tabular-nums;background:var(--sunken);color:var(--muted);
   border:1px solid var(--line);line-height:15px;cursor:help}
 .cpkey{margin:-6px 0 12px;color:var(--faint);font-size:11.5px}
+/* A mark you can ignore. Deliberately not a link and not a step in the tab
+   order's way — the answer is in its title and in its aria-label, so a reader
+   who wants it gets it and a reader filling the form never meets it. */
+.infoi{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+  margin-left:7px;padding:0;border-radius:50%;border:1px solid var(--line2);
+  background:transparent;color:var(--muted);font-family:var(--serif);font-style:italic;
+  font-size:11px;line-height:1;cursor:help;vertical-align:middle}
+.infoi:hover{color:var(--accent);border-color:var(--accent)}
 /* The position a quoted passage illustrates, above the passage. Without it
    five anonymous quotes are a sample somebody chose; with it they are a range
    the reader can check, and the rarest position is visibly the rarest. */
@@ -5179,10 +5194,30 @@ function expoPanel(){
     esc(hint)}</span></label><input type="text" inputmode="decimal" id="L_${k}"
     class="${w ? "wantfill" : ""}"${w ? ' aria-describedby="exponote"' : ""}
     data-lim="${k}" value="${(S.limits||{})[k] == null ? "" : (S.limits||{})[k]}"></div>`; };
-  return `<h4 class="ladh">Interest rate exposure</h4>
+  /* WHAT THE BOXES ARE FOR, WHERE SOMEBODY IS LOOKING AT THEM. The panel told
+     a reader the rule — fixed is the rest of the book — and never told them
+     the thing they actually stop on, which is which of their own loans counts
+     as floating. A LOBO is the case: until the option is exercised the rate is
+     fixed, so a strict reading says fixed, and a council that treats it as
+     variable is making a defensible call about what could reprice at short
+     notice. That judgement was in a code comment nobody using the tool can
+     read. It is now on the panel, behind a mark you can ignore. */
+  const info = (t) => `<button type="button" class="infoi" aria-label="${esc(t)}"
+    title="${esc(t)}">i</button>`;
+  return `<h4 class="ladh">Interest rate exposure ${info(
+      "The Code asks what share of the debt could reprice within the year. The ladder "
+      + "cannot answer it: repricing is a property of the loan, not of when it matures. "
+      + "So the floating part is entered once here and fixed is the rest.")}</h4>
     <p class="hintline">How much of the debt reprices with the market, against the upper
       limits members set on each. Fixed is the rest of the book, so it is not asked for twice.
       Leave the limits blank and the indicator is not reported.</p>
+    <p class="hintline"><b>Which of yours are variable?</b> Anything on a rate that can move
+      within the year &mdash; short-term and temporary borrowing, variable-rate market loans,
+      and a LOBO if you treat it as one. A LOBO sits on the line: until the lender exercises
+      the option the rate is fixed, so a strict reading says fixed, and a council that counts
+      it as variable is making a defensible call about what could reprice at short notice.
+      Whichever you choose, say which in your commentary. Everything at a rate fixed to
+      maturity &mdash; PWLB fixed-rate loans, fixed market loans &mdash; is the rest.</p>
     <div class="setup">
       ${box("exp_var", "Debt at variable rates", "of £" + m1(x.tot) + "m held")
         .replace("<span class=\"hint\">", "<span class=\"hint\" id=\"expo_tot\">")}
@@ -6033,14 +6068,21 @@ function plainly(tag, d){
   if(tag === "LB5"){
     const pk = d.reduce((m,r)=> r.inv > m.inv ? r : m, a);
     const ex = d.reduce((m,r)=> r.excess > m.excess ? r : m, a);
+    /* "RISING TO" THE NUMBER IT STARTED AT. pk is the peak year, found by
+       reduce starting from the first year — so on a balance that only falls,
+       which is most authorities, the peak IS the first year and the sentence
+       read "about £11.1m of cash, rising to £11.1m". The second wording had
+       the same shape: "about £11.1m, at most £11.1m". The clause is only
+       written when the balance actually moves. */
+    const rises = pk.inv > a.inv + 0.05;
     if(ex.excess > 0.05)
       return `In plain terms: the council expects to be holding about <b>£${m1(a.inv)}m</b> of
-        cash invested, rising to <b>£${m1(pk.inv)}m</b>. Some of that — up to
+        cash${rises ? `, rising to <b>£${m1(pk.inv)}m</b>` : ""}. Some of that — up to
         <b>£${m1(ex.excess)}m</b> — is money it borrowed before it needed it, and holding it
         costs more than it earns.`;
-    return `In plain terms: the council expects to hold about <b>£${m1(a.inv)}m</b> of cash
-      invested, at most <b>£${m1(pk.inv)}m</b>. The floor of <b>£${m1(a.liq)}m</b> is what it
-      keeps back simply to pay its bills on time.`;
+    return `In plain terms: the council expects to hold about <b>£${m1(a.inv)}m</b> of
+      cash${rises ? `, and at most <b>£${m1(pk.inv)}m</b>` : ""}. The floor of
+      <b>£${m1(a.liq)}m</b> is what it keeps back simply to pay its bills on time.`;
   }
   return "";
 }
@@ -12581,7 +12623,7 @@ function stampSaved(word){
         ${opts.map(([k,t])=>`<option value="${k}"${v===k?" selected":""}>${esc(t)}</option>`).join("")}
       </select>`;
     };
-    $("choices").innerHTML = CHOICE_GROUPS.map(g => {
+    const draw = () => { $("choices").innerHTML = CHOICE_GROUPS.map(g => {
       const list = avail.filter(c => c.g === g);
       if(!list.length) return "";
       const answered = list.filter(c => C[c.k]).length;
@@ -12590,10 +12632,28 @@ function stampSaved(word){
         ${list.map(c => `<div class="qrow ${c.type==="yesno"?"narrow":""} ${C[c.k]?"done":""}">
           <label for="c_${c.k}">${esc(c.l)}</label>${field(c)}</div>`).join("")}
       </section>`;
-    }).join("");
+    }).join(""); };
+    if(typeof keepFocus === "function") keepFocus($("choices"), draw); else draw();
+    /* ONE LETTER AND YOU WERE OUT OF THE BOX.
+    
+       This rebuilt the whole question list synchronously on every keystroke,
+       and the rebuild replaces every input in it — so typing into the adviser,
+       the committee or the market-data source destroyed the box after the
+       first character and dropped focus to <body>. A dropdown survived it
+       because you only touch a dropdown once; a text field did not, and there
+       are four of them.
+    
+       The same defect the period's figures and the wording step had, in the
+       one panel that never got the fix. Debounced so the rebuild happens once
+       you pause, and wrapped in keepFocus so the box you are in comes back
+       with what you typed and the caret where you left it. */
     $("choices").querySelectorAll("input,select").forEach(el =>
-      el.addEventListener("input", e => { S.choices[e.target.dataset.c] = e.target.value;
-        countClauses(); renderSections(); render(); renderChoices(); }));
+      el.addEventListener("input", e => {
+        S.choices[e.target.dataset.c] = e.target.value;
+        countClauses();
+        clearTimeout(S._c);
+        S._c = setTimeout(() => { renderSections(); render(); renderChoices(); }, 400);
+      }));
     countClauses();
   }
   function countClauses(){
