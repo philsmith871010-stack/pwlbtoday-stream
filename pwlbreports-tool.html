@@ -340,21 +340,9 @@ table.ledger tbody tr td input:focus{background:var(--accent-soft);outline-offse
 
 /* output */
 .doc{padding:44px 60px 50px;font-family:var(--serif)}
-/* Reel mode: the document, and nothing that is not the document. Driven by
-   ?reel=<demo> and framed by the landing page, so what a visitor scrolls
-   through is the live tool rather than a screenshot that will go stale. */
-html.reel .railwrap,html.reel .stepnav,html.reel .panel:not(.doc),
-html.reel #pv,html.reel .stamp,html.reel header{display:none !important}
-html.reel .shell{max-width:none;padding:0}
-html.reel body{background:var(--card)}
-html.reel .panel.doc{border:0;box-shadow:none;margin:0;border-radius:0}
-html.reel .doc{padding:52px 64px 60px}
-html.reel .docnav{display:none}
 /* Tool affordances are not part of the report. The "sections still to be
    written" banner and the WHY tags are the tool talking to its author; a
    visitor is being shown the document, not the workshop. */
-html.reel .warn,html.reel .why,html.reel .reqtag,
-html.reel .pick,html.reel .picker,html.reel .pickhint{display:none !important}
 /* A clause's own inline prompt — "Explain how the authority obtains market
    intelligence…" — is an instruction to the author, and there are nine of
    them. Hiding just the span would leave the sentence around it broken, so
@@ -366,7 +354,6 @@ html.reel .pick,html.reel .picker,html.reel .pickhint{display:none !important}
    seen from the tool rather than from the landing page, so it hides them too.
    This is the orange: .ph-inline is the marker, and three clauses are nothing
    BUT one — "Set out new borrowing taken: amount, rate, maturity...". */
-html.reel p:has(.ph-inline),
 html.demo p:has(.ph-inline){display:none !important}
 /* .lbtag stays: "LB2" names the Code indicator the chart is, which is the
    report saying what it is showing, not the tool saying anything. */
@@ -1736,7 +1723,14 @@ td.nask{background:repeating-linear-gradient(45deg,var(--hair),var(--hair) 4px,
       <div><label for="rtype">Report</label><select id="rtype"></select></div>
       <div><label for="fy0">First year</label>
         <select id="fy0"></select></div>
-      <div><label for="asat">Report as at</label>
+      <!-- WHERE THE AWARENESS LIVES NOW. It used to be four clauses naming our
+           own services inside the authority's strategy, which is their
+           document and not ours to advertise in. This is a plain statement of
+           where the data THIS TOOL ships comes from, in the tool, next to the
+           date it is as at — a fact about our own product, said in our own
+           product, which the reader can act on or ignore. -->
+      <div><label for="asat">Report as at<span class="hint">the PWLB and SONIA rates
+        that ship with this tool are PWLBtoday's, as at this date</span></label>
         <input type="date" id="asat"></div>
       <div><label for="hra">HRA</label>
         <select id="hra"><option value="no">No HRA</option><option value="one">One pool</option>
@@ -6144,23 +6138,19 @@ const CHOICES = [
    type:"yesno"},
   {k:"commborrow", g:"Investments",l:"Was any of it acquired with borrowing?", type:"yesno"},
   {k:"mifid", g:"Investments",     l:"Elective professional client under MiFID II?", type:"yesno"},
-  /* THREE USES, THREE QUESTIONS. One yes/no covered market data, counterparty
-     monitoring and training, and gated four clauses across four sections from
-     the single answer — so an authority that takes the rate data but trains
-     its own officers had to answer yes and delete a paragraph, or answer no
-     and lose three. They are separate decisions and a strategy states them
-     separately.
+  /* OUR OWN PRODUCT IS NOT DRAFTED INTO THEIR COMMITTEE PAPER.
   
-     And "no" needed somewhere to go. The Code asks an authority to say where
-     its market information comes from, so a no with nothing after it leaves
-     the report worse than the question found it. The source is asked for
-     either way, because an authority that uses PWLBtoday alongside its
-     adviser should name both. */
-  {k:"pwlbdata",  g:"Advice and reporting", l:"Use PWLBtoday for market data?", type:"yesno"},
-  {k:"pwlbcp",    g:"Advice and reporting", l:"Use PWLBtoday for counterparty monitoring?",
-   type:"yesno"},
-  {k:"pwlbtrain", g:"Advice and reporting", l:"Use PWLBtoday for officer and member training?",
-   type:"yesno"},
+     There were three questions here — market data, counterparty monitoring,
+     training — each gating a clause that named our own services in the
+     authority's own strategy. However the question is worded, a tool that
+     writes its vendor into the document it produces is using the section 151
+     officer's report as a sales channel, and the officer signs it.
+  
+     What survives is the half the Code actually asks for: name the source of
+     your market information. Whatever they type is what the clause says, and
+     for a council that does use us that is where we appear — because they
+     wrote it. Where the tool says what IT uses is beside the rates it ships,
+     in the tool, where a claim about us is ours to make. */
   {k:"datasource", g:"Advice and reporting", l:"Where your market data comes from", type:"text",
    ph:"e.g. our treasury adviser's daily rate sheet and the PWLB website"},
   {k:"cycle", g:"Advice and reporting",     l:"Reporting cycle", type:"select",
@@ -6244,39 +6234,13 @@ const CLAUSES = [
   * might not be true, which is a worse failure than leaving the sentence out.
   * Each still carries {{...}} for the detail only the authority can give.
   * -------------------------------------------------------------------- */
- {sec:"2", when:C=>C.pwlbdata==="yes", req:"TM Code — market information",
-  t:`The authority monitors gilt yields, PWLB certainty and standard rates, Bank Rate and
-     money market rates through PWLBtoday, which it uses alongside its adviser's commentary
-     to inform the timing of borrowing and investment decisions. Rate movements quoted in
-     this report are taken from that source as at {{date}}.`},
 
- /* NAMED WHATEVER THE ANSWER WAS. The Code asks an authority to say where its
-    market information comes from, and that is as true of a council that uses
-    its adviser's sheet as of one that uses ours. Drawn from what they typed,
-    with no comparison and no suggestion — it is their sentence about their
-    own arrangements. */
  {sec:"2", when:C=>String(C.datasource||"").trim() !== "",
   req:"TM Code — market information",
   t:`Market information used in preparing this report is taken from {{datasource}}.`},
 
- {sec:"4", when:C=>C.pwlbdata==="yes", req:"Prudential Code — borrowing at the lowest cost",
-  t:`Before any loan is taken the authority compares the PWLB certainty rate against the
-     rates available from other local authorities and from the market on the day, using
-     PWLBtoday's published rate history to judge whether the level offered is favourable in
-     the context of the recent range rather than in isolation.`},
 
- {sec:"5", when:C=>C.pwlbcp==="yes", req:"TM Code — creditworthiness of local authority counterparties",
-  t:`Lending to other local authorities is not covered by the credit rating agencies, so the
-     authority does not rely on ratings for it. It monitors the published financial position
-     of prospective borrowing authorities using CouncilIntel, which draws on the statutory
-     returns to MHCLG and on the authorities' own published committee papers, and takes
-     account of indicators of financial stress — the level of reserves against net revenue
-     expenditure, debt against the capital financing requirement, exceptional financial
-     support, and any auditor's statutory recommendation or section 24 notice — before a
-     loan is placed. {{State the limit and maximum duration applied to a local authority
-     counterparty, and who reviews the assessment.}}`},
 
- /* ---- 5 Investments ----------------------------------------------------- */
  {sec:"5", always:true, req:"TM Code — security, liquidity, yield in that order",
   t:`The authority's risk appetite for treasury investment is low. Its priorities are, in
      order, the security of the sum invested, then sufficient liquidity to meet its cash flow
@@ -6389,13 +6353,7 @@ const CLAUSES = [
      rather than a saving in a single year.`},
 
  /* ---- 10b Knowledge, skills and training --------------------------------- */
- {sec:"10b", when:C=>C.pwlbtrain==="yes", req:"TM Code — knowledge and skills",
-  t:`Treasury officers and members with a scrutiny role have access to the PWLBtoday Academy,
-     which provides structured training on the Prudential and Treasury Management Codes, the
-     liability benchmark and the prudential indicators. Completion is recorded and forms part
-     of the annual assessment of whether the authority's treasury knowledge and skills remain
-     adequate to its activity. {{State who completed which modules in the period, and what
-     the assessment concluded.}}`},
+
  {sec:"10b", always:true, req:"TM Code — knowledge and skills",
   t:`The Treasury Management Code requires the authority to ensure that everyone involved in
      the treasury management function has the knowledge and skills to discharge the duties
@@ -8050,8 +8008,8 @@ function cpRender(){
      the same title for anyone who hovers, and the same words for a screen
      reader; each section says once what its grey numbers are. */
   const cpn = n => n == null ? "" :
-    `<i class="cpb cpn" title="${n} of the ${CPB.councils || 0} surveyed councils"
-       aria-label="${n} of ${CPB.councils || 0} surveyed councils">${n}</i>`;
+    `<i class="cpb cpn" title="${n} of the published strategies we read state this"
+       aria-label="${n} of the published strategies we read">${n}</i>`;
 
   const chk = (attr, k, t, d, n) => `<label class="cpchk ${
       (attr==="cpi"?c.instr:c.pool)[k] ? "on" : ""}">
@@ -8114,8 +8072,8 @@ function cpRender(){
     </div>`;
 
   host.innerHTML = `
-    <div class="cpnote">Grey figures in the boxes below are the <b>median</b> of
-      <b>${CPB.councils || 0} authorities'</b> ${esc(CPB.basis_note || "current strategies")},
+    <div class="cpnote">Grey figures in the boxes below are the <b>median</b> of the
+      published ${esc(CPB.basis_note || "current strategies")} we were able to read,
       surveyed ${esc(cpAsAt())} — the middle value, not an average, and not weighted.
       Type over them. What is common is not what is right for you.</div>
 
@@ -8153,7 +8111,7 @@ function cpRender(){
     <div class="cppair">
       <section>
         <h3 class="cph">2 · Counterparties outside the UK</h3>
-        <p class="cpsub cpkey">Grey numbers are how many of the ${CPB.councils || 0} surveyed councils take that position.</p>
+        <p class="cpsub cpkey">Grey numbers are how many of the strategies we read take that position.</p>
         <div class="cpopts tight">
           ${CP_COUNTRY.map(o => {
             /* The figure each option needs, inside the option. A sovereign
@@ -8186,7 +8144,7 @@ function cpRender(){
       </section>
       <section>
         <h3 class="cph">3 · Pooled funds &amp; structure</h3>
-        <p class="cpsub cpkey">Grey numbers are how many of the ${CPB.councils || 0} surveyed councils name it.</p>
+        <p class="cpsub cpkey">Grey numbers are how many of the strategies we read name it.</p>
         <div class="cpchecks tight four">
           ${CP_POOL_TYPES.map(([k,t]) => chk("cpp", k, t)).join("")}
         </div>
@@ -8201,7 +8159,7 @@ function cpRender(){
     </div>
 
     <h3 class="cph">4 · Approved instruments</h3>
-        <p class="cpsub cpkey">Grey numbers are how many of the ${CPB.councils || 0} surveyed councils name it as approved.</p>
+        <p class="cpsub cpkey">Grey numbers are how many of the strategies we read name it as approved.</p>
     <div class="cpchecks tight five">
       ${CP_INSTRUMENTS.map(([k,t]) => {
         /* No survey figure for ETFs: the corpus was catalogued before they
@@ -8471,7 +8429,7 @@ function cpProgress(){
 }
 
 /* ===========================================================================
- * How 143 councils do this.
+ * How other councils do it.
  *
  * The survey is already beside every question — a bar with the middle half,
  * the median and where the authority's own figure falls. That is the right
@@ -8531,10 +8489,11 @@ function cpSurveyHTML(){
   };
 
   return `<p class="cpsub">Every counterparty policy we could read from a published
-      strategy: <b>${CPB.councils}</b> authorities, <b>${CPB.rows}</b> separate limits,
-      surveyed ${esc(cpAsAt())}. Counts differ by row because not every authority
-      publishes every measure — the <i>n</i> is given so a median over nine councils is not
-      read as one over a hundred. Nothing here is a recommendation.</p>
+      strategy, surveyed ${esc(cpAsAt())} &mdash; <b>${CPB.rows}</b> separate limits between
+      them. Counts differ by row because not every authority publishes every measure, so the
+      <i>n</i> is given on each: a median over nine strategies is not the same fact as a median
+      over a hundred, and only the <i>n</i> tells them apart. Nothing here is a
+      recommendation.</p>
     <div class="cpsurvwrap"><table class="otable cpsurv">
       <thead>
         <tr class="grp"><th rowspan="2" class="w">Counterparty type</th>
@@ -8544,7 +8503,7 @@ function cpSurveyHTML(){
             <th class="g n">n</th><th>25th</th><th>median</th><th>75th</th><th>max</th></tr>
       </thead><tbody>${rows}</tbody></table></div>
     ${tally("What the limit is measured against", CPB.basis,
-            "More than one may apply, so these do not sum to " + CPB.councils + ".")}
+            "More than one may apply, so these do not sum to the number of strategies read.")}
     ${tally("Minimum long-term rating, by agency named", CPB.ratings)}
     ${tally("Counterparties outside the UK", CPB.geography)}
     ${tally("Structure", CPB.structure)}
@@ -8599,8 +8558,8 @@ function cpIndexHTML(){
   return b.map(x => `<button type="button" class="cpix${x.on?" on":""}" data-cpix="${x.n}">
       <i>${x.on ? "✓" : x.n}</i>${esc(x.t)}</button>`).join("")
     + `<span class="sp"></span>
-       <button type="button" class="cpix" id="cpsurvopen">How ${CPB.councils||0} councils
-         do this</button>`;
+       <button type="button" class="cpix" id="cpsurvopen">How other councils
+         do it</button>`;
 }
 
 /* ===========================================================================
@@ -8680,8 +8639,9 @@ function docSections(){
      rather than from the landing page. There is nothing for an author to
      write in a demonstration, so a red "To be written" block in one was
      telling the reader the example was unfinished. */
-  const gap = (what, key) => (typeof REEL_GAPS !== "undefined" && key && REEL_GAPS[key]
-      && (S.demo || document.documentElement.classList.contains("reel")))
+  // The "reel" class went with the ?reel= mode; a demonstration is the only
+  // thing that fills these now.
+  const gap = (what, key) => (typeof REEL_GAPS !== "undefined" && key && REEL_GAPS[key] && S.demo)
     ? para(REEL_GAPS[key])
     : `<p class="gap">To be written: ${esc(what)}</p>`;
   const peakNeed = d.reduce((a,b)=>b.need>a.need?b:a,d[0]);
@@ -11106,7 +11066,7 @@ function stepStatus(k){
   if(k === "counterparty"){
     const p = cpProgress();
     if(!p.limits && !p.done) return {state:"", note:"No policy set",
-      need:`Set your counterparty limits — every question shows what ${CPB.councils} authorities publish.`};
+      need:`Set your counterparty limits — every question shows what published strategies do.`};
     const bits = [];
     if(p.limits) bits.push(`${p.limits} sector${p.limits===1?"":"s"} limited`);
     if(S.cp && S.cp.country) bits.push("country policy set");
@@ -11668,12 +11628,13 @@ const KEY_OLD = () => `lb:${S.gss||"none"}:${S.report}`;
  * Debounced, because this runs off render() and render() runs on a keystroke.
  */
 let _auto = null;
-/* Reel mode never writes. The landing page frames the tool with ?reel=, and
-   the demonstration it fills is saved under exactly the key a real visitor's
-   own work uses — authority, report type, opening year. Left alone, opening
-   the marketing page would silently overwrite an Aberdeen City strategy
-   somebody had been drafting. A page that shows you the product must not be
-   able to destroy your copy of it. */
+/* A LATCH THAT STOPS ANYTHING WRITING. It was raised for the ?reel= mode,
+   which framed the tool on the landing page and would otherwise have saved
+   its demonstration over a real visitor's own draft — same authority, same
+   report type, same year, same key. That mode is gone; the latch is what
+   "Clear this report" sets before it reloads, because autosave runs on a
+   timer and would otherwise write the state back over the key it had just
+   removed. */
 let NO_SAVE = false;
 
 function autoSave(){
@@ -11733,11 +11694,14 @@ function migrateLimits(L){ if(L) delete L["undefined"]; return L || {}; }
  * all three — and only where the reader has not since answered them. */
 function migrateChoices(C){
   C = C || {};
-  const old = C.pwlbtoday;
-  if(old === "yes" || old === "no"){
-    ["pwlbdata","pwlbcp","pwlbtrain"].forEach(k => { if(C[k] == null || C[k] === "") C[k] = old; });
-    delete C.pwlbtoday;
-  }
+  /* THE QUESTIONS ABOUT US ARE RETIRED, AND SO ARE THEIR ANSWERS. They gated
+     clauses that named our own services in the authority's strategy; the
+     clauses are gone, so an answer left in the payload would sit in the file
+     for ever gating nothing. Removed rather than migrated: there is no new
+     question that means the same thing, because the question should not have
+     been asked. The market-data source they typed is untouched — that one the
+     Code does ask for. */
+  ["pwlbtoday","pwlbdata","pwlbcp","pwlbtrain"].forEach(k => { delete C[k]; });
   return C;
 }
 
@@ -12491,14 +12455,10 @@ function stampSaved(word){
                  cycle:"thrice", vrp:"no", advance:"no", resched:"no",
                  pooled:"yes", nontreas:"no", mifid:"yes",
                  commprop:"no", commborrow:"no",
-                 /* The one question became three, and a demonstration answers
-                    all of them or step 4 drops from a tick to part-done. They
-                    are not all "yes": a preset that takes every one of our own
-                    services is an advertisement rather than an example, and
-                    the three are separate questions precisely so an authority
-                    can answer them separately. */
-                 pwlbdata:"yes", pwlbcp:"yes", pwlbtrain:"no",
-                 datasource:"PWLBtoday and our adviser's daily rate sheet",
+                 /* Not us. The demonstration is what a reader takes for the
+                    house style, and naming our own service in it is the same
+                    advertisement the clauses used to carry, moved. */
+                 datasource:"our adviser's daily rate sheet and the PWLB website",
                  committee:"Audit and Governance Committee",
                  wrapsummary:"yes", wrapfin:"yes", wraplegal:"yes", wraprisk:"yes",
                  wrapequality:"yes", wrapclimate:"yes",
@@ -13001,49 +12961,15 @@ function stampSaved(word){
   wireSteps();
   wireNumericFields();
 
-  /* ---- reel mode ---------------------------------------------------------
-   *
-   * ?reel=one — fill that demonstration, open the draft, and hide everything
-   * that is not the document: the step rail, the export buttons, the section
-   * rail, the panel chrome. The landing page frames this and scrolls it, so
-   * what a visitor sees really is the report the tool produces rather than a
-   * picture of one taken at some point in the past. A copied screenshot goes
-   * stale silently; this cannot, because it IS the tool.
-   *
-   * Nothing here is reachable without the parameter, and the parameter only
-   * ever fills a demonstration — there is no state it can reach that a
-   * visitor could not reach by choosing the same demonstration by hand.
-   * -------------------------------------------------------------------- */
-  const reel = new URLSearchParams(location.search).get("reel");
-  if(reel && DEMOS[reel]){
-    // Set BEFORE the demonstration is filled, not after: fillDemo saves once
-    // itself, and every render after it queues another.
-    NO_SAVE = true;
-    document.documentElement.classList.add("reel");
-    /* A real published loan book under a fictional name. The arithmetic is
-       real; the adviser contract, the training record, the reserves and the
-       committee are invented, and attaching those to a named council — on a
-       public page, in a document designed to look finished — would be a
-       fabricated report about a real organisation. */
-    if(LB[REEL_GSS]){
-      S.gss = REEL_GSS;
-      const sel = $("council"); if(sel) sel.value = REEL_GSS;
-      // Renamed BEFORE the demonstration is filled, not after: fillDemo draws
-      // the crest from the authority's name, so a later rename left a report
-      // headed "Example Borough Council" wearing Sheffield's initial.
-      LB[REEL_GSS].n = REEL_NAME;
-    }
-    fillDemo(reel);
-    // Prose in place of every prompt the draft would otherwise raise. Reel
-    // only: a real user filling the demonstration keeps the prompts, because
-    // for them the prompts are the useful part.
-    Object.keys(REEL_TEXT).forEach(k => { S.text[k] = REEL_TEXT[k]; });
-    showStep(DRAFT_STEP);
-    render();
-    // The section rail is navigation, and a reel is not navigated.
-    const nv = $("docnav"); if(nv) nv.remove();
-    window.scrollTo(0, 0);
-  }
+  /* THE ?reel= MODE IS GONE, and REEL_TEXT is not. The landing page used to
+     frame the tool in an iframe running a demonstration with every piece of
+     chrome hidden; that sample was dropped on 9 September 2026 because it did
+     not work reliably, and nothing has called the parameter since.
+  
+     What stays is the prose. REEL_TEXT and REEL_GAPS are what make a
+     demonstration read as a finished paper rather than a form with the
+     prompts still in it, and fillDemo and doc.js both take them — so the name
+     is now the only thing about them that still says "reel". */
 })();
 
 
