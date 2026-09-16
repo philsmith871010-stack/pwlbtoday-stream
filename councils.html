@@ -721,9 +721,40 @@ svg.spark .sg{stroke:var(--line2);stroke-width:1;stroke-dasharray:2 3;opacity:.7
    without a second breakpoint to keep in step. `.wide` is for the blocks that
    are meaningless narrow — a quarterly time series and an eight-bucket maturity
    ladder — and it spans every column whatever the count. */
-.dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
+/* TWO COLUMNS, STATED. auto-fit with a 380px floor gave THREE at this width,
+   which is too narrow for a chart with a year axis — so every chart took
+   `wide` to escape it and the result was a bordered vertical stack, which is
+   what a dashboard is not. Two explicit columns at ~593px each is a real
+   half: a 760-unit viewBox renders about 593x164, small enough that the
+   headline numbers and two charts share one screen. */
+.dash{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
   gap:14px;align-items:start;margin-top:10px}
 .dash .wide{grid-column:1/-1}
+@media(max-width:980px){.dash{grid-template-columns:minmax(0,1fr)}}
+/* A chart in half a dashboard must not be as tall as one across the page.
+   The viewBox scales with width, so without a ceiling a full-bleed chart is
+   332px of a 900px screen before the reader has seen a single number. */
+.dcard .stack svg,.dcard .plot svg{max-height:190px}
+/* THE TOP OF A DASHBOARD MUST NOT BE THE WHOLE SCREEN. The headline row is the
+   same markup the page uses elsewhere, where it sits alone and can afford the
+   room; here it is competing with two charts for one viewport. At the default
+   sizes the reader was 660px down before the first chart, so the dashboard was
+   a thing you scrolled to. Tighter here only — the class is unchanged wherever
+   else it appears. */
+.dcard .sect{margin:0 0 6px;font-size:15px}
+.dcard>.note{margin-top:6px;font-size:11px}
+/* A half-width card is about 560px, and a 150px floor puts four KPIs on a
+   3-then-1 row with a hole in it. 120 fits all four across, which is one row
+   shorter as well as tidier. */
+.dcard .kpis{gap:8px;margin-bottom:0;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+.dcard .kpi{padding:8px 11px}
+.dcard .kpi .k{min-height:2.2em;font-size:10px}
+.dcard .kpi .v{font-size:19px;margin-top:2px}
+/* A note ABOVE the numbers is throat-clearing before the answer. It still has
+   to be there — this row is PWLB only and the page says so — but it reads as a
+   caption, and the figures come first. */
+.dcard .lede{font-size:11px;color:var(--muted);line-height:1.45;margin:0 0 9px;max-width:80ch}
 .dcard{background:var(--card);border:1px solid var(--line2);border-radius:var(--r-sm);
   padding:13px 15px 11px;min-width:0}
 .dcard>h3.sect:first-child{margin-top:0}
@@ -770,7 +801,10 @@ svg.spark .sg{stroke:var(--line2);stroke-width:1;stroke-dasharray:2 3;opacity:.7
    year axis, and at 300 two columns fit on a laptop with both too narrow to
    read. At 420 a wide screen gets two and a laptop gets one, which is the
    honest answer for this content. */
-.fc{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px}
+/* align-items:start, or a card with one number in it stretches to match the
+   chart beside it and reads as a panel that failed to load. */
+.fc{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px;
+  align-items:start}
 .fcard{background:var(--card);border:1px solid var(--line2);border-radius:var(--r-sm);padding:14px 15px}
 .fcard h4{margin:0 0 2px;font-size:13px;font-weight:600}
 .fcard .sub2{font-size:10.5px;color:var(--muted);margin-bottom:10px}
@@ -2181,9 +2215,9 @@ function renderDebt(b){
     <section class="dcard wide">
     <h3 class="sect" style="margin-top:0">The PWLB book${pwlbShare != null
       ? ` — ${(pwlbShare * 100).toFixed(0)}% of this council's borrowing` : ""}</h3>
-    <p class="note" style="margin-top:-2px">Every figure in this row is PWLB only, including the
-      average life, the average rate and the five-year total. PWLB is the one lender that
-      publishes maturities loan by loan, so it is the only borrowing that can carry a ladder.</p>
+    <p class="lede">Every figure in this row is PWLB only — the average life, the average rate
+      and the five-year total. PWLB is the one lender that publishes maturities loan by loan, so
+      it is the only borrowing that can carry a ladder.</p>
     <div class="kpis">
       <div class="kpi"><div class="k">PWLB outstanding, ${k.loans} loans</div>
         <div class="v">${money(k.outstanding)}</div></div>
@@ -2204,7 +2238,7 @@ function renderDebt(b){
     ${d.note ? `<p class="note">${esc(d.note)}</p>` : ""}
     </section>
 
-    ${d.history && d.history.length > 1 ? `<section class="dcard wide">
+    ${d.history && d.history.length > 1 ? `<section class="dcard">
     <h3 class="sect">All borrowing, by lender — not PWLB alone</h3>
     ${stackChart(d.history, d.groups, {label: "borrowing by lender, quarterly"})}
     <p class="note">Every lender the council has drawn on, at each quarter end since
@@ -2240,7 +2274,7 @@ function renderDebt(b){
       here — an old book, not an inactive one.</p>
     </section>` : ""}
 
-    <section class="dcard wide">
+    <section class="dcard">
     <h3 class="sect">When the PWLB book matures</h3>
     <div class="ladder">${bars}</div>
     <div class="laxis">${keys.map(x => `<span>${LADDER_LABEL[x]}</span>`).join("")}</div>
